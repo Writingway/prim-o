@@ -147,7 +147,7 @@ V2 : [Native iOS/Android app]  ── HTTP ──>  [Same API]  ──>  [Same D
 | Feature | Description | Priority |
 |---------|-------------|----------|
 | Signup & secure login | Employer signup with JWT auth | Must-have |
-| Company profile | Name, SIRET, contact details | Must-have |
+| Company profile | Name, contact details | Must-have |
 | Dashboard | Available token balance | Must-have |
 
 #### Employee management
@@ -206,7 +206,7 @@ V2 : [Native iOS/Android app]  ── HTTP ──>  [Same API]  ──>  [Same D
 
 | Entity | Key fields |
 |--------|------------|
-| **Employer** | Company name, SIRET, password, token balance |
+| **Employer** | Company name, email, password, token balance |
 | **Employee** | First name, last name, username, password, token balance, employer link |
 | **Token transaction** | Sender, recipient, amount, date, reason |
 | **Partner offer** | Partner name, description, token cost, value in euros, category, status (active/inactive) |
