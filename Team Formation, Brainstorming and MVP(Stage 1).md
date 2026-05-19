@@ -42,11 +42,10 @@ A **meritocratic reverse reward pool**: the company funds it, the employee earns
 
 1. The employer creates a company account
 2. They create employee accounts — or the employee self-registers via invitation link / company code
-3. **Double validation** by email/SMS from both parties before account activation
-4. They deposit money → converted into tokens (1€ = 1 token in V1)
-5. They manually assign tokens to their employees via the interface
-6. The employee sees their tokens credited in real time
-7. The employee redeems tokens for a partner promo code (delivered in one click)
+3. They deposit money → converted into tokens (1€ = 1 token in V1)
+4. They manually assign tokens to their employees via the interface
+5. The employee sees their tokens credited in real time
+6. The employee redeems tokens for a partner promo code (delivered in one click)
 
 ---
 
@@ -156,7 +155,6 @@ V2 : [Native iOS/Android app]  ── HTTP ──>  [Same API]  ──>  [Same D
 |---------|-------------|----------|
 | Employee account creation (by employer) | Employer creates the account and shares credentials | Must-have |
 | Employee self-registration via invitation | Employee signs up via invitation link or company code | Must-have |
-| Double validation | Email/SMS confirmation from both parties before activation | Must-have |
 | Edit & deactivate | Modify or deactivate an employee account | Must-have |
 | Employee list | View all employees with their token balance | Must-have |
 
@@ -208,7 +206,7 @@ V2 : [Native iOS/Android app]  ── HTTP ──>  [Same API]  ──>  [Same D
 
 | Entity | Key fields |
 |--------|------------|
-| **Employer** | Company name, SIRET, email, password, token balance |
+| **Employer** | Company name, SIRET, password, token balance |
 | **Employee** | First name, last name, username, password, token balance, employer link |
 | **Token transaction** | Sender, recipient, amount, date, reason |
 | **Partner offer** | Partner name, description, token cost, value in euros, category, status (active/inactive) |
