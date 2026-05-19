@@ -213,3 +213,60 @@ SUCCESS - CODE RECEIVED:
 │    [CLOSE]             │
 └────────────────────────┘
 ```
+# Technical Architecture — Prim'O
+
+![Design System Architecture](img_doc/Design%20System%20Architecture.png)
+
+The diagram below represents the client-server architecture of Prim'O, organized into four distinct layers.
+
+---
+
+## Frontend — React
+
+The frontend is a **mobile-first responsive web app** built with React. It exposes three interfaces depending on the role of the logged-in user:
+
+- **Admin Dashboard** — internal interface reserved for the Prim'O team. Used to manage partner offers, import promo code stocks, and monitor the platform. Access is strictly restricted and never publicly exposed.
+- **Employer Dashboard** — back-office interface allowing the employer to manage their employees, deposit tokens, and assign them manually.
+- **Employee Web App** — mobile interface allowing the employee to check their token balance in real time, browse the partner offers catalogue, and redeem tokens for promo codes.
+
+The frontend communicates with the backend over **HTTPS** and receives responses in **JSON** format.
+
+---
+
+## Backend Server — Node.js + Express
+
+The backend exposes a **REST API** that forms the core of the application. It is structured around three responsibilities:
+
+- **Expose REST API endpoints** — the HTTP routes that receive requests from the frontend and route them to the appropriate logic.
+- **Authentication & Authorization (JWT + bcrypt)** — every request is verified via a JWT token. Three roles are strictly isolated: Admin, Employer, and Employee. Each role has its own middleware and its own set of accessible routes. Passwords are hashed with bcrypt.
+- **Apply business logic** — contains the core business logic of Prim'O:
+  - **Token management**: crediting, debiting, and balance verification on every assignment or redemption.
+  - **Promo code delivery**: checking available code stock and instantly assigning a code to the employee upon redemption.
+
+---
+
+## Database
+
+The database layer consists of two components:
+
+- **Prisma ORM** — a type-safe abstraction layer between the backend and the database. It translates JavaScript calls into SQL queries and ensures type consistency on both reads and writes.
+- **PostgreSQL** — the relational database that stores all application data:
+  - Admins, Employers & Employees (in separate tables)
+  - Token transactions
+  - Partner offers
+  - Promotional codes and their status (available / used)
+
+The backend sends its **SQL queries** through Prisma, which forwards them to PostgreSQL. **Results** travel back in the reverse order.
+
+---
+
+## External Service — Stripe
+
+Stripe is the external service used to handle **secure payments** made by the employer when depositing tokens.
+
+- The employer initiates a payment from the dashboard.
+- Stripe processes the transaction securely.
+- A **webhook** is sent to the backend to confirm the payment server-side.
+- Tokens are only credited to the employer's account after the webhook confirmation is received.
+
+This mechanism ensures that no token can ever be credited without a validated payment.
