@@ -270,3 +270,18 @@ Stripe is the external service used to handle **secure payments** made by the em
 - Tokens are only credited to the employer's account after the webhook confirmation is received.
 
 This mechanism ensures that no token can ever be credited without a validated payment.
+
+---
+
+## User Login — JWT Authentication
+
+![User Login (JWT)](img_doc/User%20Login%20(JWT).png)
+
+1. Enter email + password — the user fills in their credentials on the login form and submits.
+2. Send login request — the frontend sends the credentials to the backend via a secure HTTPS request.
+3. Check user credentials — the backend queries the database through Prisma to find the matching account.
+4. User found (hashed password + role) — the database returns the user row including the bcrypt-hashed password and their role.
+5. bcrypt.compare(password, hash) — the backend compares the plain password against the stored hash to verify the identity without ever storing the password in clear text.
+6. Return JWT token — if the credentials are valid, the backend signs and returns a JWT token containing the user's ID and role.
+7. Store JWT — the frontend stores the token in an HttpOnly cookie, making it inaccessible to JavaScript and protected against XSS attacks.
+8. User is logged in — the frontend redirects the user to the correct dashboard based on their role.
