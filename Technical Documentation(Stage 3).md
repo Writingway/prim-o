@@ -285,3 +285,107 @@ This mechanism ensures that no token can ever be credited without a validated pa
 6. Return JWT token — if the credentials are valid, the backend signs and returns a JWT token containing the user's ID and role.
 7. Store JWT — the frontend stores the token in an HttpOnly cookie, making it inaccessible to JavaScript and protected against XSS attacks.
 8. User is logged in — the frontend redirects the user to the correct dashboard based on their role.
+
+---
+
+## 1. Employer — Token Management
+
+![Employer Token Management](img_doc/Employer%20Token%20Management.png)
+
+### View token balance
+
+1. **Open dashboard** — the employer opens their back-office interface. This action triggers an automatic request to load the current state of their account.
+2. **Request balance** — the frontend sends a request to the backend to retrieve the employer's current token balance.
+3. **Fetch balance** — the backend queries the database to find the token balance linked to this employer's account.
+4. **Return balance** — the database sends the value back to the backend.
+5. **Display current balance** — the backend forwards the balance to the frontend, which displays it in real time on the employer's dashboard.
+
+---
+
+### Assign tokens to employee
+
+1. **Select employee + enter amount + reason** — the employer chooses an employee from their list, enters the number of tokens to assign, and provides a reason for the reward (e.g. "Exceeded monthly target").
+2. **Send assignment request** — the frontend sends the assignment request to the backend with the employee ID, the amount, and the reason.
+3. **Check employer balance >= amount** — before doing anything, the backend verifies that the employer's current token balance is greater than or equal to the amount being assigned. If not, the request is rejected.
+4. **Debit employer + Credit employee** — in a single atomic database transaction, the backend deducts the tokens from the employer's balance and adds them to the employee's balance. Both operations happen at the same time — there is no state where tokens are debited but not credited, or vice versa.
+5. **Transaction confirmed** — the database confirms that the transaction was saved successfully.
+6. **Updated balance + confirmation** — the backend returns the new balance and a success confirmation, which the frontend displays immediately to the employer.
+
+---
+
+### View attribution history
+
+1. **Open history tab** — the employer navigates to the history section of their dashboard.
+2. **Request transaction history** — the frontend requests the full list of past token attributions from the backend.
+3. **Fetch transactions** — the backend queries the database for all token transactions linked to this employer.
+4. **Return transactions list** — the database returns the full list of transactions.
+5. **Display history** — the frontend displays each attribution with its date, amount, recipient, and reason, giving the employer full visibility over every reward they have issued.
+
+---
+
+## 2. Employee — Token Usage & Promo Code Redemption
+
+![Employee Token Usage](img_doc/Employee%20Token%20Usage%20%26%20Promo%20Code.png)
+
+### View balance & received history
+
+1. **Open dashboard** — the employee opens their mobile interface. The frontend immediately fetches their current token balance and transaction history.
+2. **Request balance & history** — the frontend sends a single request to the backend to retrieve both the balance and the list of received tokens.
+3. **Fetch balance & transactions** — the backend queries the database for the employee's token balance and all incoming transactions linked to their account.
+4. **Return balance & history** — the database returns both sets of data to the backend.
+5. **Display balance + received tokens** — the frontend shows the employee their current balance along with a history of every token they have received, including the date, amount, and the employer who sent it.
+
+---
+
+### Browse partner offers catalogue
+
+1. **Open offers catalogue** — the employee navigates to the offers section to browse available rewards they can redeem their tokens for.
+2. **Request offers list** — the frontend requests the list of available partner offers from the backend, potentially with filters applied (category, maximum token cost).
+3. **Fetch active offers** — the backend queries the database for all offers with an active status, meaning they are currently available for redemption.
+4. **Return offers** — the database returns the filtered list of active offers.
+5. **Display offers** — the frontend displays each offer with the partner brand name, the token cost required to redeem it, and its real monetary value in euros.
+
+---
+
+### Redeem tokens for promo code
+
+1. **Select offer + confirm redemption** — the employee selects an offer they want and confirms they want to proceed with the redemption. A confirmation step is shown before any tokens are debited.
+2. **Send redemption request** — the frontend sends the redemption request to the backend with the selected offer ID.
+3. **Check balance >= offer cost** — the backend verifies that the employee's current token balance is sufficient to cover the cost of the selected offer. If not, the request is rejected and no tokens are debited.
+4. **Debit tokens + assign promo code** — in a single atomic transaction, the backend deducts the token cost from the employee's balance and marks one available promo code for this offer as used, linking it to this employee.
+5. **Return promo code** — the database returns the assigned promo code to the backend.
+6. **Display promo code + updated balance** — the frontend instantly displays the promo code to the employee along with their updated token balance. The code is available immediately with no delay.
+
+---
+
+## 3. Stripe — Payment Flow
+
+![Stripe Payment Flow](img_doc/Stripe%20Payment%20Flow.png)
+
+### Create payment intent
+
+1. **Enter deposit amount** — the employer enters the amount of money they want to deposit into their token wallet (e.g. 200€ = 200 tokens in V1).
+2. **Submit deposit request** — the frontend sends the deposit request to the backend with the amount.
+3. **Create payment intent** — the backend calls the Stripe API to create a Payment Intent. This is a Stripe object that represents the intention to collect a payment. It contains the amount, the currency, and any metadata needed.
+4. **Return client_secret** — Stripe returns a `client_secret`, which is a unique temporary key that identifies this specific payment session. It is never stored — it lives only in memory for this transaction.
+5. **Send client_secret** — the backend forwards the `client_secret` to the frontend so it can initialise the Stripe payment form.
+
+---
+
+### Employer confirms payment
+
+1. **Stripe Elements renders secure payment form** — using the `client_secret`, the frontend initialises Stripe Elements, which renders a secure, PCI-compliant card input form directly in the browser. The card details never touch the backend — they go directly to Stripe.
+2. **Enter card details + confirm** — the employer fills in their card information and clicks confirm.
+3. **Confirm payment (Stripe Elements)** — Stripe processes the payment securely on their end, handling all card validation, 3D Secure authentication, and fraud detection.
+4. **Result (succeeded / failed)** — Stripe returns a result to the frontend indicating whether the payment succeeded or failed. This result is informational only — the backend does not act on it directly.
+
+---
+
+### Webhook confirmation & token credit
+
+1. **Webhook (payment_intent.succeeded)** — independently of the frontend result, Stripe sends an HTTP POST request (a webhook) directly to the backend to confirm the payment server-side. This is the authoritative confirmation — it cannot be faked or intercepted by the frontend.
+2. **Verify webhook signature** — the backend verifies the webhook signature using the Stripe secret key. This ensures the request genuinely comes from Stripe and has not been tampered with. If the signature is invalid, the request is rejected immediately.
+3. **Credit tokens to employer wallet** — only after the signature is verified does the backend credit the tokens to the employer's account in the database. This is the critical rule: tokens are never credited before this step.
+4. **Balance updated** — the database confirms the balance has been updated successfully.
+5. **Acknowledge webhook (200 OK)** — the backend responds to Stripe with a 200 OK to confirm the webhook was received and processed. If Stripe does not receive this, it will retry the webhook automatically.
+6. **Tokens credited — dashboard updated** — the employer's dashboard reflects the new token balance, ready to be assigned to employees.
