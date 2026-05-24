@@ -334,47 +334,71 @@ Below is a cleaned, developer-friendly view of the MVP relational schema rendere
 
 ## 4. External and Internal APIs
 
-### 4.1 External APIs
+## 4.1 External APIs Used
 
-#### Stripe Payments API
+| API | Purpose | Why chosen |
+|-----|---------|------------|
+| **Stripe** | Handle subscription payments and token top-ups securely | PCI-DSS compliance offloaded to Stripe, webhook-based server-side confirmation |
+| **Brevo (Optional)** | Send account verification emails at signup | Managed deliverability (SPF/DKIM/DMARC), GDPR-compliant European provider |
 
-**Purpose**: Handle secure payment processing for employer token deposits.
+---
 
-| Method | Endpoint | Request | Response |
-|--------|----------|---------|----------|
-| | | | |
+## 4.2 Internal API Endpoints (MVP)
 
-### 4.2 Internal API Endpoints
+### Authentication
 
-#### Authentication
+| Method | Endpoint | Description | Input | Output |
+|--------|----------|-------------|-------|--------|
+| `POST` | `/auth/register` | Register a new employer account | `{ "companyName": "string", "siret": "string", "email": "string", "password": "string" }` | `{ "employerId": "uuid", "token": "jwt_token" }` |
+| `POST` | `/auth/login` | Log in user and get JWT (any role) | `{ "email": "string", "password": "string" }` | `{ "token": "jwt_token", "role": "employer\|employee\|admin" }` |
+| `POST` | `/auth/logout` | Log out the current user | Header: `Authorization: Bearer <token>` | `{ "success": true }` |
+| `GET` | `/auth/me` | Get logged-in user info | Header: `Authorization: Bearer <token>` | `{ "id": "uuid", "role": "string", "email": "string" }` |
 
-| Method | Endpoint | Request | Response | Auth |
-|--------|----------|---------|----------|------|
-| | | | | |
+### Employer Account
 
-#### Employer Management
+| Method | Endpoint | Description | Input | Output |
+|--------|----------|-------------|-------|--------|
+| `GET` | `/employers/me` | Get current employer profile | JWT required | `{ "id": "uuid", "companyName": "string", "siret": "string", "email": "string" }` |
+| `PATCH` | `/employers/me` | Update current employer profile | `{ "companyName": "string", "email": "string" }` | `{ "success": true, "employer": { ... } }` |
+| `GET` | `/employers/me/balance` | Get current employer token balance | JWT required | `{ "balance": 250, "updatedAt": "ISO-date" }` |
 
-| Method | Endpoint | Request | Response | Auth |
-|--------|----------|---------|----------|------|
-| | | | | |
+### Employee Management
 
-#### Employee Management
+| Method | Endpoint | Description | Input | Output |
+|--------|----------|-------------|-------|--------|
+| `POST` | `/employees` | Create a new employee account | `{ "firstName": "string", "lastName": "string", "username": "string", "password": "string" }` | `{ "id": "uuid", "firstName": "string", "balance": 0, "isActive": true }` |
+| `GET` | `/employees/me` | Get current employee profile and balance | JWT required | `{ "id": "uuid", "firstName": "string", "balance": 45, "isActive": true }` |
+| `GET` | `/employees` | List employees of the current employer | JWT required | `[ { "id": "uuid", "firstName": "string", "balance": 45, "isActive": true } ]` |
+| `GET` | `/employees/:id` | Get one employee's details | Path param: `id` | `{ "id": "uuid", "firstName": "string", "lastName": "string", "balance": 45, "isActive": true }` |
+| `PATCH` | `/employees/:id` | Update employee profile or status | `{ "firstName": "string", "isActive": false }` | `{ "success": true, "employee": { ... } }` |
+| `DELETE` | `/employees/:id` | Deactivate employee (soft delete) | Path param: `id` | `{ "success": true, "id": "uuid", "isActive": false }` |
 
-| Method | Endpoint | Request | Response | Auth |
-|--------|----------|---------|----------|------|
-| | | | | |
+### Tokens & Payments
 
-#### Token Transactions
+| Method | Endpoint | Description | Input | Output |
+|--------|----------|-------------|-------|--------|
+| `POST` | `/payments/checkout-session` | Create a Stripe checkout session to buy tokens | `{ "amount": 500 }` | `{ "sessionId": "string", "checkoutUrl": "stripe_url" }` |
+| `POST` | `/payments/webhook` | Receive payment confirmation from Stripe | Stripe webhook payload | `{ "received": true }` |
+| `POST` | `/tokens/award` | Award tokens from employer to employee(s) | `{ "employeeIds": ["uuid"], "amount": 50, "reason": "string" }` | `{ "success": true, "transactions": [ ... ], "newBalance": 150 }` |
+| `GET` | `/tokens/transactions` | List token transactions of the current user | Query: `?page=1&limit=20` | `{ "transactions": [ ... ], "total": 47 }` |
 
-| Method | Endpoint | Request | Response | Auth |
-|--------|----------|---------|----------|------|
-| | | | | |
+### Partner Offers
 
-#### Offers & Redemption
+| Method | Endpoint | Description | Input | Output |
+|--------|----------|-------------|-------|--------|
+| `GET` | `/offers` | List active partner offers | Query: `?category=string&maxTokens=100` | `[ { "id": "uuid", "partner": "string", "tokenCost": 50, "valueEuros": 50 } ]` |
+| `GET` | `/offers/:id` | Get offer details | Path param: `id` | `{ "id": "uuid", "partner": "string", "description": "string", "tokenCost": 50, "codesAvailable": 47 }` |
+| `POST` | `/offers` | Create a new partner offer (admin only) | `{ "partner": "string", "title": "string", "tokenCost": 50, "valueEuros": 50, "category": "string" }` | `{ "id": "uuid", "status": "active", "codesAvailable": 0 }` |
+| `PATCH` | `/offers/:id` | Update an offer or change status (admin only) | `{ "tokenCost": 45, "status": "inactive" }` | `{ "success": true, "offer": { ... } }` |
+| `POST` | `/offers/:id/codes` | Bulk-import promo codes for an offer (admin only) | `{ "codes": ["string"] }` | `{ "success": true, "imported": 3, "codesAvailable": 50 }` |
 
-| Method | Endpoint | Request | Response | Auth |
-|--------|----------|---------|----------|------|
-| | | | | |
+### Redemption
+
+| Method | Endpoint | Description | Input | Output |
+|--------|----------|-------------|-------|--------|
+| `POST` | `/redemptions` | Redeem tokens for a promo code | `{ "offerId": "uuid" }` | `{ "id": "uuid", "partner": "string", "tokensSpent": 50, "promoCode": "string", "newBalance": 400 }` |
+| `GET` | `/redemptions` | List redemptions of the current employee | Query: `?page=1&limit=20` | `{ "redemptions": [ ... ], "total": 7 }` |
+| `GET` | `/redemptions/:id` | Get one redemption with the promo code | Path param: `id` | `{ "id": "uuid", "partner": "string", "tokensSpent": 50, "promoCode": "string" }` |
 
 ---
 
