@@ -225,7 +225,11 @@ Below is a cleaned, developer-friendly view of the MVP relational schema rendere
 - **PromoCode** = single-use code assigned on redemption
 - **ExchangeHistory** = link between redemption, employee and code
 
-### 3.4 Authentication Flow – JWT
+---
+
+## 3. High-Level Sequence Diagrams
+
+### 3.1 Authentication Flow – JWT
 
 ![User Login (JWT)](img_doc/User%20Login%20(JWT).png)
 
@@ -240,11 +244,7 @@ Below is a cleaned, developer-friendly view of the MVP relational schema rendere
 7. Store JWT - the frontend stores the token in an HttpOnly cookie, making it inaccessible to JavaScript and protected against XSS attacks.
 8. User is logged in - the frontend redirects the user to the correct dashboard based on their role.
 
----
-
-## 3. High-Level Sequence Diagrams
-
-### 3.1 Employer Token Management
+### 3.2 Employer Token Management
 
 ![Employer Token Management](img_doc/Employer%20Token%20Management.png)
 
@@ -273,7 +273,7 @@ Below is a cleaned, developer-friendly view of the MVP relational schema rendere
 4. **Return transactions list** - the database returns the full list of transactions.
 5. **Display history** - the frontend displays each attribution with its date, amount, recipient, and reason, giving the employer full visibility over every reward they have issued.
 
-### 3.2 Employee Token Usage & Promo Code Redemption
+### 3.3 Employee Token Usage & Promo Code Redemption
 
 ![Employee Token Usage](img_doc/Employee%20Token%20Usage%20%26%20Promo%20Code.png)
 
@@ -302,7 +302,7 @@ Below is a cleaned, developer-friendly view of the MVP relational schema rendere
 5. **Return promo code** - the database returns the assigned promo code to the backend.
 6. **Display promo code + updated balance** - the frontend instantly displays the promo code to the employee along with their updated token balance. The code is available immediately with no delay.
 
-### 3.3 Stripe Payment Flow
+### 3.4 Stripe Payment Flow
 
 ![Stripe Payment Flow](img_doc/Stripe%20Payment%20Flow.png)
 
