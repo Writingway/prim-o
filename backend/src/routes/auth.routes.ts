@@ -1,8 +1,9 @@
 import { Router } from 'express';
-import { registerEmployerController } from '../controllers/auth.controller';
+import { registerEmployerController, registerEmployeeController } from '../controllers/auth.controller';
 
 const router = Router();
 
 router.post('/employer/register', registerEmployerController);
+router.post('/employee/register', registerEmployeeController);
 
 export default router;
