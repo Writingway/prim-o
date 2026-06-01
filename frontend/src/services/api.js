@@ -10,7 +10,9 @@ async function post(path, body) {
   const res = await fetch(`${API_URL}${path}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
+    // credentials: pour envoyer/recevoir le cookie refresh (httpOnly)
+    credentials: 'include',
+    body: body === undefined ? undefined : JSON.stringify(body),
   });
 
   let data = null;
@@ -32,7 +34,11 @@ export function registerEmployee(payload) {
 }
 
 // role : 'employer' | 'employee'
-// La route de login n'existe pas encore côté backend → renverra 404 pour l'instant.
 export function login(role, payload) {
   return post(`/auth/${role}/login`, payload);
+}
+
+// Déconnexion : révoque le refresh côté serveur et supprime le cookie.
+export function logout() {
+  return post('/auth/logout');
 }

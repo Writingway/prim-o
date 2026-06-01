@@ -1,0 +1,55 @@
+.home-wrapper {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f4f5f7;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.home-card {
+  width: 100%;
+  max-width: 420px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  padding: 40px 32px;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.home-logo {
+  margin: 0 0 16px;
+  font-size: 32px;
+  font-weight: 700;
+  color: #1f2937;
+  letter-spacing: -0.5px;
+}
+
+.home-welcome {
+  margin: 0 0 8px;
+  font-size: 20px;
+  color: #111827;
+}
+
+.home-role {
+  margin: 0 0 28px;
+  color: #4b5563;
+}
+
+.home-logout {
+  padding: 12px 20px;
+  border: none;
+  border-radius: 8px;
+  background: #4f46e5;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.home-logout:hover {
+  background: #4338ca;
+}
