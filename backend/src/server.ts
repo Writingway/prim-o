@@ -7,6 +7,8 @@ import morgan from 'morgan';
 import { config } from './config';
 import { errorHandler } from './middleware/error.middleware';
 import authRouter from './routes/auth.routes';
+import cookieParser from 'cookie-parser';
+
 
 const app = express();
 
@@ -27,6 +29,8 @@ app.use(rateLimit({
 app.use(morgan(config.NODE_ENV === 'production' ? 'combined' : 'dev'));
 // 4. Parse JSON
 app.use(express.json());
+// Parser cookies
+app.use(cookieParser());
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', env: config.NODE_ENV });

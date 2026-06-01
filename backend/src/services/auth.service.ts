@@ -1,8 +1,9 @@
 import bcrypt from "bcryptjs";
 import {prisma} from "../lib/db";
-import { signAccessToken, generateRefreshToken, REFRESH_TTL_MS } from '../lib/token';
+import { signAccessToken, generateRefreshToken, REFRESH_TTL_MS, hashRefreshToken } from '../lib/token';
 import type { LoginInput } from '../schemas/auth.schemas';
 import type { RegisterEmployerInput, RegisterEmployeeInput } from "../schemas/auth.schemas";
+
 
 export async function registerEmployer(input: RegisterEmployerInput) {
   const { companyName, email, password } = input;
@@ -100,3 +101,59 @@ export async function registerEmployee(input: RegisterEmployeeInput) {
     employerId: employee.employerId,
   };
 };
+
+export async function refreshTokens(rawToken: string) {
+  const tokenHash = hashRefreshToken(rawToken);
+  const stored = await prisma.refreshToken.findUnique({ where: { tokenHash } });
+
+  // a) introuvable
+  if (!stored) throw new Error('INVALID_REFRESH');
+
+  // b) DÉTECTION DE VOL : token connu mais déjà révoqué = quelqu'un réutilise un vieux token
+  if (stored.isRevoked) {
+    // révoque tous les refresh actifs de cet user (coupe l'attaquant ET la victime)
+    await prisma.refreshToken.updateMany({
+      where: { employerId: stored.employerId, isRevoked: false },
+      data: { isRevoked: true },
+    });
+    throw new Error('INVALID_REFRESH');
+  }
+
+  // c) expiré
+  if (stored.expiresAt < new Date()) throw new Error('INVALID_REFRESH');
+
+  // d) ROTATION — atomique (transaction)
+  const { raw, hash } = generateRefreshToken();
+  const newToken = await prisma.$transaction(async (tx) => {
+    const created = await tx.refreshToken.create({
+      data: {
+        tokenHash: hash,
+        role: stored.role,
+        expiresAt: new Date(Date.now() + REFRESH_TTL_MS),
+        employerId: stored.employerId,
+        employeeId: stored.employeeId,
+      },
+    });
+    await tx.refreshToken.update({
+      where: { id: stored.id },
+      data: { isRevoked: true, replacedById: created.id },
+    });
+    return created;
+  });
+
+  // e) nouvel access — qui est l'user ? employer ou employee
+  const userId = stored.employerId ?? stored.employeeId;
+  if (!userId) throw new Error('INVALID_REFRESH');
+  const accessToken = signAccessToken(userId, stored.role);
+
+  return { accessToken, refreshToken: raw };
+}
+
+
+export async function logout(rawToken: string): Promise<void> {
+  const tokenHash = hashRefreshToken(rawToken);
+  await prisma.refreshToken.updateMany({
+    where: { tokenHash, isRevoked: false },
+    data: { isRevoked: true },
+  });
+}
