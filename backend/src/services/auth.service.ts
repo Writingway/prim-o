@@ -60,6 +60,32 @@ export async function loginEmployer(input: LoginInput) {
   // 6. Retourner { accessToken, refreshToken: raw }
   return { accessToken, refreshToken };
 }
+export async function loginEmployee(input: LoginInput) {
+  const { email, password } = input;
+
+  // Même logique que loginEmployer, mais sur la table Employee / rôle EMPLOYEE.
+  const employee = await prisma.employee.findUnique({ where: { email } });
+
+  // Même erreur si introuvable OU mauvais mdp (ne pas révéler quel email existe)
+  if (!employee || !(await bcrypt.compare(password, employee.passwordHash))) {
+    throw new Error('INVALID_CREDENTIALS');
+  }
+
+  const accessToken = signAccessToken(employee.id, 'EMPLOYEE');
+  const { raw: refreshToken, hash: refreshTokenHash } = generateRefreshToken();
+
+  await prisma.refreshToken.create({
+    data: {
+      tokenHash: refreshTokenHash,
+      role: 'EMPLOYEE',
+      expiresAt: new Date(Date.now() + REFRESH_TTL_MS),
+      employeeId: employee.id,
+    },
+  });
+
+  return { accessToken, refreshToken };
+}
+
 export async function registerEmployee(input: RegisterEmployeeInput) {
   const { firstName, lastName, email, password, employerId } = input;
 

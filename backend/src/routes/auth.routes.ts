@@ -1,8 +1,9 @@
 import { Router } from 'express';
-import { 
-  registerEmployerController, 
-  registerEmployeeController, 
+import {
+  registerEmployerController,
+  registerEmployeeController,
   loginEmployerController,
+  loginEmployeeController,
   refreshController,
   logoutController
  } from '../controllers/auth.controller';
@@ -12,6 +13,7 @@ const router = Router();
 router.post('/employer/register', registerEmployerController);
 router.post('/employee/register', registerEmployeeController);
 router.post('/employer/login', loginEmployerController);
+router.post('/employee/login', loginEmployeeController);
 router.post('/refresh', refreshController);
 router.post('/logout', logoutController);
 

@@ -9,7 +9,7 @@ import './AuthPage.css';
 // - un rôle : employer / employee
 // - un mode : login / register
 // Le formulaire affiché dépend de ces deux réglages.
-export default function AuthPage() {
+export default function AuthPage({ onLoginSuccess }) {
   const [role, setRole] = useState('employer');
   const [mode, setMode] = useState('login');
   const [success, setSuccess] = useState('');
@@ -40,7 +40,7 @@ export default function AuthPage() {
         {success && <p className="auth-success">{success}</p>}
 
         {mode === 'login' ? (
-          <LoginForm role={role} />
+          <LoginForm role={role} onLoginSuccess={onLoginSuccess} />
         ) : (
           <RegisterForm role={role} onSuccess={handleRegisterSuccess} />
         )}
