@@ -3,19 +3,17 @@ import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
+import morgan from 'morgan';
 import { config } from './config';
+import { errorHandler } from './middleware/error.middleware';
+import authRouter from './routes/auth.routes';
 
 const app = express();
 
 // 1. Sécurité headers
 app.use(helmet());
-
 // 2. CORS (avant rate limit)
-app.use(cors({
-  origin: config.CLIENT_URL,
-  credentials: true,
-}));
-
+app.use(cors({origin: config.CLIENT_URL, credentials: true}));
 // 3. Rate limiting
 app.use(rateLimit({
   windowMs: 60 * 1000,
@@ -24,13 +22,19 @@ app.use(rateLimit({
   legacyHeaders: false,
   message: { error: 'Trop de requêtes, réessaie dans 1 minute.' },
 }));
-
+// En dev : logs détaillés colorés
+// En prod : format court (économise les logs)
+app.use(morgan(config.NODE_ENV === 'production' ? 'combined' : 'dev'));
 // 4. Parse JSON
 app.use(express.json());
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', env: config.NODE_ENV });
 });
+
+app.use('/api/auth', authRouter);
+
+app.use(errorHandler);
 
 app.listen(config.PORT, () => {
   console.log(`Serveur lancé sur http://localhost:${config.PORT}`);
