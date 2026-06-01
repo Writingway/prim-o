@@ -25,3 +25,13 @@ export function generateRefreshToken(): { raw: string; hash: string } {
 export function hashRefreshToken(raw: string): string {
   return crypto.createHash('sha256').update(raw).digest('hex');
 }
+
+export interface AccessPayload { sub: string; role: string; }
+
+export function verifyAccessToken(token: string): AccessPayload {
+  const decoded = jwt.verify(token, config.JWT_SECRET); // throw si signature KO ou expiré
+  if (typeof decoded === 'string' || !decoded.sub || !decoded.role) {
+    throw new Error('INVALID_TOKEN');
+  }
+  return { sub: decoded.sub, role: decoded.role as string };
+}
