@@ -1,0 +1,144 @@
+.auth-wrapper {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f4f5f7;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 380px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  padding: 32px 28px;
+  box-sizing: border-box;
+}
+
+.auth-logo {
+  text-align: center;
+  margin: 0 0 24px;
+  font-size: 32px;
+  font-weight: 700;
+  color: #1f2937;
+  letter-spacing: -0.5px;
+}
+
+/* Sélecteur de rôle : segmenté */
+.role-selector {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.role-selector button {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid #d1d5db;
+  background: #fff;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #4b5563;
+  transition: all 0.15s ease;
+}
+
+.role-selector button.active {
+  background: #4f46e5;
+  border-color: #4f46e5;
+  color: #fff;
+  font-weight: 600;
+}
+
+/* Onglets login / register */
+.auth-tabs {
+  display: flex;
+  border-bottom: 1px solid #e5e7eb;
+  margin-bottom: 20px;
+}
+
+.auth-tabs button {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 15px;
+  color: #6b7280;
+  border-bottom: 2px solid transparent;
+}
+
+.auth-tabs button.active {
+  color: #4f46e5;
+  font-weight: 600;
+  border-bottom-color: #4f46e5;
+}
+
+/* Formulaire */
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.auth-form input {
+  padding: 12px 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 15px;
+  box-sizing: border-box;
+}
+
+.auth-form input:focus {
+  outline: none;
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+}
+
+.auth-form button[type='submit'] {
+  margin-top: 4px;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  background: #4f46e5;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.auth-form button[type='submit']:hover:not(:disabled) {
+  background: #4338ca;
+}
+
+.auth-form button[type='submit']:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Messages */
+.auth-error {
+  margin: 0;
+  color: #dc2626;
+  font-size: 14px;
+}
+
+.auth-info {
+  margin: 0;
+  color: #2563eb;
+  font-size: 14px;
+}
+
+.auth-success {
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  background: #ecfdf5;
+  color: #059669;
+  border-radius: 8px;
+  font-size: 14px;
+  text-align: center;
+}
