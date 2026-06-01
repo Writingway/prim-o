@@ -1,13 +1,11 @@
 import { useState } from 'react';
 import { login } from '../../services/api';
 
-// Formulaire de connexion. L'UI est complète, mais la route backend
-// /auth/{role}/login n'existe pas encore : un 404 affiche un message
-// "bientôt disponible" (sera branché à l'étape suivante).
-export default function LoginForm({ role }) {
+// Formulaire de connexion. À la réussite, remonte le token + rôle au parent
+// (App) via onLoginSuccess, qui bascule alors sur la page d'accueil.
+export default function LoginForm({ role, onLoginSuccess }) {
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
-  const [info, setInfo] = useState('');
   const [loading, setLoading] = useState(false);
 
   const update = (e) => setForm({ ...form, [e.target.name]: e.target.value });
@@ -15,18 +13,18 @@ export default function LoginForm({ role }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    setInfo('');
     setLoading(true);
 
     try {
       const res = await login(role, form);
 
       if (res.ok) {
-        setInfo('Connexion réussie ✅');
-      } else if (res.status === 404) {
-        setInfo('La connexion sera bientôt disponible (route serveur à venir).');
+        onLoginSuccess(res.data.accessToken, role);
+        return;
       } else if (res.status === 401) {
         setError('Email ou mot de passe incorrect.');
+      } else if (res.status === 400) {
+        setError('Données invalides.');
       } else {
         setError('Une erreur est survenue.');
       }
@@ -55,7 +53,6 @@ export default function LoginForm({ role }) {
       />
 
       {error && <p className="auth-error">{error}</p>}
-      {info && <p className="auth-info">{info}</p>}
 
       <button type="submit" disabled={loading}>
         {loading ? 'Chargement…' : 'Se connecter'}

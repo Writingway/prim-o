@@ -4,10 +4,11 @@ import { AppError } from '../middleware/error.middleware';
 import { loginSchema } from '../schemas/auth.schemas';
 import { config } from '../config';
 import { REFRESH_TTL_MS } from '../lib/token';
-import { 
-  registerEmployer, 
+import {
+  registerEmployer,
   registerEmployee,
   loginEmployer,
+  loginEmployee,
   refreshTokens,
   logout
 } from '../services/auth.service';
@@ -75,6 +76,29 @@ export async function loginEmployerController(
     });
 
     // l'access token part dans le JSON (le front le garde en mémoire)
+    res.status(200).json({ accessToken });
+  } catch (err) {
+    if (err instanceof Error && err.message === 'INVALID_CREDENTIALS') {
+      next(new AppError(401, 'Email ou mot de passe incorrect.'));
+      return;
+    }
+    next(err);
+  }
+}
+
+export async function loginEmployeeController(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const input = loginSchema.parse(req.body);
+    const { accessToken, refreshToken } = await loginEmployee(input);
+
+    res.cookie('refreshToken', refreshToken, {
+      ...refreshCookieOptions
+    });
+
     res.status(200).json({ accessToken });
   } catch (err) {
     if (err instanceof Error && err.message === 'INVALID_CREDENTIALS') {
