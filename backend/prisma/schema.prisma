@@ -8,111 +8,114 @@ datasource db {
 }
 
 model Admin {
-  id           String   @id @default(cuid())
+  id           String   @id @default(uuid()) @db.Uuid
   email        String   @unique
   passwordHash String
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
+  refreshTokens RefreshToken[]
 }
 
-model Employer {
-  id               String    @id @default(cuid())
-  companyName      String
-  email            String    @unique
-  passwordHash     String
-  tokenBalance     Int       @default(0)
-  isEmailVerified  Boolean   @default(false)
-  isSmsVerified    Boolean   @default(false)
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
-  deletedAt        DateTime?
+model Manager {
+  id              String    @id @default(uuid()) @db.Uuid
+  companyName     String
+  email           String    @unique
+  passwordHash    String
+  balance         Int       @default(0)
+  isEmailVerified Boolean   @default(false)
+  isSmsVerified   Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  deletedAt       DateTime?
 
-  employees        Employee[]
-  sentTransactions TokenTransaction[] @relation("SenderTransactions")
-  refreshTokens    RefreshToken[]
+  employees     Employee[]
+  attributions  Attribution[]  @relation("SenderAttributions")
+  refreshTokens RefreshToken[]
 }
 
 model Employee {
-  id                String    @id @default(cuid())
-  firstName         String
-  lastName          String
-  email             String    @unique
-  passwordHash      String
-  tokenBalance      Int       @default(0)
-  isEmailVerified   Boolean   @default(false)
-  isSmsVerified     Boolean   @default(false)
-  invitationToken   String?
-  employerId        String
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-  deletedAt         DateTime?
+  id              String    @id @default(uuid()) @db.Uuid
+  firstName       String
+  lastName        String
+  email           String    @unique
+  passwordHash    String
+  balance         Int       @default(0)
+  isEmailVerified Boolean   @default(false)
+  isSmsVerified   Boolean   @default(false)
+  invitationCode  String?
+  managerId       String    @db.Uuid
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  deletedAt       DateTime?
 
-  employer          Employer   @relation(fields: [employerId], references: [id])
-  receivedTransactions TokenTransaction[] @relation("RecipientTransactions")
-  exchangeHistory   ExchangeHistory[]
-  refreshTokens     RefreshToken[]
+  manager       Manager       @relation(fields: [managerId], references: [id])
+  attributions  Attribution[] @relation("RecipientAttributions")
+  redemptions   Redemption[]
+  refreshTokens RefreshToken[]
 }
 
 model RefreshToken {
-  id             String   @id @default(cuid())
-  tokenHash      String   @unique
-  role           Role
-  expiresAt      DateTime
-  isRevoked      Boolean  @default(false)
-  replacedById   String?
-  createdAt      DateTime @default(now())
+  id           String   @id @default(uuid()) @db.Uuid
+  tokenHash    String   @unique
+  role         Role
+  expiresAt    DateTime
+  isRevoked    Boolean  @default(false)
+  replacedById String?  @db.Uuid
+  createdAt    DateTime @default(now())
 
-  employerId     String?
-  employeeId     String?
-  adminId        String?
+  managerId  String? @db.Uuid
+  employeeId String? @db.Uuid
+  adminId    String? @db.Uuid
 
-  employer       Employer? @relation(fields: [employerId], references: [id])
-  employee       Employee? @relation(fields: [employeeId], references: [id])
+  manager  Manager?  @relation(fields: [managerId], references: [id])
+  employee Employee? @relation(fields: [employeeId], references: [id])
+  admin    Admin?    @relation(fields: [adminId], references: [id])
 }
 
-model TokenTransaction {
-  id          String   @id @default(cuid())
-  amount      Int
-  reason      String
-  senderId    String
-  recipientId String
-  createdAt   DateTime @default(now())
+model Attribution {
+  id         String   @id @default(uuid()) @db.Uuid
+  amount     Int
+  reason     String
+  managerId  String   @db.Uuid
+  employeeId String   @db.Uuid
+  createdAt  DateTime @default(now())
 
-  sender      Employer @relation("SenderTransactions", fields: [senderId], references: [id])
-  recipient   Employee @relation("RecipientTransactions", fields: [recipientId], references: [id])
+  manager  Manager  @relation("SenderAttributions", fields: [managerId], references: [id])
+  employee Employee @relation("RecipientAttributions", fields: [employeeId], references: [id])
 }
 
 model PartnerOffer {
-  id          String   @id @default(cuid())
+  id          String   @id @default(uuid()) @db.Uuid
   partnerName String
-  tokenCost   Int
-  valueEuros  Float
+  cost        Int
+  valueEuros  Decimal  @db.Decimal(10, 2)
   category    String
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  promoCodes  PromoCode[]
+  promoCodes PromoCode[]
 }
 
 model PromoCode {
-  id        String    @id @default(cuid())
+  id        String    @id @default(uuid()) @db.Uuid
   code      String    @unique
   isUsed    Boolean   @default(false)
   usedAt    DateTime?
-  offerId   String
+  offerId   String    @db.Uuid
   createdAt DateTime  @default(now())
 
-  offer           PartnerOffer     @relation(fields: [offerId], references: [id])
-  exchangeHistory ExchangeHistory?
+  offer      PartnerOffer @relation(fields: [offerId], references: [id])
+  redemption Redemption?
 }
 
-model ExchangeHistory {
-  id            String   @id @default(cuid())
-  tokensDebited Int
-  employeeId    String
-  promoCodeId   String   @unique
-  createdAt     DateTime @default(now())
+model Redemption {
+  id          String   @id @default(uuid()) @db.Uuid
+  amount      Int
+  employeeId  String   @db.Uuid
+  promoCodeId String   @unique @db.Uuid
+  createdAt   DateTime @default(now())
 
   employee  Employee  @relation(fields: [employeeId], references: [id])
   promoCode PromoCode @relation(fields: [promoCodeId], references: [id])
@@ -120,6 +123,6 @@ model ExchangeHistory {
 
 enum Role {
   ADMIN
-  EMPLOYER
+  MANAGER
   EMPLOYEE
 }

@@ -1,12 +1,15 @@
 // Client API minimal pour parler au backend Prim'O.
 // En dev, l'URL est relative (/api) et Vite la proxifie vers le backend
+
+import { Role } from "../types/types";
+
 // (voir vite.config.js) → pas de souci CORS ni de port Windows/WSL.
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 // POST générique : envoie du JSON, renvoie { ok, status, data }.
 // On ne jette pas d'exception sur les erreurs HTTP : on renvoie le statut
 // pour que les formulaires affichent le bon message (400, 404, 409...).
-async function post(path, body) {
+async function post(path: string, body?: unknown) {
   const res = await fetch(`${API_URL}${path}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -25,16 +28,16 @@ async function post(path, body) {
   return { ok: res.ok, status: res.status, data };
 }
 
-export function registerEmployer(payload) {
-  return post('/auth/employer/register', payload);
+export function registerManager(payload: { companyName: string; email: string; password: string }) {
+  return post('/auth/manager/register', payload);
 }
 
-export function registerEmployee(payload) {
+export function registerEmployee(payload: { firstName: string; lastName: string; email: string; password: string; managerId: string }) {
   return post('/auth/employee/register', payload);
 }
 
-// role : 'employer' | 'employee'
-export function login(role, payload) {
+// role : 'manager' | 'employee' (segment d'URL backend)
+export function login(role: Role, payload: { email: string; password: string }) {
   return post(`/auth/${role}/login`, payload);
 }
 

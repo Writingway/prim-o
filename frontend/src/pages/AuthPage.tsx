@@ -3,29 +3,34 @@ import RoleSelector from '../components/auth/RoleSelector';
 import AuthTabs from '../components/auth/AuthTabs';
 import LoginForm from '../components/auth/LoginForm';
 import RegisterForm from '../components/auth/RegisterForm';
+import type { Role, Mode } from '../types/types';
 import './AuthPage.css';
 
+type AuthPageProps = {
+  onLoginSuccess: (accessToken: string, role: Role) => void;
+};
+
 // Page d'authentification unique (option A) :
-// - un rôle : employer / employee
+// - un rôle : manager / employee
 // - un mode : login / register
 // Le formulaire affiché dépend de ces deux réglages.
-export default function AuthPage({ onLoginSuccess }) {
-  const [role, setRole] = useState('employer');
-  const [mode, setMode] = useState('login');
-  const [success, setSuccess] = useState('');
+export default function AuthPage({ onLoginSuccess }: AuthPageProps) {
+  const [role, setRole] = useState<Role>('manager');
+  const [mode, setMode] = useState<Mode>('login');
+  const [successMessage, setSuccessMessage] = useState('');
 
-  const changeRole = (r) => {
-    setRole(r);
-    setSuccess('');
+  const changeRole = (nextRole: Role) => {
+    setRole(nextRole);
+    setSuccessMessage('');
   };
 
-  const changeMode = (m) => {
-    setMode(m);
-    setSuccess('');
+  const changeMode = (nextMode: Mode) => {
+    setMode(nextMode);
+    setSuccessMessage('');
   };
 
   const handleRegisterSuccess = () => {
-    setSuccess('Compte créé ✅ Vous pouvez maintenant vous connecter.');
+    setSuccessMessage('Compte créé ✅ Vous pouvez maintenant vous connecter.');
     setMode('login');
   };
 
@@ -37,7 +42,7 @@ export default function AuthPage({ onLoginSuccess }) {
         <RoleSelector role={role} onChange={changeRole} />
         <AuthTabs mode={mode} onChange={changeMode} />
 
-        {success && <p className="auth-success">{success}</p>}
+        {successMessage && <p className="auth-success">{successMessage}</p>}
 
         {mode === 'login' ? (
           <LoginForm role={role} onLoginSuccess={onLoginSuccess} />
