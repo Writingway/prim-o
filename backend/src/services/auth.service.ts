@@ -2,25 +2,20 @@ import bcrypt from "bcryptjs";
 import {prisma} from "../lib/db";
 import { signAccessToken, generateRefreshToken, REFRESH_TTL_MS, hashRefreshToken } from '../lib/token';
 import type { LoginInput } from '../schemas/auth.schemas';
-import type { RegisterEmployerInput, RegisterEmployeeInput } from "../schemas/auth.schemas";
+import type { RegisterManagerInput, RegisterEmployeeInput } from "../schemas/auth.schemas";
 
 
-export async function registerEmployer(input: RegisterEmployerInput) {
+export async function registerManager(input: RegisterManagerInput) {
   const { companyName, email, password } = input;
-  
-  // Vérifier si l'employeur existe déjà
-  const existingEmployer = await prisma.employer.findUnique({
-    where: { email },
-  });
-  if (existingEmployer) {
+
+  const existingManager = await prisma.manager.findUnique({ where: { email } });
+  if (existingManager) {
     throw new Error('EMAIL_TAKEN');
   }
 
-  // Hasher le mot de passe
   const passwordHash = await bcrypt.hash(password, 10);
 
-  // Créer l'employeur
-  const employer = await prisma.employer.create({
+  const manager = await prisma.manager.create({
     data: {
       companyName: input.companyName,
       email: input.email,
@@ -28,45 +23,39 @@ export async function registerEmployer(input: RegisterEmployerInput) {
     },
   });
 
-  return { id: employer.id, email: employer.email, companyName: employer.companyName };
+  return { id: manager.id, email: manager.email, companyName: manager.companyName };
 };
 
 
-export async function loginEmployer(input: LoginInput) {
+export async function loginManager(input: LoginInput) {
   const { email, password } = input;
 
-  // 1. Trouver l'employer par email
-  const employer = await prisma.employer.findUnique({ where: { email } });
+  const manager = await prisma.manager.findUnique({ where: { email } });
 
-  // 2. Vérifier mot de passe — MÊME erreur si introuvable OU mauvais mdp
-  //    bcrypt.compare(password, employer.passwordHash) -> Promise<boolean>
-  if (!employer || !(await bcrypt.compare(password, employer.passwordHash))) {
+  if (!manager || !(await bcrypt.compare(password, manager.passwordHash))) {
     throw new Error('INVALID_CREDENTIALS');
   }
-  // 3. Émettre access token (employer.id, 'EMPLOYER')
-  const accessToken = signAccessToken(employer.id, 'EMPLOYER');
-  // 4. Générer refresh (raw + hash)
+
+  const accessToken = signAccessToken(manager.id, 'MANAGER');
   const { raw: refreshToken, hash: refreshTokenHash } = generateRefreshToken();
-  // 5. Stocker le HASH en DB avec expiration
-  //    prisma.refreshToken.create({ data: { tokenHash, role, expiresAt, employerId } })
+
   await prisma.refreshToken.create({
     data: {
       tokenHash: refreshTokenHash,
-      role: 'EMPLOYER',
+      role: 'MANAGER',
       expiresAt: new Date(Date.now() + REFRESH_TTL_MS),
-      employerId: employer.id,
+      managerId: manager.id,
     },
   });
-  // 6. Retourner { accessToken, refreshToken: raw }
+
   return { accessToken, refreshToken };
 }
+
 export async function loginEmployee(input: LoginInput) {
   const { email, password } = input;
 
-  // Même logique que loginEmployer, mais sur la table Employee / rôle EMPLOYEE.
   const employee = await prisma.employee.findUnique({ where: { email } });
 
-  // Même erreur si introuvable OU mauvais mdp (ne pas révéler quel email existe)
   if (!employee || !(await bcrypt.compare(password, employee.passwordHash))) {
     throw new Error('INVALID_CREDENTIALS');
   }
@@ -87,35 +76,27 @@ export async function loginEmployee(input: LoginInput) {
 }
 
 export async function registerEmployee(input: RegisterEmployeeInput) {
-  const { firstName, lastName, email, password, employerId } = input;
+  const { firstName, lastName, email, password, managerId } = input;
 
-  // Vérifier que l'employeur existe
-  const employer = await prisma.employer.findUnique({
-    where: { id: employerId },
-  });
-  if (!employer) {
-    throw new Error('EMPLOYER_NOT_FOUND');
+  const manager = await prisma.manager.findUnique({ where: { id: managerId } });
+  if (!manager) {
+    throw new Error('MANAGER_NOT_FOUND');
   }
 
-  // Vérifier si l'employé existe déjà
-  const existingEmployee = await prisma.employee.findUnique({
-    where: { email },
-  });
+  const existingEmployee = await prisma.employee.findUnique({ where: { email } });
   if (existingEmployee) {
     throw new Error('EMAIL_TAKEN');
   }
 
-  // Hasher le mot de passe
   const passwordHash = await bcrypt.hash(password, 10);
 
-  // Créer l'employé (non vérifié : email + SMS à valider plus tard)
   const employee = await prisma.employee.create({
     data: {
       firstName,
       lastName,
       email,
       passwordHash,
-      employerId,
+      managerId,
     },
   });
 
@@ -124,7 +105,7 @@ export async function registerEmployee(input: RegisterEmployeeInput) {
     firstName: employee.firstName,
     lastName: employee.lastName,
     email: employee.email,
-    employerId: employee.employerId,
+    managerId: employee.managerId,
   };
 };
 
@@ -132,23 +113,20 @@ export async function refreshTokens(rawToken: string) {
   const tokenHash = hashRefreshToken(rawToken);
   const stored = await prisma.refreshToken.findUnique({ where: { tokenHash } });
 
-  // a) introuvable
   if (!stored) throw new Error('INVALID_REFRESH');
 
-  // b) DÉTECTION DE VOL : token connu mais déjà révoqué = quelqu'un réutilise un vieux token
+  // DÉTECTION DE VOL : token révoqué = quelqu'un réutilise un vieux token
   if (stored.isRevoked) {
-    // révoque tous les refresh actifs de cet user (coupe l'attaquant ET la victime)
     await prisma.refreshToken.updateMany({
-      where: { employerId: stored.employerId, isRevoked: false },
+      where: { managerId: stored.managerId, isRevoked: false },
       data: { isRevoked: true },
     });
     throw new Error('INVALID_REFRESH');
   }
 
-  // c) expiré
   if (stored.expiresAt < new Date()) throw new Error('INVALID_REFRESH');
 
-  // d) ROTATION — atomique (transaction)
+  // ROTATION atomique
   const { raw, hash } = generateRefreshToken();
   const newToken = await prisma.$transaction(async (tx) => {
     const created = await tx.refreshToken.create({
@@ -156,7 +134,7 @@ export async function refreshTokens(rawToken: string) {
         tokenHash: hash,
         role: stored.role,
         expiresAt: new Date(Date.now() + REFRESH_TTL_MS),
-        employerId: stored.employerId,
+        managerId: stored.managerId,
         employeeId: stored.employeeId,
       },
     });
@@ -167,8 +145,7 @@ export async function refreshTokens(rawToken: string) {
     return created;
   });
 
-  // e) nouvel access — qui est l'user ? employer ou employee
-  const userId = stored.employerId ?? stored.employeeId;
+  const userId = stored.managerId ?? stored.employeeId;
   if (!userId) throw new Error('INVALID_REFRESH');
   const accessToken = signAccessToken(userId, stored.role);
 

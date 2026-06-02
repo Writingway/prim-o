@@ -7,13 +7,13 @@ const safeText = (min: number) =>
     .pipe(z.string().min(min));
 
 
-export const registerEmployerSchema = z.object({
+export const registerManagerSchema = z.object({
   companyName: safeText(2),
   email: z.email(),
   password: z.string().min(8),
 });
 
-export type RegisterEmployerInput = z.infer<typeof registerEmployerSchema>;
+export type RegisterManagerInput = z.infer<typeof registerManagerSchema>;
 
 export const loginSchema = z.object({
   email: z.email(),
@@ -26,7 +26,7 @@ export const registerEmployeeSchema = z.object({
   lastName: safeText(2),
   email: z.email(),
   password: z.string().min(8),
-  employerId: z.string().min(1),
+  managerId: z.string().uuid(),
 });
 
 export type RegisterEmployeeInput = z.infer<typeof registerEmployeeSchema>;

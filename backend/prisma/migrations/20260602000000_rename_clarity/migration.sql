@@ -1,0 +1,1 @@
+-- Consolidé dans 20260528105815_init — no-op.
