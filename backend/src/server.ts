@@ -7,6 +7,7 @@ import morgan from 'morgan';
 import { config } from './config';
 import { errorHandler } from './middleware/error.middleware';
 import authRouter from './routes/auth.routes';
+import employeeRouter from './routes/employee.routes';
 import cookieParser from 'cookie-parser';
 
 
@@ -37,6 +38,7 @@ app.get('/health', (req, res) => {
 });
 
 app.use('/api/auth', authRouter);
+app.use('/api/employees', employeeRouter);
 
 app.use(errorHandler);
 
