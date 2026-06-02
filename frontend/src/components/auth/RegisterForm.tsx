@@ -1,8 +1,20 @@
 import { useState } from 'react';
-import { registerEmployer, registerEmployee } from '../../services/api';
+import type { ChangeEvent, SyntheticEvent } from 'react';
+import { registerManager, registerEmployee } from '../../services/api';
+import type { Role } from '../../types/types';
 
-// Récupère le 1er message de validation renvoyé par le backend (ZodError -> details[]).
-function firstValidationMessage(data) {
+// Corps d'erreur de validation renvoyé par le backend (ZodError -> details[]).
+type ValidationErrorBody = {
+  details?: Array<{ message: string }>;
+};
+
+type RegisterFormProps = {
+  role: Role;
+  onSuccess: () => void;
+};
+
+// Récupère le 1er message de validation renvoyé par le backend, ou null.
+function firstValidationMessage(data: ValidationErrorBody | null): string | null {
   if (data && Array.isArray(data.details) && data.details[0]) {
     return data.details[0].message;
   }
@@ -10,31 +22,33 @@ function firstValidationMessage(data) {
 }
 
 // Formulaire d'inscription. Les champs affichés dépendent du rôle :
-// - employer : companyName
-// - employee : firstName, lastName, employerId
-export default function RegisterForm({ role, onSuccess }) {
+// - manager  : companyName
+// - employee : firstName, lastName, managerId
+export default function RegisterForm({ role, onSuccess }: RegisterFormProps) {
   const [form, setForm] = useState({
     companyName: '',
     firstName: '',
     lastName: '',
     email: '',
     password: '',
-    employerId: '',
+    managerId: '',
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const update = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+  // Met à jour le champ dont l'attribut `name` correspond à la clé du state.
+  const handleFieldChange = (event: ChangeEvent<HTMLInputElement>) =>
+    setForm({ ...form, [event.target.name]: event.target.value });
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (event: SyntheticEvent<HTMLFormElement>) => {
+    event.preventDefault();
     setError('');
     setLoading(true);
 
     try {
       const res =
-        role === 'employer'
-          ? await registerEmployer({
+        role === 'manager'
+          ? await registerManager({
               companyName: form.companyName,
               email: form.email,
               password: form.password,
@@ -44,7 +58,7 @@ export default function RegisterForm({ role, onSuccess }) {
               lastName: form.lastName,
               email: form.email,
               password: form.password,
-              employerId: form.employerId,
+              managerId: form.managerId,
             });
 
       if (res.ok) {
@@ -70,12 +84,12 @@ export default function RegisterForm({ role, onSuccess }) {
 
   return (
     <form className="auth-form" onSubmit={handleSubmit}>
-      {role === 'employer' && (
+      {role === 'manager' && (
         <input
           name="companyName"
           placeholder="Nom de l'entreprise"
           value={form.companyName}
-          onChange={update}
+          onChange={handleFieldChange}
         />
       )}
 
@@ -85,13 +99,13 @@ export default function RegisterForm({ role, onSuccess }) {
             name="firstName"
             placeholder="Prénom"
             value={form.firstName}
-            onChange={update}
+            onChange={handleFieldChange}
           />
           <input
             name="lastName"
             placeholder="Nom"
             value={form.lastName}
-            onChange={update}
+            onChange={handleFieldChange}
           />
         </>
       )}
@@ -101,22 +115,22 @@ export default function RegisterForm({ role, onSuccess }) {
         type="email"
         placeholder="Email"
         value={form.email}
-        onChange={update}
+        onChange={handleFieldChange}
       />
       <input
         name="password"
         type="password"
         placeholder="Mot de passe (8 caractères min.)"
         value={form.password}
-        onChange={update}
+        onChange={handleFieldChange}
       />
 
       {role === 'employee' && (
         <input
-          name="employerId"
+          name="managerId"
           placeholder="Code entreprise"
-          value={form.employerId}
-          onChange={update}
+          value={form.managerId}
+          onChange={handleFieldChange}
         />
       )}
 

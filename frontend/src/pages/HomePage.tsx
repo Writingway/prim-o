@@ -1,9 +1,15 @@
 import { logout as apiLogout } from '../services/api';
+import type { Role } from '../types/types';
 import './HomePage.css';
 
+type HomePageProps = {
+  role: Role;
+  onLogout: () => void;
+};
+
 // Page d'accueil minimale affichée après connexion.
-export default function HomePage({ role, onLogout }) {
-  const roleLabel = role === 'employer' ? 'Employeur' : 'Employé';
+export default function HomePage({ role, onLogout }: HomePageProps) {
+  const roleLabel = role === 'manager' ? 'Employeur' : 'Employé';
 
   const handleLogout = async () => {
     try {

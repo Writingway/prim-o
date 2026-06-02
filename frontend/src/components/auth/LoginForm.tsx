@@ -1,17 +1,26 @@
 import { useState } from 'react';
+import type { ChangeEvent, SyntheticEvent } from 'react';
 import { login } from '../../services/api';
+import type { Role } from '../../types/types';
+
+type LoginFormProps = {
+  role: Role;
+  onLoginSuccess: (accessToken: string, role: Role) => void;
+};
 
 // Formulaire de connexion. À la réussite, remonte le token + rôle au parent
 // (App) via onLoginSuccess, qui bascule alors sur la page d'accueil.
-export default function LoginForm({ role, onLoginSuccess }) {
+export default function LoginForm({ role, onLoginSuccess }: LoginFormProps) {
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const update = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+  // Met à jour le champ dont l'attribut `name` correspond à la clé du state.
+  const handleFieldChange = (event: ChangeEvent<HTMLInputElement>) =>
+    setForm({ ...form, [event.target.name]: event.target.value });
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (event: SyntheticEvent<HTMLFormElement>) => {
+    event.preventDefault();
     setError('');
     setLoading(true);
 
@@ -42,14 +51,14 @@ export default function LoginForm({ role, onLoginSuccess }) {
         type="email"
         placeholder="Email"
         value={form.email}
-        onChange={update}
+        onChange={handleFieldChange}
       />
       <input
         name="password"
         type="password"
         placeholder="Mot de passe"
         value={form.password}
-        onChange={update}
+        onChange={handleFieldChange}
       />
 
       {error && <p className="auth-error">{error}</p>}

@@ -1,5 +1,12 @@
+import type { Mode } from '../../types/types';
+
+type AuthTabsProps = {
+  mode: Mode;
+  onChange: (mode: Mode) => void;
+};
+
 // Onglets : Se connecter / S'inscrire.
-export default function AuthTabs({ mode, onChange }) {
+export default function AuthTabs({ mode, onChange }: AuthTabsProps) {
   return (
     <div className="auth-tabs">
       <button
