@@ -1,7 +1,7 @@
 // Client API minimal pour parler au backend Prim'O.
 // En dev, l'URL est relative (/api) et Vite la proxifie vers le backend
 
-import { Role } from "../types/types";
+import { Role, Employee } from "../types/types";
 
 // (voir vite.config.js) → pas de souci CORS ni de port Windows/WSL.
 const API_URL = import.meta.env.VITE_API_URL || '/api';
@@ -26,6 +26,32 @@ async function post(path: string, body?: unknown) {
   }
 
   return { ok: res.ok, status: res.status, data };
+}
+
+// GET authentifié : joint l'access token en Bearer.
+async function get(path: string, accessToken: string) {
+  const res = await fetch(`${API_URL}${path}`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+    credentials: 'include',
+  });
+
+  let data = null;
+  try {
+    data = await res.json();
+  } catch {
+    // Pas de corps JSON — on ignore.
+  }
+
+  return { ok: res.ok, status: res.status, data };
+}
+
+// Liste les employés de l'entreprise du manager connecté.
+export function listEmployees(accessToken: string) {
+  return get('/employees/list', accessToken) as Promise<{
+    ok: boolean;
+    status: number;
+    data: { employees: Employee[] } | null;
+  }>;
 }
 
 export function registerManager(payload: { companyName: string; email: string; password: string }) {

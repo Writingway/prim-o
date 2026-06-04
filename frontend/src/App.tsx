@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import AuthPage from './pages/AuthPage';
 import HomePage from './pages/HomePage';
+import ManagerDashboard from './pages/ManagerDashboard';
 import type { AuthSession, Role } from './types/types';
 
 function App() {
@@ -11,11 +12,16 @@ function App() {
     setSession({ accessToken, role });
   const handleLogout = () => setSession(null);
 
-  return session ? (
-    <HomePage role={session.role} onLogout={handleLogout} />
-  ) : (
-    <AuthPage onLoginSuccess={handleLoginSuccess} />
-  );
+  if (!session) {
+    return <AuthPage onLoginSuccess={handleLoginSuccess} />;
+  }
+
+  // Le manager arrive sur son dashboard ; les autres rôles gardent la page d'accueil.
+  if (session.role === 'manager') {
+    return <ManagerDashboard accessToken={session.accessToken} onLogout={handleLogout} />;
+  }
+
+  return <HomePage role={session.role} onLogout={handleLogout} />;
 }
 
 export default App;
