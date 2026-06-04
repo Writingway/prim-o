@@ -54,7 +54,7 @@ export function listEmployees(accessToken: string) {
   }>;
 }
 
-export function registerManager(payload: { companyName: string; email: string; password: string }) {
+export function registerManager(payload: { companyName: string; firstName: string; lastName: string; email: string; password: string }) {
   return post('/auth/manager/register', payload);
 }
 
