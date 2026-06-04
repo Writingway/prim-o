@@ -129,7 +129,7 @@ export async function refreshTokens(rawToken: string) {
   const userId = stored.userId;
   const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user) throw new Error('INVALID_REFRESH');
-  const accessToken = signAccessToken(userId, user.role, user.companyId);
+  const accessToken = signAccessToken(userId, user.role, user.companyId ?? undefined);
 
   return { accessToken, refreshToken: raw };
 }
@@ -166,7 +166,7 @@ export async function login(input: LoginInput) {
     },
   });
 
-  const accessToken = signAccessToken(user.id, user.role, user.companyId);
+  const accessToken = signAccessToken(user.id, user.role, user.companyId ?? undefined);
   return { accessToken, refreshToken };
 }
 
