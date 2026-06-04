@@ -23,7 +23,7 @@ function firstValidationMessage(data: ValidationErrorBody | null): string | null
 
 // Formulaire d'inscription. Les champs affichés dépendent du rôle :
 // - manager  : companyName
-// - employee : firstName, lastName, managerId
+// - employee : firstName, lastName, code (code entreprise)
 export default function RegisterForm({ role, onSuccess }: RegisterFormProps) {
   const [form, setForm] = useState({
     companyName: '',
@@ -31,7 +31,7 @@ export default function RegisterForm({ role, onSuccess }: RegisterFormProps) {
     lastName: '',
     email: '',
     password: '',
-    managerId: '',
+    code: '',
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -58,7 +58,7 @@ export default function RegisterForm({ role, onSuccess }: RegisterFormProps) {
               lastName: form.lastName,
               email: form.email,
               password: form.password,
-              managerId: form.managerId,
+              code: form.code,
             });
 
       if (res.ok) {
@@ -68,8 +68,8 @@ export default function RegisterForm({ role, onSuccess }: RegisterFormProps) {
 
       if (res.status === 409) {
         setError('Cet email est déjà utilisé.');
-      } else if (res.status === 404) {
-        setError('Code entreprise invalide.');
+      } else if (res.status === 410) {
+        setError('Code entreprise invalide ou expiré.');
       } else if (res.status === 400) {
         setError(firstValidationMessage(res.data) || 'Données invalides.');
       } else {
@@ -127,9 +127,9 @@ export default function RegisterForm({ role, onSuccess }: RegisterFormProps) {
 
       {role === 'employee' && (
         <input
-          name="managerId"
+          name="code"
           placeholder="Code entreprise"
-          value={form.managerId}
+          value={form.code}
           onChange={handleFieldChange}
         />
       )}

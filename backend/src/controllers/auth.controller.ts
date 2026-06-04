@@ -1,15 +1,14 @@
 import type { Request, Response, NextFunction } from 'express';
-import { registerManagerSchema, registerEmployeeSchema } from '../schemas/auth.schemas';
+import { registerManagerSchema, registerUserSchema } from '../schemas/auth.schemas';
 import { AppError } from '../middleware/error.middleware';
 import { loginSchema } from '../schemas/auth.schemas';
 import { config } from '../config';
 import { REFRESH_TTL_MS } from '../lib/token';
 import {
   registerManager,
-  registerEmployee,
-  loginManager,
-  loginEmployee,
+  registerUser,
   refreshTokens,
+  login,
   logout
 } from '../services/auth.service';
 
@@ -39,64 +38,27 @@ export async function registerManagerController(
   }
 }
 
-export async function registerEmployeeController(
+export async function registerUserController(
   req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> {
   try {
-    const input = registerEmployeeSchema.parse(req.body);
-    const employee = await registerEmployee(input);
+    const input = registerUserSchema.parse(req.body);
+    const employee = await registerUser(input);
     res.status(201).json({ employee });
   } catch (err) {
-    if (err instanceof Error && err.message === 'MANAGER_NOT_FOUND') {
-      next(new AppError(404, 'Manager introuvable.'));
+
+    if (err instanceof Error && err.message === 'INVALID_CODE') {
+      next(new AppError(410, 'Code entreprise invalide ou expiré.'));
       return;
     }
+
     if (err instanceof Error && err.message === 'EMAIL_TAKEN') {
       next(new AppError(409, 'Email déjà utilisé.'));
       return;
     }
-    next(err);
-  }
-}
 
-export async function loginManagerController(
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> {
-  try {
-    const input = loginSchema.parse(req.body);
-    const { accessToken, refreshToken } = await loginManager(input);
-
-    res.cookie('refreshToken', refreshToken, { ...refreshCookieOptions });
-    res.status(200).json({ accessToken });
-  } catch (err) {
-    if (err instanceof Error && err.message === 'INVALID_CREDENTIALS') {
-      next(new AppError(401, 'Email ou mot de passe incorrect.'));
-      return;
-    }
-    next(err);
-  }
-}
-
-export async function loginEmployeeController(
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> {
-  try {
-    const input = loginSchema.parse(req.body);
-    const { accessToken, refreshToken } = await loginEmployee(input);
-
-    res.cookie('refreshToken', refreshToken, { ...refreshCookieOptions });
-    res.status(200).json({ accessToken });
-  } catch (err) {
-    if (err instanceof Error && err.message === 'INVALID_CREDENTIALS') {
-      next(new AppError(401, 'Email ou mot de passe incorrect.'));
-      return;
-    }
     next(err);
   }
 }
@@ -115,6 +77,36 @@ export async function refreshController(req: Request, res: Response, next: NextF
       next(new AppError(401, 'Session invalide, reconnecte-toi.'));
       return;
     }
+    next(err);
+  }
+}
+
+export async function loginController(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const input = loginSchema.parse(req.body);
+    const { accessToken, refreshToken } = await login(input);
+    res.cookie('refreshToken', refreshToken, { ...refreshCookieOptions });
+    res.status(200).json({ accessToken });
+  } catch (err) {
+    if (err instanceof Error && err.message === 'INVALID_CREDENTIALS') {
+      next(new AppError(401, 'Email ou mot de passe invalide.'));
+      return;
+    }
+
+    if (err instanceof Error && err.message === 'USER_NOT_APPROVED') {
+      next(new AppError(403, 'Utilisateur en attente de validation.'));
+      return;
+    }
+    
+    if (err instanceof Error && err.message === 'EMAIL_NOT_VERIFIED') {
+      next(new AppError(403, 'Email non vérifié. Vérifie ta boîte mail.'));
+      return;
+    }
+
     next(err);
   }
 }

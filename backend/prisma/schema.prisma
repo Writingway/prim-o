@@ -1,3 +1,12 @@
+// ============================================================
+//  Prim'O — schema.prisma
+//  User unifié + Company (multi-tenant). Corrige les règles
+//  métier violées + dette technique de l'ancienne version.
+//  ⚠️ Deux contraintes ne s'expriment pas en Prisma : voir le
+//     bloc SQL en bas (CHECK + index partiel) à coller dans une
+//     migration vide après `migrate dev`.
+// ============================================================
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -7,122 +16,242 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Admin {
-  id           String   @id @default(uuid()) @db.Uuid
-  email        String   @unique
-  passwordHash String
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  refreshTokens RefreshToken[]
-}
-
-model Manager {
-  id              String    @id @default(uuid()) @db.Uuid
-  companyName     String
-  email           String    @unique
-  passwordHash    String
-  balance         Int       @default(0)
-  isEmailVerified Boolean   @default(false)
-  isSmsVerified   Boolean   @default(false)
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  deletedAt       DateTime?
-
-  employees     Employee[]
-  attributions  Attribution[]  @relation("SenderAttributions")
-  refreshTokens RefreshToken[]
-}
-
-model Employee {
-  id              String    @id @default(uuid()) @db.Uuid
-  firstName       String
-  lastName        String
-  email           String    @unique
-  passwordHash    String
-  balance         Int       @default(0)
-  isEmailVerified Boolean   @default(false)
-  isSmsVerified   Boolean   @default(false)
-  invitationCode  String?
-  managerId       String    @db.Uuid
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  deletedAt       DateTime?
-
-  manager       Manager       @relation(fields: [managerId], references: [id])
-  attributions  Attribution[] @relation("RecipientAttributions")
-  redemptions   Redemption[]
-  refreshTokens RefreshToken[]
-}
-
-model RefreshToken {
-  id           String   @id @default(uuid()) @db.Uuid
-  tokenHash    String   @unique
-  role         Role
-  expiresAt    DateTime
-  isRevoked    Boolean  @default(false)
-  replacedById String?  @db.Uuid
-  createdAt    DateTime @default(now())
-
-  managerId  String? @db.Uuid
-  employeeId String? @db.Uuid
-  adminId    String? @db.Uuid
-
-  manager  Manager?  @relation(fields: [managerId], references: [id])
-  employee Employee? @relation(fields: [employeeId], references: [id])
-  admin    Admin?    @relation(fields: [adminId], references: [id])
-}
-
-model Attribution {
-  id         String   @id @default(uuid()) @db.Uuid
-  amount     Int
-  reason     String
-  managerId  String   @db.Uuid
-  employeeId String   @db.Uuid
-  createdAt  DateTime @default(now())
-
-  manager  Manager  @relation("SenderAttributions", fields: [managerId], references: [id])
-  employee Employee @relation("RecipientAttributions", fields: [employeeId], references: [id])
-}
-
-model PartnerOffer {
-  id          String   @id @default(uuid()) @db.Uuid
-  partnerName String
-  cost        Int
-  valueEuros  Decimal  @db.Decimal(10, 2)
-  category    String
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  promoCodes PromoCode[]
-}
-
-model PromoCode {
-  id        String    @id @default(uuid()) @db.Uuid
-  code      String    @unique
-  isUsed    Boolean   @default(false)
-  usedAt    DateTime?
-  offerId   String    @db.Uuid
-  createdAt DateTime  @default(now())
-
-  offer      PartnerOffer @relation(fields: [offerId], references: [id])
-  redemption Redemption?
-}
-
-model Redemption {
-  id          String   @id @default(uuid()) @db.Uuid
-  amount      Int
-  employeeId  String   @db.Uuid
-  promoCodeId String   @unique @db.Uuid
-  createdAt   DateTime @default(now())
-
-  employee  Employee  @relation(fields: [employeeId], references: [id])
-  promoCode PromoCode @relation(fields: [promoCodeId], references: [id])
-}
+// ─────────────────────────── ENUMS ───────────────────────────
 
 enum Role {
   ADMIN
   MANAGER
   EMPLOYEE
 }
+
+// Règle 3 : file d'approbation manager
+enum UserStatus {
+  PENDING   // employé inscrit, en attente de validation manager
+  APPROVED  // MANAGER/ADMIN sont APPROVED dès la création
+  REJECTED
+}
+
+enum OfferCategory {
+  FOOD
+  SHOPPING
+  CULTURE
+  TRAVEL
+  WELLNESS
+  OTHER
+}
+
+// ─────────────────────────── ENTREPRISE ──────────────────────
+// Remplace `companyName String`. C'est la barrière multi-tenant.
+
+model Company {
+  id           String    @id @default(uuid()) @db.Uuid
+  name         String
+  tokenBalance Int       @default(0)   // POOL acheté par l'employeur. CHECK >= 0 en SQL.
+                                        // Les managers attribuent DEPUIS ce pool. Jamais sur le manager.
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+
+  users        User[]
+  inviteCodes  CompanyInviteCode[]
+  attributions Attribution[]
+  redemptions  Redemption[]
+  purchases    CompanyTokenPurchase[]   // historique des recharges du pool (D2)
+}
+
+// ─────────────────────────── USER UNIQUE ─────────────────────
+// Remplace Admin + Manager + Employee. Auth écrite UNE fois.
+
+model User {
+  id              String     @id @default(uuid()) @db.Uuid
+  email           String                          // unicité : index partiel en SQL (soft-delete)
+  passwordHash    String
+  role            Role
+  firstName       String?                         // null pour ADMIN
+  lastName        String?
+  balance         Int        @default(0)          // PORTEFEUILLE EMPLOYÉ uniquement. Reste 0 pour MANAGER/ADMIN. CHECK >= 0 en SQL.
+  isEmailVerified Boolean    @default(false)
+  status          UserStatus @default(PENDING)
+  companyId       String?    @db.Uuid             // null UNIQUEMENT pour ADMIN
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  deletedAt       DateTime?
+
+  company       Company?                 @relation(fields: [companyId], references: [id])
+  refreshTokens RefreshToken[]
+  emailTokens   EmailVerificationToken[]
+
+  inviteCodesCreated   CompanyInviteCode[]    @relation("InviteCreatedBy")
+  attributionsSent     Attribution[]          @relation("AttribManager")   // en tant que manager
+  attributionsReceived Attribution[]          @relation("AttribEmployee")  // en tant qu'employé
+  redemptions          Redemption[]
+  purchasesCreated     CompanyTokenPurchase[] @relation("PurchaseCreatedBy") // recharges saisies par un admin
+
+  @@index([companyId])
+  @@index([email])
+}
+
+// ─────────────────────────── AUTH TOKENS ─────────────────────
+// Plus de 3 FK nullables : un seul userId (rôle déduit de User).
+
+model RefreshToken {
+  id           String   @id @default(uuid()) @db.Uuid
+  tokenHash    String   @unique
+  expiresAt    DateTime
+  isRevoked    Boolean  @default(false)
+  replacedById String?  @db.Uuid
+  createdAt    DateTime @default(now())
+
+  userId String @db.Uuid
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// Stocke le lien de confirmation email (règle 3)
+model EmailVerificationToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  userId String @db.Uuid
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// ─────────────────────────── CODE D'ENTREPRISE ───────────────
+// Modélise VRAIMENT la règle 3 : 24h + plafond + révocable.
+// Validité = revokedAt IS NULL AND expiresAt > now AND usedCount < maxUses
+// Consommation atomique via $queryRaw (D3) : UPDATE ... WHERE usedCount < maxUses.
+
+model CompanyInviteCode {
+  id          String    @id @default(uuid()) @db.Uuid
+  code        String    @unique
+  companyId   String    @db.Uuid
+  createdById String    @db.Uuid           // le manager qui l'a généré
+  expiresAt   DateTime                     // = createdAt + 24h
+  maxUses     Int                          // plafond d'usages
+  usedCount   Int       @default(0)
+  revokedAt   DateTime?                    // révocation
+  createdAt   DateTime  @default(now())
+
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  createdBy User    @relation("InviteCreatedBy", fields: [createdById], references: [id])
+
+  @@index([companyId])
+}
+
+// ─────────────────────────── RECHARGE DU POOL (D2) ───────────
+// Ledger d'achats : chaque crédit du pool entreprise = une ligne immuable.
+// Source de vérité de l'historique ; Company.tokenBalance = solde courant.
+
+model CompanyTokenPurchase {
+  id          String   @id @default(uuid()) @db.Uuid
+  amount      Int                            // > 0 (Zod + CHECK). Tokens ajoutés au pool.
+  note        String?                        // motif/référence d'achat (optionnel)
+  companyId   String   @db.Uuid
+  createdById String   @db.Uuid              // l'ADMIN qui a crédité
+  createdAt   DateTime @default(now())
+
+  company   Company @relation(fields: [companyId], references: [id])
+  createdBy User    @relation("PurchaseCreatedBy", fields: [createdById], references: [id])
+
+  @@index([companyId])
+  @@index([createdById])
+}
+
+// ─────────────────────────── LEDGER TOKENS ───────────────────
+// Attribution (crédit) + Redemption (débit) = registre append-only.
+// INVARIANT : user.balance == SUM(attributionsReceived) - SUM(redemptions)
+// Toujours muter le balance DANS la même transaction (voir SOLUTIONS_dette_technique.md).
+
+model Attribution {
+  id         String   @id @default(uuid()) @db.Uuid
+  amount     Int                            // > 0 (Zod + CHECK)
+  reason     String                         // règle 4 : obligatoire
+  companyId  String   @db.Uuid              // dénormalisé pour filtre multi-tenant rapide
+  managerId  String   @db.Uuid
+  employeeId String   @db.Uuid
+  createdAt  DateTime @default(now())
+
+  company  Company @relation(fields: [companyId], references: [id])
+  manager  User    @relation("AttribManager", fields: [managerId], references: [id])
+  employee User    @relation("AttribEmployee", fields: [employeeId], references: [id])
+
+  @@index([companyId])
+  @@index([employeeId])
+  @@index([managerId])
+}
+
+// ─────────────────────────── OFFRES PARTENAIRES ──────────────
+
+model PartnerOffer {
+  id          String        @id @default(uuid()) @db.Uuid
+  partnerName String
+  cost        Int                              // prix en tokens
+  discountPercent  Int
+  category    OfferCategory
+  isActive    Boolean       @default(true)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  promoCodes  PromoCode[]
+  redemptions Redemption[]
+
+  @@index([category])
+  @@index([isActive])
+}
+
+model PromoCode {
+  id        String    @id @default(uuid()) @db.Uuid
+  code      String    @unique
+  isUsed    Boolean   @default(false)         // marqué de façon atomique (règle 5)
+  usedAt    DateTime?
+  offerId   String    @db.Uuid
+  createdAt DateTime  @default(now())
+
+  offer      PartnerOffer @relation(fields: [offerId], references: [id])
+  redemption Redemption?
+
+  @@index([offerId])
+  @@index([isUsed])
+}
+
+model Redemption {
+  id          String   @id @default(uuid()) @db.Uuid
+  amount      Int                            // snapshot de offer.cost au moment de l'achat
+  employeeId  String   @db.Uuid
+  offerId     String   @db.Uuid
+  promoCodeId String   @unique @db.Uuid      // 1 code = 1 redemption (garanti par DB)
+  companyId   String   @db.Uuid
+  createdAt   DateTime @default(now())
+
+  employee  User         @relation(fields: [employeeId], references: [id])
+  offer     PartnerOffer @relation(fields: [offerId], references: [id])
+  promoCode PromoCode    @relation(fields: [promoCodeId], references: [id])
+  company   Company      @relation(fields: [companyId], references: [id])
+
+  @@index([companyId])
+  @@index([employeeId])
+  @@index([offerId])
+}
+
+// ============================================================
+//  MIGRATION SQL À AJOUTER MANUELLEMENT
+//  (Prisma ne sait pas exprimer CHECK ni index partiel)
+//  → après `migrate dev`, créer une migration vide puis coller :
+//
+//  -- Règle 1 : soldes jamais négatifs (au niveau DB, pas que le code)
+//  ALTER TABLE "User"                 ADD CONSTRAINT user_balance_non_negative   CHECK ("balance" >= 0);
+//  ALTER TABLE "Company"              ADD CONSTRAINT company_pool_non_negative    CHECK ("tokenBalance" >= 0);
+//  ALTER TABLE "Attribution"          ADD CONSTRAINT attribution_amount_positive  CHECK ("amount" > 0);
+//  ALTER TABLE "Redemption"           ADD CONSTRAINT redemption_amount_positive   CHECK ("amount" > 0);
+//  ALTER TABLE "CompanyTokenPurchase" ADD CONSTRAINT purchase_amount_positive     CHECK ("amount" > 0);
+//
+//  -- Email unique SEULEMENT parmi les comptes non supprimés (réinscription après soft-delete)
+//  CREATE UNIQUE INDEX user_email_active_unique
+//    ON "User" ("email") WHERE "deletedAt" IS NULL;
+// ============================================================

@@ -10,12 +10,18 @@ export async function listEmployeesController(
   next: NextFunction
 ): Promise<void> {
   try {
-    if (req.user?.role !== 'EMPLOYER') {
-      next(new AppError(403, 'Accès réservé aux employeurs.'));
+    if (req.user?.role !== 'MANAGER') {
+      next(new AppError(403, 'Accès réservé aux manager.'));
       return;
     }
 
-    const employees = await listEmployeesByEmployer(req.user.id);
+    const companyId = req.user?.companyId;
+    if (!companyId) {
+      next(new AppError(403, 'Aucune entreprise associée.'));
+      return;
+    }
+
+    const employees = await listEmployeesByEmployer(companyId);
     res.status(200).json({ employees });
   } catch (err) {
     next(err);
