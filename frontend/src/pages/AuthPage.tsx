@@ -45,7 +45,7 @@ export default function AuthPage({ onLoginSuccess }: AuthPageProps) {
         {successMessage && <p className="auth-success">{successMessage}</p>}
 
         {mode === 'login' ? (
-          <LoginForm role={role} onLoginSuccess={onLoginSuccess} />
+          <LoginForm onLoginSuccess={onLoginSuccess} />
         ) : (
           <RegisterForm role={role} onSuccess={handleRegisterSuccess} />
         )}

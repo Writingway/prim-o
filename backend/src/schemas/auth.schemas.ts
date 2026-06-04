@@ -21,12 +21,12 @@ export const loginSchema = z.object({
 });
 export type LoginInput = z.infer<typeof loginSchema>;
 
-export const registerEmployeeSchema = z.object({
+export const registerUserSchema = z.object({
   firstName: safeText(2),
   lastName: safeText(2),
   email: z.email(),
   password: z.string().min(8),
-  managerId: z.string().uuid(),
+  code: z.string().min(6)
 });
 
-export type RegisterEmployeeInput = z.infer<typeof registerEmployeeSchema>;
+export type RegisterUserInput = z.infer<typeof registerUserSchema>;

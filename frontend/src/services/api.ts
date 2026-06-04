@@ -32,13 +32,21 @@ export function registerManager(payload: { companyName: string; email: string; p
   return post('/auth/manager/register', payload);
 }
 
-export function registerEmployee(payload: { firstName: string; lastName: string; email: string; password: string; managerId: string }) {
+export function registerEmployee(payload: { firstName: string; lastName: string; email: string; password: string; code: string }) {
   return post('/auth/employee/register', payload);
 }
 
-// role : 'manager' | 'employee' (segment d'URL backend)
-export function login(role: Role, payload: { email: string; password: string }) {
-  return post(`/auth/${role}/login`, payload);
+// Login unifié : le backend identifie le rôle via les identifiants, plus via l'URL.
+// La réponse ne contient que { accessToken } ; le rôle se lit dans le JWT.
+export function login(payload: { email: string; password: string }) {
+  return post('/auth/login', payload);
+}
+
+// Source de vérité du rôle = le payload du JWT (et non le sélecteur du formulaire).
+// Le backend émet le rôle en MAJUSCULES (enum Prisma) → on repasse en minuscules.
+export function roleFromToken(accessToken: string): Role {
+  const payload = JSON.parse(atob(accessToken.split('.')[1]));
+  return String(payload.role).toLowerCase() as Role;
 }
 
 // Déconnexion : révoque le refresh côté serveur et supprime le cookie.

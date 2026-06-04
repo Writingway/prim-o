@@ -3,109 +3,143 @@ import bcrypt from 'bcryptjs'
 
 const prisma = new PrismaClient()
 
+// Coût bcrypt conforme CLAUDE.md (>= 12)
+const hash = (pwd: string) => bcrypt.hash(pwd, 12)
+
 async function main() {
   console.log('🌱 Seeding database...')
 
   // Vider dans l'ordre (FK oblige)
   await prisma.redemption.deleteMany()
   await prisma.attribution.deleteMany()
+  await prisma.companyTokenPurchase.deleteMany()
+  await prisma.companyInviteCode.deleteMany()
   await prisma.promoCode.deleteMany()
   await prisma.partnerOffer.deleteMany()
+  await prisma.emailVerificationToken.deleteMany()
   await prisma.refreshToken.deleteMany()
-  await prisma.employee.deleteMany()
-  await prisma.manager.deleteMany()
-  await prisma.admin.deleteMany()
+  await prisma.user.deleteMany()
+  await prisma.company.deleteMany()
 
-  // ── Managers ──────────────────────────────────────────────
-  const acme = await prisma.manager.create({
+  // ── Admin ─────────────────────────────────────────────────
+  const admin = await prisma.user.create({
     data: {
-      companyName: 'Acme',
+      email: 'admin@primo.fr',
+      passwordHash: await hash('password123'),
+      role: 'ADMIN',
+      status: 'APPROVED',
+      isEmailVerified: true,
+      // companyId null : seul l'ADMIN n'a pas d'entreprise
+    },
+  })
+
+  // ── Entreprises (pool initial à 0, crédité ensuite par l'admin) ──
+  const acme = await prisma.company.create({ data: { name: 'Acme' } })
+  const testco = await prisma.company.create({ data: { name: 'TestCo' } })
+
+  // ── Recharge du pool par l'admin (D2 : ledger d'achats) ───
+  // Le pool est alimenté UNIQUEMENT via CompanyTokenPurchase + increment.
+  await prisma.$transaction([
+    prisma.companyTokenPurchase.create({
+      data: { amount: 500, note: 'Crédit initial', companyId: acme.id, createdById: admin.id },
+    }),
+    prisma.company.update({ where: { id: acme.id }, data: { tokenBalance: { increment: 500 } } }),
+    prisma.companyTokenPurchase.create({
+      data: { amount: 200, note: 'Crédit initial', companyId: testco.id, createdById: admin.id },
+    }),
+    prisma.company.update({ where: { id: testco.id }, data: { tokenBalance: { increment: 200 } } }),
+  ])
+
+  // ── Managers (pas de solde : le solde vit sur Company) ────
+  const bossAcme = await prisma.user.create({
+    data: {
       email: 'boss@acme.fr',
-      passwordHash: await bcrypt.hash('password123', 10),
-      balance: 500,
+      passwordHash: await hash('password123'),
+      role: 'MANAGER',
+      firstName: 'Boss',
+      lastName: 'Acme',
+      status: 'APPROVED',
       isEmailVerified: true,
-      isSmsVerified: true,
+      companyId: acme.id,
     },
   })
 
-  await prisma.manager.create({
+  await prisma.user.create({
     data: {
-      companyName: 'TestCo',
       email: 'test@testco.fr',
-      passwordHash: await bcrypt.hash('password123', 10),
-      balance: 200,
+      passwordHash: await hash('password123'),
+      role: 'MANAGER',
+      firstName: 'Test',
+      lastName: 'Co',
+      status: 'APPROVED',
       isEmailVerified: true,
-      isSmsVerified: true,
+      companyId: testco.id,
     },
   })
 
-  // ── Employees ─────────────────────────────────────────────
-  const jean = await prisma.employee.create({
+  // ── Employés ──────────────────────────────────────────────
+  const jean = await prisma.user.create({
     data: {
+      email: 'jean.dupont@acme.fr',
+      passwordHash: await hash('password123'),
+      role: 'EMPLOYEE',
       firstName: 'Jean',
       lastName: 'Dupont',
-      email: 'jean.dupont@acme.fr',
-      passwordHash: await bcrypt.hash('password123', 10),
-      balance: 0,
+      status: 'APPROVED',
       isEmailVerified: true,
-      isSmsVerified: true,
-      managerId: acme.id,
+      companyId: acme.id,
     },
   })
 
-  const marie = await prisma.employee.create({
+  const marie = await prisma.user.create({
     data: {
+      email: 'marie.martin@acme.fr',
+      passwordHash: await hash('password123'),
+      role: 'EMPLOYEE',
       firstName: 'Marie',
       lastName: 'Martin',
-      email: 'marie.martin@acme.fr',
-      passwordHash: await bcrypt.hash('password123', 10),
-      balance: 50,
+      status: 'APPROVED',
       isEmailVerified: true,
-      isSmsVerified: true,
-      managerId: acme.id,
+      companyId: acme.id,
     },
   })
 
-  // ── Partner Offers ────────────────────────────────────────
+  // ── Attributions (débit pool Acme + crédit employé, invariant respecté) ──
+  // jean +30, marie +50 → pool Acme : 500 - 80 = 420
+  await prisma.$transaction([
+    prisma.attribution.create({
+      data: {
+        amount: 30,
+        reason: 'Excellent travail sur le projet client Q1',
+        companyId: acme.id,
+        managerId: bossAcme.id,
+        employeeId: jean.id,
+      },
+    }),
+    prisma.attribution.create({
+      data: {
+        amount: 50,
+        reason: 'Dépassement des objectifs de vente',
+        companyId: acme.id,
+        managerId: bossAcme.id,
+        employeeId: marie.id,
+      },
+    }),
+    prisma.user.update({ where: { id: jean.id }, data: { balance: { increment: 30 } } }),
+    prisma.user.update({ where: { id: marie.id }, data: { balance: { increment: 50 } } }),
+    prisma.company.update({ where: { id: acme.id }, data: { tokenBalance: { decrement: 80 } } }),
+  ])
+
+  // ── Offres partenaires (category en enum OfferCategory) ───
   const amazon = await prisma.partnerOffer.create({
-    data: {
-      partnerName: 'Amazon',
-      cost: 20,
-      valueEuros: 20.00,
-      category: 'E-commerce',
-      isActive: true,
-    },
+    data: { partnerName: 'Amazon', cost: 20, discountPercent: 50, category: 'SHOPPING', isActive: true },
   })
 
   const netflix = await prisma.partnerOffer.create({
-    data: {
-      partnerName: 'Netflix',
-      cost: 15,
-      valueEuros: 15.99,
-      category: 'Streaming',
-      isActive: true,
-    },
+    data: { partnerName: 'Netflix', cost: 15, discountPercent: 30, category: 'CULTURE', isActive: true },
   })
 
-  // ── Attributions ──────────────────────────────────────────
-  await prisma.attribution.createMany({
-    data: [
-      {
-        amount: 30,
-        reason: 'Excellent travail sur le projet client Q1',
-        managerId: acme.id,
-        employeeId: jean.id,
-      },
-      {
-        amount: 50,
-        reason: 'Dépassement des objectifs de vente',
-        managerId: acme.id,
-        employeeId: marie.id,
-      },
-    ],
-  })
-
-  // ── Promo Codes ───────────────────────────────────────────
+  // ── Codes promo ───────────────────────────────────────────
   await prisma.promoCode.createMany({
     data: [
       { code: 'AMAZON-SEED-001', offerId: amazon.id },
@@ -115,9 +149,11 @@ async function main() {
   })
 
   console.log('✅ Seed terminé.')
-  console.log('   Managers  : Acme (boss@acme.fr), TestCo (test@testco.fr)')
-  console.log('   Employees : jean.dupont@acme.fr, marie.martin@acme.fr')
-  console.log('   Offers    : Amazon (20€), Netflix (15.99€)')
+  console.log('   Admin     : admin@primo.fr')
+  console.log('   Companies : Acme (pool 420), TestCo (pool 200)')
+  console.log('   Managers  : boss@acme.fr, test@testco.fr')
+  console.log('   Employees : jean.dupont@acme.fr (30), marie.martin@acme.fr (50)')
+  console.log('   Offers    : Amazon (SHOPPING), Netflix (CULTURE)')
   console.log('   Codes     : AMAZON-SEED-001, AMAZON-SEED-002, NETFLIX-SEED-001')
   console.log('   Password  : password123 (tous)')
 }

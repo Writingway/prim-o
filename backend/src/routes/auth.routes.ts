@@ -1,20 +1,18 @@
 import { Router } from 'express';
 import {
   registerManagerController,
-  registerEmployeeController,
-  loginManagerController,
-  loginEmployeeController,
+  registerUserController,
   refreshController,
+  loginController,
   logoutController
  } from '../controllers/auth.controller';
 
 const router = Router();
 
 router.post('/manager/register', registerManagerController);
-router.post('/employee/register', registerEmployeeController);
-router.post('/manager/login', loginManagerController);
-router.post('/employee/login', loginEmployeeController);
+router.post('/employee/register', registerUserController);
 router.post('/refresh', refreshController);
+router.post('/login', loginController);
 router.post('/logout', logoutController);
 
 

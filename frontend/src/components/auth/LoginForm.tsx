@@ -1,16 +1,16 @@
 import { useState } from 'react';
 import type { ChangeEvent, SyntheticEvent } from 'react';
-import { login } from '../../services/api';
+import { login, roleFromToken } from '../../services/api';
 import type { Role } from '../../types/types';
 
 type LoginFormProps = {
-  role: Role;
   onLoginSuccess: (accessToken: string, role: Role) => void;
 };
 
 // Formulaire de connexion. À la réussite, remonte le token + rôle au parent
 // (App) via onLoginSuccess, qui bascule alors sur la page d'accueil.
-export default function LoginForm({ role, onLoginSuccess }: LoginFormProps) {
+// Le rôle n'est plus choisi ici : il est déduit du JWT renvoyé par le backend.
+export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -25,13 +25,16 @@ export default function LoginForm({ role, onLoginSuccess }: LoginFormProps) {
     setLoading(true);
 
     try {
-      const res = await login(role, form);
+      const res = await login(form);
 
       if (res.ok) {
-        onLoginSuccess(res.data.accessToken, role);
+        const accessToken = res.data.accessToken;
+        onLoginSuccess(accessToken, roleFromToken(accessToken));
         return;
       } else if (res.status === 401) {
         setError('Email ou mot de passe incorrect.');
+      } else if (res.status === 403) {
+        setError(res.data?.error || 'Compte en attente de validation.');
       } else if (res.status === 400) {
         setError('Données invalides.');
       } else {

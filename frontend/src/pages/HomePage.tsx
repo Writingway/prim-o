@@ -9,7 +9,8 @@ type HomePageProps = {
 
 // Page d'accueil minimale affichée après connexion.
 export default function HomePage({ role, onLogout }: HomePageProps) {
-  const roleLabel = role === 'manager' ? 'Employeur' : 'Employé';
+  const labels: Record<Role, string> = { manager: 'Employeur', employee: 'Employé', admin: 'Administrateur' };
+  const roleLabel = labels[role];
 
   const handleLogout = async () => {
     try {

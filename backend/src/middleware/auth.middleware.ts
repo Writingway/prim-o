@@ -8,11 +8,15 @@ export function requireAuth(req: Request, res: Response, next: NextFunction): vo
     next(new AppError(401, 'Token manquant.'));
     return;
   }
-  const token = header.slice(7);          // vire "Bearer "
+  const token = header.slice(7);
   try {
     const payload = verifyAccessToken(token);
-    req.user = { id: payload.sub, role: payload.role };
-    next();                                // route protégée accessible
+    req.user = {
+      id: payload.sub,
+      role: payload.role,
+      ...(payload.companyId ? { companyId: payload.companyId } : {}),
+    }; // injecte les infos du token dans req.user
+    next(); // route protégée accessible
   } catch {
     next(new AppError(401, 'Token invalide ou expiré.'));
   }
