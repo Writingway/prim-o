@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { listEmployees, logout as apiLogout } from '../services/api';
+import { listEmployees, generateInviteCode, logout as apiLogout } from '../services/api';
 import type { Employee } from '../types/types';
 import './ManagerDashboard.css';
 
@@ -19,6 +19,8 @@ export default function ManagerDashboard({ accessToken, onLogout }: ManagerDashb
   const [employees, setEmployees] = useState<Employee[] | null>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
+  const [inviteCode, setInviteCode] = useState<string | null>(null);
+  const [inviteError, setInviteError] = useState('');
 
   const load = async () => {
     setLoading(true);
@@ -53,6 +55,22 @@ export default function ManagerDashboard({ accessToken, onLogout }: ManagerDashb
     onLogout();
   };
 
+  const handleGenerateInvite = async () => {
+    setInviteError('');
+    try {
+      const res = await generateInviteCode(accessToken);
+      if (res.ok && res.data?.invite) {
+        setInviteCode(res.data.invite.code);
+      } else if (res.status === 401) {
+        setInviteError('Session expirée, reconnecte-toi.');
+      } else {
+        setInviteError('Impossible de générer le code d\'invitation.');
+      }
+    } catch {
+      setInviteError('Impossible de joindre le serveur.');
+    }
+  };
+
   const totalDistributed = (employees ?? []).reduce((sum, e) => sum + e.balance, 0);
 
   return (
@@ -68,10 +86,24 @@ export default function ManagerDashboard({ accessToken, onLogout }: ManagerDashb
         <div className="dash-stats">
           <div className="dash-stat">👥 <strong>{employees?.length ?? 0}</strong>&nbsp;employés</div>
           <div className="dash-stat">🪙 <strong>{totalDistributed}</strong>&nbsp;tokens distribués</div>
-          <button className="dash-invite" type="button" disabled title="Bientôt disponible">
-            + Inviter (à venir)
+          <button className="dash-invite" type="button" onClick={handleGenerateInvite}>
+            Générer un code d'invitation
           </button>
         </div>
+
+        {inviteCode && (
+          <div className="dash-msg">
+            Code d'invitation : <strong>{inviteCode}</strong>{' '}
+            <button
+              type="button"
+              className="dash-retry"
+              onClick={() => navigator.clipboard.writeText(inviteCode)}
+            >
+              Copier
+            </button>
+          </div>
+        )}
+        {inviteError && <p className="dash-msg dash-error">{inviteError}</p>}
 
         {loading && <p className="dash-msg">Chargement…</p>}
 
