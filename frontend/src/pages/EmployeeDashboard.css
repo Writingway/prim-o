@@ -1,0 +1,129 @@
+.emp-dash-wrapper {
+  min-height: 100vh;
+  background: #f4f5f7;
+  padding: 24px 16px;
+  box-sizing: border-box;
+}
+
+.emp-dash-container {
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.emp-dash-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.emp-dash-title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  color: #1f2937;
+  letter-spacing: -0.5px;
+}
+
+.emp-dash-logout {
+  border: 1px solid #d1d5db;
+  background: #fff;
+  color: #4b5563;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.emp-dash-logout:hover {
+  background: #f9fafb;
+}
+
+/* Bandeau de bienvenue */
+.emp-dash-welcome {
+  background: #fff;
+  border: 1px solid #e3e3e8;
+  border-radius: 12px;
+  padding: 20px 18px;
+  margin-bottom: 14px;
+}
+
+.emp-dash-hello {
+  margin: 0 0 4px;
+  font-size: 18px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.emp-dash-role {
+  margin: 0;
+  font-size: 15px;
+  color: #4b5563;
+}
+
+.emp-dash-role strong {
+  color: #4f46e5;
+}
+
+/* Cartes récap */
+.emp-dash-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.emp-dash-card {
+  background: #fff;
+  border: 1px solid #e3e3e8;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.emp-dash-card-icon {
+  font-size: 22px;
+  margin-bottom: 6px;
+}
+
+.emp-dash-card-label {
+  font-size: 13px;
+  color: #6b7280;
+  margin-bottom: 4px;
+}
+
+.emp-dash-card-value {
+  font-size: 22px;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.emp-dash-soon {
+  font-size: 12px;
+  font-weight: 500;
+  color: #9ca3af;
+}
+
+.emp-dash-muted {
+  font-size: 14px;
+  font-weight: 500;
+  color: #9ca3af;
+}
+
+.emp-dash-note {
+  font-size: 13px;
+  color: #6b7280;
+  text-align: center;
+  margin: 0;
+}
+
+/* Mobile : en-tête empilé, cartes en colonne */
+@media (max-width: 520px) {
+  .emp-dash-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .emp-dash-cards {
+    grid-template-columns: 1fr;
+  }
+}
