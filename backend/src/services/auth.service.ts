@@ -7,7 +7,7 @@ import { Role } from "@prisma/client";
 
 // 
 export async function registerManager(input: RegisterManagerInput) {
-  const { companyName, email, password } = input;
+  const { companyName, firstName, lastName, email, password } = input;
 
   const existingManager = await prisma.user.findFirst({ where: { email, deletedAt: null } });
   if (existingManager) {
@@ -22,6 +22,8 @@ export async function registerManager(input: RegisterManagerInput) {
       data: {
         email,
         passwordHash,
+        firstName,
+        lastName,
         role: Role.MANAGER,
         status: 'APPROVED',
         isEmailVerified: true,

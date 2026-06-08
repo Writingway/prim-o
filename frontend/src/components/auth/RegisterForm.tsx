@@ -21,9 +21,10 @@ function firstValidationMessage(data: ValidationErrorBody | null): string | null
   return null;
 }
 
-// Formulaire d'inscription. Les champs affichés dépendent du rôle :
+// Formulaire d'inscription. Prénom/Nom + email/mot de passe sont communs ;
+// les champs supplémentaires dépendent du rôle :
 // - manager  : companyName
-// - employee : firstName, lastName, code (code entreprise)
+// - employee : code (code entreprise)
 export default function RegisterForm({ role, onSuccess }: RegisterFormProps) {
   const [form, setForm] = useState({
     companyName: '',
@@ -50,6 +51,8 @@ export default function RegisterForm({ role, onSuccess }: RegisterFormProps) {
         role === 'manager'
           ? await registerManager({
               companyName: form.companyName,
+              firstName: form.firstName,
+              lastName: form.lastName,
               email: form.email,
               password: form.password,
             })
@@ -93,22 +96,19 @@ export default function RegisterForm({ role, onSuccess }: RegisterFormProps) {
         />
       )}
 
-      {role === 'employee' && (
-        <>
-          <input
-            name="firstName"
-            placeholder="Prénom"
-            value={form.firstName}
-            onChange={handleFieldChange}
-          />
-          <input
-            name="lastName"
-            placeholder="Nom"
-            value={form.lastName}
-            onChange={handleFieldChange}
-          />
-        </>
-      )}
+      {/* Prénom / Nom requis pour manager comme employé (sinon User en DB sans nom). */}
+      <input
+        name="firstName"
+        placeholder="Prénom"
+        value={form.firstName}
+        onChange={handleFieldChange}
+      />
+      <input
+        name="lastName"
+        placeholder="Nom"
+        value={form.lastName}
+        onChange={handleFieldChange}
+      />
 
       <input
         name="email"

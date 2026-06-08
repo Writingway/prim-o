@@ -9,6 +9,8 @@ const safeText = (min: number) =>
 
 export const registerManagerSchema = z.object({
   companyName: safeText(2),
+  firstName: safeText(2),
+  lastName: safeText(2),
   email: z.email(),
   password: z.string().min(8),
 });
