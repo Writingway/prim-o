@@ -61,11 +61,13 @@
   margin-left: auto;
   border: 1px dashed #c7c7d1;
   background: #fff;
-  color: #9ca3af;
   padding: 8px 14px;
   border-radius: 8px;
-  font-size: 14px;
-  cursor: not-allowed;
+  font-size: 14px;  
+}
+
+.dash-invite:hover {
+  background: #007ffd;
 }
 
 /* Messages d'état */

@@ -9,6 +9,7 @@ import { errorHandler } from './middleware/error.middleware';
 import authRouter from './routes/auth.routes';
 import employeeRouter from './routes/employee.routes';
 import cookieParser from 'cookie-parser';
+import inviteRouter from './routes/invite.routes';
 
 
 const app = express();
@@ -39,6 +40,7 @@ app.get('/health', (req, res) => {
 
 app.use('/api/auth', authRouter);
 app.use('/api/employees', employeeRouter);
+app.use('/api/invites', inviteRouter);
 
 app.use(errorHandler);
 

@@ -128,7 +128,7 @@ export default function RegisterForm({ role, onSuccess }: RegisterFormProps) {
       {role === 'employee' && (
         <input
           name="code"
-          placeholder="Code entreprise"
+          placeholder="Code d'invitation (Obligatoire)"
           value={form.code}
           onChange={handleFieldChange}
         />

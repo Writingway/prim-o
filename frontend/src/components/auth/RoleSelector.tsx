@@ -12,16 +12,12 @@ export default function RoleSelector({ role, onChange }: RoleSelectorProps) {
       <button
         type="button"
         className={role === 'manager' ? 'active' : ''}
-        onClick={() => onChange('manager')}
-      >
-        Employeur
+        onClick={() => onChange('manager')}> Employeur
       </button>
       <button
         type="button"
         className={role === 'employee' ? 'active' : ''}
-        onClick={() => onChange('employee')}
-      >
-        Employé
+        onClick={() => onChange('employee')}> Employé
       </button>
     </div>
   );

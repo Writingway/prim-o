@@ -39,8 +39,8 @@ export default function AuthPage({ onLoginSuccess }: AuthPageProps) {
       <div className="auth-card">
         <h1 className="auth-logo">Prim'O</h1>
 
-        <RoleSelector role={role} onChange={changeRole} />
-        <AuthTabs mode={mode} onChange={changeMode} />
+        <AuthTabs mode={mode} onChange={changeMode}/>
+        {mode === 'register' && <RoleSelector role={role} onChange={changeRole} />}
 
         {successMessage && <p className="auth-success">{successMessage}</p>}
 
