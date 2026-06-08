@@ -45,12 +45,45 @@ async function get(path: string, accessToken: string) {
   return { ok: res.ok, status: res.status, data };
 }
 
+// POST authentifié : le token vient en argument (comme `get`), pas du
+// localStorage — cette app garde l'accessToken dans le state React.
+async function authPost(path: string, accessToken: string, body?: unknown) {
+  const res = await fetch(`${API_URL}${path}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    credentials: 'include',
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+
+  let data = null;
+  try {
+    data = await res.json();
+  } catch {
+    // Pas de corps JSON — on ignore.
+  }
+
+  return { ok: res.ok, status: res.status, data };
+}
+
 // Liste les employés de l'entreprise du manager connecté.
 export function listEmployees(accessToken: string) {
   return get('/employees/list', accessToken) as Promise<{
     ok: boolean;
     status: number;
     data: { employees: Employee[] } | null;
+  }>;
+}
+
+// Génère un code d'invitation (manager connecté).
+// Aucun body : le code est créé côté serveur avec les défauts backend.
+export function generateInviteCode(accessToken: string) {
+  return authPost('/invites/generate', accessToken) as Promise<{
+    ok: boolean;
+    status: number;
+    data: { invite: { code: string; maxUses: number; expiresAt: string; createdAt: string } } | null;
   }>;
 }
 
@@ -79,3 +112,4 @@ export function roleFromToken(accessToken: string): Role {
 export function logout() {
   return post('/auth/logout');
 }
+

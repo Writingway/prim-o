@@ -28,7 +28,7 @@ export const registerUserSchema = z.object({
   lastName: safeText(2),
   email: z.email(),
   password: z.string().min(8),
-  code: z.string().optional()
+  code: z.string().min(6), // Le code d'invitation est optionnel côté backend : on vérifie sa présence dans le service.
 });
 
 export type RegisterUserInput = z.infer<typeof registerUserSchema>;
