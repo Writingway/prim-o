@@ -37,17 +37,21 @@ export async function registerManager(input: RegisterManagerInput) {
 export async function registerUser(input: RegisterUserInput) {
   const { firstName, lastName, email, password, code } = input;
 
-  const rows = await prisma.$queryRaw<{ companyId: string }[]>`
-    UPDATE "CompanyInviteCode"
-    SET "usedCount" = "usedCount" + 1
-    WHERE "code" = ${code}
-      AND "revokedAt" IS NULL
-      AND "expiresAt" > now()
-      AND "usedCount" < "maxUses"
-    RETURNING "companyId"
-  `;
-  const first = rows[0]; if (!first) throw new Error('INVALID_CODE'); 
-  const companyId = first.companyId;
+  let companyId: string | null = null;
+  if (code) {
+    const rows = await prisma.$queryRaw<{ companyId: string }[]>`
+      UPDATE "CompanyInviteCode"
+      SET "usedCount" = "usedCount" + 1
+      WHERE "code" = ${code}
+        AND "revokedAt" IS NULL
+        AND "expiresAt" > now()
+        AND "usedCount" < "maxUses"
+      RETURNING "companyId"
+    `;
+    const first = rows[0];
+    if (!first) throw new Error('INVALID_CODE');
+    companyId = first.companyId;
+  }
 
 
   const existingEmployee = await prisma.user.findFirst({ where: { email, deletedAt: null } });

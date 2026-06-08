@@ -8,6 +8,7 @@ import { config } from './config';
 import { errorHandler } from './middleware/error.middleware';
 import authRouter from './routes/auth.routes';
 import employeeRouter from './routes/employee.routes';
+import attributionRouter from './routes/attribution.routes';
 import cookieParser from 'cookie-parser';
 
 
@@ -39,6 +40,7 @@ app.get('/health', (req, res) => {
 
 app.use('/api/auth', authRouter);
 app.use('/api/employees', employeeRouter);
+app.use('/api/attributions', attributionRouter);
 
 app.use(errorHandler);
 
