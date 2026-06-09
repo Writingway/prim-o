@@ -21,3 +21,12 @@ export function requireAuth(req: Request, res: Response, next: NextFunction): vo
     next(new AppError(401, 'Token invalide ou expiré.'));
   }
 }
+
+
+export function requireAdmin(req: Request, res: Response, next: NextFunction): void {
+  if (req.user?.role !== 'ADMIN') {
+    next(new AppError(403, 'Accès réservé aux administrateurs.'));
+    return;
+  }
+  next(); // route accessible aux admins
+}

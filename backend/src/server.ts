@@ -11,6 +11,8 @@ import employeeRouter from './routes/employee.routes';
 import attributionRouter from './routes/attribution.routes';
 import cookieParser from 'cookie-parser';
 import inviteRouter from './routes/invite.routes';
+import offerRouter from './routes/offer.routes';
+
 
 
 const app = express();
@@ -43,6 +45,7 @@ app.use('/api/auth', authRouter);
 app.use('/api/employees', employeeRouter);
 app.use('/api/attributions', attributionRouter);
 app.use('/api/invites', inviteRouter);
+app.use('/api/offers', offerRouter);
 
 app.use(errorHandler);
 

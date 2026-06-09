@@ -1,0 +1,23 @@
+import { prisma } from '../lib/db'
+import { Prisma } from '@prisma/client'
+import type { CreateOfferInput, UpdateOfferInput } from '../schemas/offer.schemas'
+
+export const listOffers = async () => {
+  return prisma.partnerOffer.findMany({ orderBy: { createdAt: 'desc' } })
+}
+
+export const getOffer = async (id: string) => {
+  return prisma.partnerOffer.findUnique({ where: { id } })
+}
+
+export const createOffer = async (data: CreateOfferInput) => {
+  return prisma.partnerOffer.create({ data })
+}
+
+export const updateOffer = async (id: string, data: UpdateOfferInput) => {
+  return prisma.partnerOffer.update({ where: { id }, data: data as Prisma.PartnerOfferUpdateInput })
+}
+
+export const deactivateOffer = async (id: string) => {
+  return prisma.partnerOffer.update({ where: { id }, data: { isActive: false } })
+}

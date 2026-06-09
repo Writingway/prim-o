@@ -3,7 +3,9 @@ import AuthPage from './pages/AuthPage';
 import HomePage from './pages/HomePage';
 import ManagerDashboard from './pages/ManagerDashboard';
 import EmployeeDashboard from './pages/EmployeeDashboard';
+import AdminPage from './pages/AdminPage';
 import type { AuthSession, Role } from './types/types';
+
 
 function App() {
   // Session connectée gardée en mémoire, ou null si déconnecté.
@@ -24,6 +26,10 @@ function App() {
 
   if (session.role === 'employee') {
     return <EmployeeDashboard accessToken={session.accessToken} onLogout={handleLogout} />;
+  }
+
+  if (session.role === 'admin') {
+    return <AdminPage accessToken={session.accessToken} onLogout={handleLogout} />;
   }
 
   return <HomePage role={session.role} onLogout={handleLogout} />;

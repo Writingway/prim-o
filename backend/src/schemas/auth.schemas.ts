@@ -1,11 +1,5 @@
 import { z } from 'zod';
-import sanitizeHtml from 'sanitize-html';
-
-const safeText = (min: number) =>
-  z.string()
-    .transform((v) => sanitizeHtml(v, { allowedTags: [], allowedAttributes: {} }).trim())
-    .pipe(z.string().min(min));
-
+import { safeText } from '../lib/validation';
 
 export const registerManagerSchema = z.object({
   companyName: safeText(2),

@@ -5,6 +5,12 @@ export type Role = 'manager' | 'employee' | 'admin';
 // Mode du formulaire d'auth.
 export type Mode = 'login' | 'register';
 
+export type ApiResponse<T> = {
+  ok: boolean;
+  status: number;
+  data: T | null;
+};
+
 // Session renvoyée après une connexion réussie.
 export type AuthSession = {
   accessToken: string;
@@ -20,4 +26,16 @@ export type Employee = {
   balance: number;
   isEmailVerified: boolean;
   createdAt: string;
+};
+
+// Offre telle que renvoyée par les endpoints d'offres.
+export type OfferCategory = 'FOOD' | 'SHOPPING' | 'CULTURE' | 'TRAVEL' | 'WELLNESS' | 'OTHER';
+
+export type Offer = {
+  id: string;
+  partnerName: string;
+  cost: number;
+  discountPercent: number;
+  category: OfferCategory;
+  isActive: boolean;
 };

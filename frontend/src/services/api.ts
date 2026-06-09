@@ -2,6 +2,7 @@
 // En dev, l'URL est relative (/api) et Vite la proxifie vers le backend
 
 import { Role, Employee } from "../types/types";
+import { Offer } from "../types/types";
 
 // (voir vite.config.js) → pas de souci CORS ni de port Windows/WSL.
 const API_URL = import.meta.env.VITE_API_URL || '/api';
@@ -68,6 +69,80 @@ async function authPost(path: string, accessToken: string, body?: unknown) {
   return { ok: res.ok, status: res.status, data };
 }
 
+async function authDelete(path: string, accessToken: string, body?: unknown) {
+  const res = await fetch(`${API_URL}${path}`, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    credentials: 'include',
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+
+  let data = null;
+  try {
+    data = await res.json();
+  } catch {
+    // Pas de corps JSON — on ignore.
+  }
+
+  return { ok: res.ok, status: res.status, data };
+}
+
+async function authPatch(path: string, accessToken: string, body?: unknown) {
+  const res = await fetch(`${API_URL}${path}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    credentials: 'include',
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+
+  let data = null;
+  try {
+    data = await res.json();
+  } catch {
+    // Pas de corps JSON — on ignore.
+  }
+
+  return { ok: res.ok, status: res.status, data };
+}
+
+export function listOffers(token: string) {
+  return get('/offers', token) as Promise<{
+    ok: boolean;
+    status: number;
+    data: { offers: Offer[] } | null;
+  }>;
+}
+
+export function createOffer(token: string, payload: Omit<Offer, 'id' | 'isActive'> ) {
+  return authPost('/offers', token, payload) as Promise<{
+    ok: boolean;
+    status: number;
+    data: { offer: Offer } | null;
+  }>;
+}
+
+export function updateOffer(token: string, offerId: string, payload: Partial<Omit<Offer, 'id'>> ) {
+  return authPatch(`/offers/${offerId}`, token, payload) as Promise<{
+    ok: boolean;
+    status: number;
+    data: { offer: Offer } | null;
+  }>;
+}
+
+export function deactivateOffer(token: string, offerId: string) {
+  return authDelete(`/offers/${offerId}`, token) as Promise<{
+    ok: boolean;
+    status: number;
+    data: { offer: Offer } | null;
+  }>;
+}
+
 // Liste les employés de l'entreprise du manager connecté.
 export function listEmployees(accessToken: string) {
   return get('/employees/list', accessToken) as Promise<{
@@ -101,15 +176,14 @@ export function login(payload: { email: string; password: string }) {
   return post('/auth/login', payload);
 }
 
+// Déconnexion : révoque le refresh côté serveur et supprime le cookie.
+export function logout() {
+  return post('/auth/logout');
+}
 // Source de vérité du rôle = le payload du JWT (et non le sélecteur du formulaire).
 // Le backend émet le rôle en MAJUSCULES (enum Prisma) → on repasse en minuscules.
 export function roleFromToken(accessToken: string): Role {
   const payload = JSON.parse(atob(accessToken.split('.')[1]));
   return String(payload.role).toLowerCase() as Role;
-}
-
-// Déconnexion : révoque le refresh côté serveur et supprime le cookie.
-export function logout() {
-  return post('/auth/logout');
 }
 
