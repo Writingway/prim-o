@@ -1,4 +1,11 @@
-import { logout as apiLogout } from '../services/api';
+import { useEffect, useState } from 'react';
+import {
+  getEmployeeBalance,
+  getEmployeeReceived,
+  getEmployeeSpent,
+  logout as apiLogout,
+} from '../services/api';
+import type { ReceivedToken, SpentToken } from '../types/types';
 import './EmployeeDashboard.css';
 
 type EmployeeDashboardProps = {
@@ -6,12 +13,89 @@ type EmployeeDashboardProps = {
   onLogout: () => void;
 };
 
-// Dashboard employé : espace personnel après connexion.
-// Le backend confirme déjà le rôle (JWT) ; ici on présente l'espace côté front.
-// Le solde et l'historique restent des placeholders tant que les endpoints
-// employé (ex. GET /auth/me ne renvoie que id/role/companyId) ne fournissent
-// pas ces données.
-export default function EmployeeDashboard({ onLogout }: EmployeeDashboardProps) {
+const PAGE_SIZE = 10;
+
+const formatDate = (iso: string) =>
+  new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+export default function EmployeeDashboard({ accessToken, onLogout }: EmployeeDashboardProps) {
+  const [balance, setBalance] = useState<number | null>(null);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  // Historiques : items accumulés + page courante + s'il reste des pages.
+  const [received, setReceived] = useState<ReceivedToken[]>([]);
+  const [receivedPage, setReceivedPage] = useState(1);
+  const [receivedHasMore, setReceivedHasMore] = useState(false);
+
+  const [spent, setSpent] = useState<SpentToken[]>([]);
+  const [spentPage, setSpentPage] = useState(1);
+  const [spentHasMore, setSpentHasMore] = useState(false);
+
+  // Chargement initial : solde + 1re page de chaque historique.
+  const loadInitial = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const [balRes, recRes, spRes] = await Promise.all([
+        getEmployeeBalance(accessToken),
+        getEmployeeReceived(accessToken, 1, PAGE_SIZE),
+        getEmployeeSpent(accessToken, 1, PAGE_SIZE),
+      ]);
+
+      if (balRes.status === 401) {
+        setError('Session expirée, reconnecte-toi.');
+        return;
+      }
+      if (!balRes.ok || !balRes.data) {
+        setError('Impossible de charger ton espace.');
+        return;
+      }
+
+      setBalance(balRes.data.balance);
+      if (recRes.ok && recRes.data) {
+        setReceived(recRes.data.items);
+        setReceivedPage(1);
+        setReceivedHasMore(recRes.data.hasMore);
+      }
+      if (spRes.ok && spRes.data) {
+        setSpent(spRes.data.items);
+        setSpentPage(1);
+        setSpentHasMore(spRes.data.hasMore);
+      }
+    } catch {
+      setError('Impossible de joindre le serveur. Le backend est-il lancé ?');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadInitial();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // « Voir plus » : charge la page suivante et l'ajoute à la liste existante.
+  const loadMoreReceived = async () => {
+    const next = receivedPage + 1;
+    const res = await getEmployeeReceived(accessToken, next, PAGE_SIZE);
+    if (res.ok && res.data) {
+      setReceived((prev) => [...prev, ...res.data!.items]);
+      setReceivedPage(next);
+      setReceivedHasMore(res.data.hasMore);
+    }
+  };
+
+  const loadMoreSpent = async () => {
+    const next = spentPage + 1;
+    const res = await getEmployeeSpent(accessToken, next, PAGE_SIZE);
+    if (res.ok && res.data) {
+      setSpent((prev) => [...prev, ...res.data!.items]);
+      setSpentPage(next);
+      setSpentHasMore(res.data.hasMore);
+    }
+  };
+
   const handleLogout = async () => {
     try {
       await apiLogout();
@@ -31,30 +115,78 @@ export default function EmployeeDashboard({ onLogout }: EmployeeDashboardProps) 
           </button>
         </header>
 
-        <section className="emp-dash-welcome">
-          <p className="emp-dash-hello">Bienvenue ! 🎉</p>
-          <p className="emp-dash-role">
-            Vous êtes connecté en tant que <strong>Employé</strong>.
-          </p>
-        </section>
+        {loading && <p className="emp-dash-note">Chargement…</p>}
 
-        <div className="emp-dash-cards">
-          <div className="emp-dash-card">
-            <div className="emp-dash-card-icon">🪙</div>
-            <div className="emp-dash-card-label">Mon solde</div>
-            <div className="emp-dash-card-value">— <span className="emp-dash-soon">à venir</span></div>
+        {!loading && error && (
+          <div className="emp-dash-note emp-dash-error">
+            {error}{' '}
+            <button type="button" className="emp-dash-retry" onClick={loadInitial}>Réessayer</button>
           </div>
-          <div className="emp-dash-card">
-            <div className="emp-dash-card-icon">📜</div>
-            <div className="emp-dash-card-label">Historique</div>
-            <div className="emp-dash-card-value emp-dash-muted">Bientôt disponible</div>
-          </div>
-        </div>
+        )}
 
-        <p className="emp-dash-note">
-          Ton espace s'enrichira au fil des prochaines fonctionnalités (solde de
-          tokens, historique, récompenses).
-        </p>
+        {!loading && !error && balance !== null && (
+          <>
+            <div className="emp-dash-cards">
+              <div className="emp-dash-card">
+                <div className="emp-dash-card-icon">🪙</div>
+                <div className="emp-dash-card-label">Mon solde</div>
+                <div className="emp-dash-card-value">{balance} tokens</div>
+              </div>
+            </div>
+
+            <section className="emp-dash-section">
+              <h2 className="emp-dash-section-title">Tokens reçus</h2>
+              {received.length === 0 ? (
+                <p className="emp-dash-muted">Aucun token reçu pour l'instant.</p>
+              ) : (
+                <>
+                  <ul className="emp-tx-list">
+                    {received.map((t) => (
+                      <li className="emp-tx-row received" key={t.id}>
+                        <div className="emp-tx-main">
+                          <div className="emp-tx-reason">{t.reason}</div>
+                          <div className="emp-tx-sub">de {t.managerName} · {formatDate(t.createdAt)}</div>
+                        </div>
+                        <div className="emp-tx-amount positive">+{t.amount}</div>
+                      </li>
+                    ))}
+                  </ul>
+                  {receivedHasMore && (
+                    <button className="emp-dash-more" type="button" onClick={loadMoreReceived}>
+                      Voir plus
+                    </button>
+                  )}
+                </>
+              )}
+            </section>
+
+            <section className="emp-dash-section">
+              <h2 className="emp-dash-section-title">Mes dépenses</h2>
+              {spent.length === 0 ? (
+                <p className="emp-dash-muted">Aucune dépense pour l'instant.</p>
+              ) : (
+                <>
+                  <ul className="emp-tx-list">
+                    {spent.map((t) => (
+                      <li className="emp-tx-row spent" key={t.id}>
+                        <div className="emp-tx-main">
+                          <div className="emp-tx-reason">{t.offerName}</div>
+                          <div className="emp-tx-sub">code {t.promoCode} · {formatDate(t.createdAt)}</div>
+                        </div>
+                        <div className="emp-tx-amount negative">−{t.amount}</div>
+                      </li>
+                    ))}
+                  </ul>
+                  {spentHasMore && (
+                    <button className="emp-dash-more" type="button" onClick={loadMoreSpent}>
+                      Voir plus
+                    </button>
+                  )}
+                </>
+              )}
+            </section>
+          </>
+        )}
       </div>
     </div>
   );
