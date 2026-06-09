@@ -1,7 +1,7 @@
 // Client API minimal pour parler au backend Prim'O.
 // En dev, l'URL est relative (/api) et Vite la proxifie vers le backend
 
-import { Role, Employee } from "../types/types";
+import { Role, Employee, ReceivedToken, SpentToken, Paginated } from "../types/types";
 
 // (voir vite.config.js) → pas de souci CORS ni de port Windows/WSL.
 const API_URL = import.meta.env.VITE_API_URL || '/api';
@@ -74,6 +74,33 @@ export function listEmployees(accessToken: string) {
     ok: boolean;
     status: number;
     data: { employees: Employee[] } | null;
+  }>;
+}
+
+// Solde de l'employé connecté.
+export function getEmployeeBalance(accessToken: string) {
+  return get('/employees/me', accessToken) as Promise<{
+    ok: boolean;
+    status: number;
+    data: { balance: number } | null;
+  }>;
+}
+
+// Historique paginé des tokens reçus.
+export function getEmployeeReceived(accessToken: string, page = 1, limit = 10) {
+  return get(`/employees/me/received?page=${page}&limit=${limit}`, accessToken) as Promise<{
+    ok: boolean;
+    status: number;
+    data: Paginated<ReceivedToken> | null;
+  }>;
+}
+
+// Historique paginé des dépenses.
+export function getEmployeeSpent(accessToken: string, page = 1, limit = 10) {
+  return get(`/employees/me/spent?page=${page}&limit=${limit}`, accessToken) as Promise<{
+    ok: boolean;
+    status: number;
+    data: Paginated<SpentToken> | null;
   }>;
 }
 
