@@ -8,15 +8,17 @@ import './AuthPage.css';
 
 type AuthPageProps = {
   onLoginSuccess: (accessToken: string, role: Role) => void;
+  initialMode?: Mode;
+  onBack?: () => void;
 };
 
 // Page d'authentification unique (option A) :
 // - un rôle : manager / employee
 // - un mode : login / register
 // Le formulaire affiché dépend de ces deux réglages.
-export default function AuthPage({ onLoginSuccess }: AuthPageProps) {
+export default function AuthPage({ onLoginSuccess, initialMode = 'login', onBack }: AuthPageProps) {
   const [role, setRole] = useState<Role>('manager');
-  const [mode, setMode] = useState<Mode>('login');
+  const [mode, setMode] = useState<Mode>(initialMode);
   const [successMessage, setSuccessMessage] = useState('');
 
   const changeRole = (nextRole: Role) => {
@@ -37,6 +39,11 @@ export default function AuthPage({ onLoginSuccess }: AuthPageProps) {
   return (
     <div className="auth-wrapper">
       <div className="auth-card">
+        {onBack && (
+          <button type="button" className="auth-back" onClick={onBack}>
+            ← Retour
+          </button>
+        )}
         <h1 className="auth-logo">Prim'O</h1>
 
         <AuthTabs mode={mode} onChange={changeMode}/>

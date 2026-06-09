@@ -22,6 +22,15 @@ export type Employee = {
   createdAt: string;
 };
 
+// Offre partenaire (GET /api/offers, vitrine publique).
+export type Offer = {
+  id: string;
+  partnerName: string;
+  cost: number;
+  discountPercent: number;
+  category: 'FOOD' | 'SHOPPING' | 'CULTURE' | 'TRAVEL' | 'WELLNESS' | 'OTHER';
+};
+
 // Entreprise du manager (GET /api/company).
 export type Company = {
   id: string;

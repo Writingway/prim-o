@@ -1,7 +1,7 @@
 // Client API minimal pour parler au backend Prim'O.
 // En dev, l'URL est relative (/api) et Vite la proxifie vers le backend
 
-import { Role, Employee, Company, AttributionHistory, ReceivedToken, SpentToken, Paginated } from "../types/types";
+import { Role, Employee, Company, AttributionHistory, ReceivedToken, SpentToken, Paginated, Offer } from "../types/types";
 
 // (voir vite.config.js) → pas de souci CORS ni de port Windows/WSL.
 const API_URL = import.meta.env.VITE_API_URL || '/api';
@@ -84,6 +84,27 @@ async function authPost(path: string, accessToken: string, body?: unknown) {
   }
 
   return { ok: res.ok, status: res.status, data };
+}
+
+// GET public (sans token) — pour la vitrine d'offres.
+async function getPublic(path: string) {
+  const res = await fetch(`${API_URL}${path}`);
+  let data = null;
+  try {
+    data = await res.json();
+  } catch {
+    // pas de corps JSON — on ignore.
+  }
+  return { ok: res.ok, status: res.status, data };
+}
+
+// Vitrine publique des offres partenaires actives.
+export function listOffers() {
+  return getPublic('/offers') as Promise<{
+    ok: boolean;
+    status: number;
+    data: { offers: Offer[] } | null;
+  }>;
 }
 
 // Liste les employés de l'entreprise du manager connecté.
