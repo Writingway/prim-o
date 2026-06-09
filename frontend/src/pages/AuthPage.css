@@ -18,6 +18,20 @@
   box-sizing: border-box;
 }
 
+.auth-back {
+  border: none;
+  background: none;
+  color: #6b7280;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 8px;
+}
+
+.auth-back:hover {
+  color: #00a19a;
+}
+
 .auth-logo {
   text-align: center;
   margin: 0 0 24px;
@@ -47,8 +61,8 @@
 }
 
 .role-selector button.active {
-  background: #4f46e5;
-  border-color: #4f46e5;
+  background: #00a19a;
+  border-color: #00a19a;
   color: #fff;
   font-weight: 600;
 }
@@ -72,9 +86,9 @@
 }
 
 .auth-tabs button.active {
-  color: #4f46e5;
+  color: #00a19a;
   font-weight: 600;
-  border-bottom-color: #4f46e5;
+  border-bottom-color: #00a19a;
 }
 
 /* Formulaire */
@@ -94,7 +108,7 @@
 
 .auth-form input:focus {
   outline: none;
-  border-color: #4f46e5;
+  border-color: #00a19a;
   box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
 }
 
@@ -103,7 +117,7 @@
   padding: 12px;
   border: none;
   border-radius: 8px;
-  background: #4f46e5;
+  background: #00a19a;
   color: #fff;
   font-size: 15px;
   font-weight: 600;
@@ -112,7 +126,7 @@
 }
 
 .auth-form button[type='submit']:hover:not(:disabled) {
-  background: #4338ca;
+  background: #00827c;
 }
 
 .auth-form button[type='submit']:disabled {
@@ -129,7 +143,7 @@
 
 .auth-info {
   margin: 0;
-  color: #2563eb;
+  color: #00a19a;
   font-size: 14px;
 }
 

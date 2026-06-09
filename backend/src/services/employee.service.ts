@@ -17,3 +17,101 @@ export async function listEmployeesByEmployer(companyId: string) {
     },
   });
 }
+
+// Soft delete d'un employé (deletedAt), uniquement s'il appartient à l'entreprise du manager.
+export async function softDeleteEmployee(companyId: string, employeeId: string) {
+  const employee = await prisma.user.findUnique({
+    where: { id: employeeId },
+    select: { id: true, role: true, companyId: true, deletedAt: true },
+  });
+
+  if (!employee || employee.deletedAt !== null || employee.role !== 'EMPLOYEE') {
+    throw new Error('EMPLOYEE_NOT_FOUND');
+  }
+  if (employee.companyId !== companyId) {
+    throw new Error('EMPLOYEE_NOT_IN_COMPANY');
+  }
+
+  await prisma.user.update({
+    where: { id: employeeId },
+    data: { deletedAt: new Date() },
+  });
+}
+
+// Solde seul de l'employé. employeeId vient du JWT.
+export async function getEmployeeBalance(employeeId: string): Promise<number> {
+  const user = await prisma.user.findUnique({
+    where: { id: employeeId },
+    select: { balance: true, deletedAt: true },
+  });
+  if (!user || user.deletedAt !== null) {
+    throw new Error('EMPLOYEE_NOT_FOUND');
+  }
+  return user.balance;
+}
+
+// Historique des tokens reçus (attributions), paginé.
+export async function getEmployeeReceived(employeeId: string, page: number, limit: number) {
+  const [rows, total] = await Promise.all([
+    prisma.attribution.findMany({
+      where: { employeeId },
+      orderBy: { createdAt: 'desc' },
+      skip: (page - 1) * limit,
+      take: limit,
+      select: {
+        id: true,
+        amount: true,
+        reason: true,
+        createdAt: true,
+        manager: { select: { firstName: true, lastName: true } },
+      },
+    }),
+    prisma.attribution.count({ where: { employeeId } }),
+  ]);
+
+  return {
+    items: rows.map((r) => ({
+      id: r.id,
+      amount: r.amount,
+      reason: r.reason,
+      createdAt: r.createdAt,
+      managerName: `${r.manager.firstName ?? ''} ${r.manager.lastName ?? ''}`.trim(),
+    })),
+    total,
+    page,
+    hasMore: page * limit < total,
+  };
+}
+
+// Historique des dépenses (redemptions), paginé.
+export async function getEmployeeSpent(employeeId: string, page: number, limit: number) {
+  const [rows, total] = await Promise.all([
+    prisma.redemption.findMany({
+      where: { employeeId },
+      orderBy: { createdAt: 'desc' },
+      skip: (page - 1) * limit,
+      take: limit,
+      select: {
+        id: true,
+        amount: true,
+        createdAt: true,
+        offer: { select: { partnerName: true } },
+        promoCode: { select: { code: true } },
+      },
+    }),
+    prisma.redemption.count({ where: { employeeId } }),
+  ]);
+
+  return {
+    items: rows.map((s) => ({
+      id: s.id,
+      amount: s.amount,
+      createdAt: s.createdAt,
+      offerName: s.offer.partnerName,
+      promoCode: s.promoCode.code,
+    })),
+    total,
+    page,
+    hasMore: page * limit < total,
+  };
+}

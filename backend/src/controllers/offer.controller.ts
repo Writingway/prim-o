@@ -2,12 +2,14 @@ import type { Request, Response, NextFunction } from 'express';
 import { Prisma } from '@prisma/client';
 import { AppError } from '../middleware/error.middleware';
 import { createOfferSchema, updateOfferSchema } from '../schemas/offer.schemas';
-import { listOffers, getOffer, createOffer, updateOffer, deactivateOffer } from '../services/offer.service';
+import { listOffers, listActiveOffers, getOffer, createOffer, updateOffer, deactivateOffer } from '../services/offer.service';
 
 
 export async function listOffersController(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const offers = await listOffers();
+    // Admin (token via optionalAuth) : liste complète, inactives comprises.
+    // Public / autres rôles : uniquement les offres actives (vitrine).
+    const offers = req.user?.role === 'ADMIN' ? await listOffers() : await listActiveOffers();
     res.json({ offers });
   } catch (err) {
     next(err);

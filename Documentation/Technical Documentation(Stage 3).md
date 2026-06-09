@@ -229,7 +229,7 @@ Below is a cleaned, developer-friendly view of the MVP relational schema rendere
 
 ## 3. High-Level Sequence Diagrams
 
-### 3.1 Authentication Flow – JWT
+### 3.1 Authentication Flow - JWT
 
 ![User Login (JWT)](img_doc/User%20Login%20(JWT).png)
 
@@ -467,21 +467,21 @@ Code Commit → Linting (ESLint) → Unit Tests (Vitest) → Integration Tests (
 
 ### 6.1 Technology Choices
 
-#### Frontend – React
+#### Frontend - React
 
 **Why React?**
 - **Rationale:** Largest frontend ecosystem; component-based; skills transferable to React Native for V2.
 - **Trade-offs:** Steeper learning curve; larger bundle than Vue.
 - **Alternatives considered:** Vue (smaller ecosystem), Angular (too heavy for MVP).
 
-#### Backend – Node.js + Express
+#### Backend - Node.js + Express
 
 **Why Node.js + Express?**
 - **Rationale:** JavaScript on both ends; team already familiar; Express is the de-facto standard for REST APIs.
 - **Trade-offs:** Single-threaded; minimal architectural opinions.
 - **Alternatives considered:** Python/FastAPI (adds a second language), NestJS (overhead), Go (unfamiliar).
 
-#### Database – PostgreSQL + Prisma ORM
+#### Database - PostgreSQL + Prisma ORM
 
 **Why PostgreSQL?**
 - **Rationale:** Relational + ACID; mandatory for token transactions; 40+ years of production track record.
@@ -493,14 +493,14 @@ Code Commit → Linting (ESLint) → Unit Tests (Vitest) → Integration Tests (
 - **Trade-offs:** Abstraction layer (raw SQL needed for some complex queries).
 - **Alternatives considered:** Sequelize (older, more boilerplate), TypeORM (heavier API), raw SQL (no type safety).
 
-#### Authentication – JWT + bcrypt
+#### Authentication - JWT + bcrypt
 
 **Why JWT + bcrypt?**
 - **Rationale:** Industry standard for REST APIs; team familiar; bcrypt is the long-established password hashing standard.
 - **Trade-offs:** JWTs hard to revoke; bcrypt intentionally slow on login.
 - **Alternatives considered:** Session + Redis (extra infrastructure), OAuth (overkill), Argon2 (less supported in Node).
 
-#### Payment Gateway – Stripe
+#### Payment Gateway - Stripe
 
 **Why Stripe?**
 - **Rationale:** PCI-DSS offloaded; webhook server-side confirmation; best developer experience; widely adopted with mature Node.js SDK.

@@ -1,18 +1,21 @@
 import { Router } from 'express';
-import { requireAuth, requireAdmin } from '../middleware/auth.middleware';
+import { requireAuth, requireAdmin, optionalAuth } from '../middleware/auth.middleware';
 import {
-  listOffersController, getOfferController, createOfferController,
+  listOffersController, 
+  getOfferController, createOfferController,
   updateOfferController, deactivateOfferController,
 } from '../controllers/offer.controller';
 
 const router = Router();
 
-router.use(requireAuth, requireAdmin);  // tout admin-only
-
-router.get('/', listOffersController);
+// Lecture publique : vitrine de la landing + users connectés.
+router.get('/', optionalAuth, listOffersController);
 router.get('/:id', getOfferController);
-router.post('/', createOfferController);
-router.patch('/:id', updateOfferController);
-router.delete('/:id', deactivateOfferController);
+
+// Mutations réservées à l'admin.
+router.post('/', requireAuth, requireAdmin, createOfferController);
+router.patch('/:id', requireAuth, requireAdmin, updateOfferController);
+router.delete('/:id', requireAuth, requireAdmin, deactivateOfferController);
+
 
 export default router;

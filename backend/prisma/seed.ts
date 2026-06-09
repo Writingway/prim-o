@@ -139,6 +139,16 @@ async function main() {
     data: { partnerName: 'Netflix', cost: 15, discountPercent: 30, category: 'CULTURE', isActive: true },
   })
 
+  // Offres supplémentaires pour étoffer la vitrine
+  await prisma.partnerOffer.createMany({
+    data: [
+      { partnerName: 'Uber Eats', cost: 12, discountPercent: 25, category: 'FOOD', isActive: true },
+      { partnerName: 'Spotify', cost: 10, discountPercent: 40, category: 'CULTURE', isActive: true },
+      { partnerName: 'Decathlon', cost: 18, discountPercent: 20, category: 'WELLNESS', isActive: true },
+      { partnerName: 'SNCF Connect', cost: 25, discountPercent: 15, category: 'TRAVEL', isActive: true },
+    ],
+  })
+
   // ── Codes promo ───────────────────────────────────────────
   await prisma.promoCode.createMany({
     data: [
