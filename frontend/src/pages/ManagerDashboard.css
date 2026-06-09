@@ -25,6 +25,11 @@
   letter-spacing: -0.5px;
 }
 
+.dash-header-actions {
+  display: flex;
+  gap: 8px;
+}
+
 .dash-logout {
   border: 1px solid #d1d5db;
   background: #fff;

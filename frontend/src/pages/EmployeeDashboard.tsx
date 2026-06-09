@@ -11,6 +11,7 @@ import './EmployeeDashboard.css';
 type EmployeeDashboardProps = {
   accessToken: string;
   onLogout: () => void;
+  onBack: () => void;
 };
 
 const PAGE_SIZE = 10;
@@ -18,7 +19,7 @@ const PAGE_SIZE = 10;
 const formatDate = (iso: string) =>
   new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
-export default function EmployeeDashboard({ accessToken, onLogout }: EmployeeDashboardProps) {
+export default function EmployeeDashboard({ accessToken, onLogout, onBack }: EmployeeDashboardProps) {
   const [balance, setBalance] = useState<number | null>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
@@ -110,9 +111,14 @@ export default function EmployeeDashboard({ accessToken, onLogout }: EmployeeDas
       <div className="emp-dash-container">
         <header className="emp-dash-header">
           <h1 className="emp-dash-title">Prim'O — Mon espace</h1>
-          <button className="emp-dash-logout" type="button" onClick={handleLogout}>
-            Se déconnecter
-          </button>
+          <div className="emp-dash-header-actions">
+            <button className="emp-dash-logout" type="button" onClick={onBack}>
+              ← Accueil
+            </button>
+            <button className="emp-dash-logout" type="button" onClick={handleLogout}>
+              Se déconnecter
+            </button>
+          </div>
         </header>
 
         {loading && <p className="emp-dash-note">Chargement…</p>}

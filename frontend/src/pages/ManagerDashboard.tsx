@@ -14,6 +14,7 @@ import './ManagerDashboard.css';
 type ManagerDashboardProps = {
   accessToken: string;
   onLogout: () => void;
+  onBack: () => void;
 };
 
 const initials = (e: Employee) =>
@@ -23,7 +24,7 @@ const formatDate = (iso: string) =>
   new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
 // Dashboard employeur : liste des employés de son entreprise (lecture seule).
-export default function ManagerDashboard({ accessToken, onLogout }: ManagerDashboardProps) {
+export default function ManagerDashboard({ accessToken, onLogout, onBack }: ManagerDashboardProps) {
   const [employees, setEmployees] = useState<Employee[] | null>(null);
   const [company, setCompany] = useState<Company | null>(null);
   const [attributions, setAttributions] = useState<AttributionHistory[]>([]);
@@ -172,9 +173,14 @@ export default function ManagerDashboard({ accessToken, onLogout }: ManagerDashb
       <div className="dash-container">
         <header className="dash-header">
           <h1 className="dash-title">Prim'O — Mes employés</h1>
-          <button className="dash-logout" type="button" onClick={handleLogout}>
-            Se déconnecter
-          </button>
+          <div className="dash-header-actions">
+            <button className="dash-logout" type="button" onClick={onBack}>
+              ← Accueil
+            </button>
+            <button className="dash-logout" type="button" onClick={handleLogout}>
+              Se déconnecter
+            </button>
+          </div>
         </header>
 
         <div className="dash-stats">

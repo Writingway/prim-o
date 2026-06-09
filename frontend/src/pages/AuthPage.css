@@ -18,6 +18,20 @@
   box-sizing: border-box;
 }
 
+.auth-back {
+  border: none;
+  background: none;
+  color: #6b7280;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 8px;
+}
+
+.auth-back:hover {
+  color: #4f46e5;
+}
+
 .auth-logo {
   text-align: center;
   margin: 0 0 24px;
