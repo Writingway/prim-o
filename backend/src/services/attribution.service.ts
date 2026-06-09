@@ -62,3 +62,18 @@ export async function createAttribution(
     throw err;
   }
 }
+
+// Historique des attributions d'une entreprise (récentes d'abord).
+export async function listAttributionsByCompany(companyId: string) {
+  return prisma.attribution.findMany({
+    where: { companyId },
+    orderBy: { createdAt: 'desc' },
+    select: {
+      id: true,
+      amount: true,
+      reason: true,
+      createdAt: true,
+      employee: { select: { firstName: true, lastName: true } },
+    },
+  });
+}
