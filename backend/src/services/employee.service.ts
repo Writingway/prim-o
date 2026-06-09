@@ -18,6 +18,26 @@ export async function listEmployeesByEmployer(companyId: string) {
   });
 }
 
+// Soft delete d'un employé (deletedAt), uniquement s'il appartient à l'entreprise du manager.
+export async function softDeleteEmployee(companyId: string, employeeId: string) {
+  const employee = await prisma.user.findUnique({
+    where: { id: employeeId },
+    select: { id: true, role: true, companyId: true, deletedAt: true },
+  });
+
+  if (!employee || employee.deletedAt !== null || employee.role !== 'EMPLOYEE') {
+    throw new Error('EMPLOYEE_NOT_FOUND');
+  }
+  if (employee.companyId !== companyId) {
+    throw new Error('EMPLOYEE_NOT_IN_COMPANY');
+  }
+
+  await prisma.user.update({
+    where: { id: employeeId },
+    data: { deletedAt: new Date() },
+  });
+}
+
 // Solde seul de l'employé. employeeId vient du JWT.
 export async function getEmployeeBalance(employeeId: string): Promise<number> {
   const user = await prisma.user.findUnique({

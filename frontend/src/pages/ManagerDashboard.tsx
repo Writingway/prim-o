@@ -1,6 +1,14 @@
 import { useEffect, useState } from 'react';
-import { listEmployees, generateInviteCode, logout as apiLogout } from '../services/api';
-import type { Employee } from '../types/types';
+import {
+  listEmployees,
+  getCompany,
+  listAttributions,
+  deleteEmployee,
+  generateInviteCode,
+  createAttribution,
+  logout as apiLogout,
+} from '../services/api';
+import type { Employee, Company, AttributionHistory } from '../types/types';
 import './ManagerDashboard.css';
 
 type ManagerDashboardProps = {
@@ -17,27 +25,66 @@ const formatDate = (iso: string) =>
 // Dashboard employeur : liste des employés de son entreprise (lecture seule).
 export default function ManagerDashboard({ accessToken, onLogout }: ManagerDashboardProps) {
   const [employees, setEmployees] = useState<Employee[] | null>(null);
+  const [company, setCompany] = useState<Company | null>(null);
+  const [attributions, setAttributions] = useState<AttributionHistory[]>([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [inviteCode, setInviteCode] = useState<string | null>(null);
   const [inviteError, setInviteError] = useState('');
+
+  // Formulaire d'attribution inline : un seul ouvert à la fois.
+  const [attribOpenId, setAttribOpenId] = useState<string | null>(null);
+  const [attribAmount, setAttribAmount] = useState('');
+  const [attribReason, setAttribReason] = useState('');
+  const [attribError, setAttribError] = useState('');
+  const [attribSubmitting, setAttribSubmitting] = useState(false);
 
   const load = async () => {
     setLoading(true);
     setError('');
     try {
-      const res = await listEmployees(accessToken);
-      if (res.ok && res.data) {
-        setEmployees(res.data.employees);
-      } else if (res.status === 401) {
+      const [empRes, compRes, attrRes] = await Promise.all([
+        listEmployees(accessToken),
+        getCompany(accessToken),
+        listAttributions(accessToken),
+      ]);
+
+      if (empRes.status === 401) {
         setError('Session expirée, reconnecte-toi.');
-      } else {
-        setError('Impossible de charger les employés.');
+        return;
       }
+      if (!empRes.ok || !empRes.data) {
+        setError('Impossible de charger les employés.');
+        return;
+      }
+
+      setEmployees(empRes.data.employees);
+      if (compRes.ok && compRes.data) setCompany(compRes.data.company);
+      if (attrRes.ok && attrRes.data) setAttributions(attrRes.data.attributions);
     } catch {
       setError('Impossible de joindre le serveur. Le backend est-il lancé ?');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDelete = async (e: Employee) => {
+    if (!window.confirm(`Supprimer ${e.firstName} ${e.lastName} ? Son historique est conservé.`)) {
+      return;
+    }
+    setDeletingId(e.id);
+    try {
+      const res = await deleteEmployee(accessToken, e.id);
+      if (res.ok) {
+        await load(); // recharge liste + solde + historique
+      } else {
+        setError("Impossible de supprimer cet employé.");
+      }
+    } catch {
+      setError('Impossible de joindre le serveur.');
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -71,6 +118,53 @@ export default function ManagerDashboard({ accessToken, onLogout }: ManagerDashb
     }
   };
 
+  const openAttrib = (id: string) => {
+    setAttribOpenId(id);
+    setAttribAmount('');
+    setAttribReason('');
+    setAttribError('');
+  };
+
+  const closeAttrib = () => {
+    setAttribOpenId(null);
+    setAttribError('');
+  };
+
+  const submitAttrib = async (employeeId: string) => {
+    setAttribError('');
+    const amount = Number(attribAmount);
+    if (!Number.isInteger(amount) || amount <= 0) {
+      setAttribError('Le montant doit être un entier positif.');
+      return;
+    }
+    if (!attribReason.trim()) {
+      setAttribError('La raison est obligatoire.');
+      return;
+    }
+
+    setAttribSubmitting(true);
+    try {
+      const res = await createAttribution(accessToken, { employeeId, amount, reason: attribReason.trim() });
+      if (res.ok) {
+        closeAttrib();
+        await load(); // recharge la liste → le solde de l'employé est à jour
+      } else if (res.status === 409) {
+        setAttribError('Solde insuffisant dans le pool entreprise.');
+      } else if (res.status === 400) {
+        setAttribError('Montant et raison obligatoires.');
+      } else if (res.status === 401) {
+        setAttribError('Session expirée, reconnecte-toi.');
+      } else {
+        const msg = res.data && 'error' in res.data ? res.data.error : "Échec de l'attribution.";
+        setAttribError(msg);
+      }
+    } catch {
+      setAttribError('Impossible de joindre le serveur.');
+    } finally {
+      setAttribSubmitting(false);
+    }
+  };
+
   const totalDistributed = (employees ?? []).reduce((sum, e) => sum + e.balance, 0);
 
   return (
@@ -84,6 +178,7 @@ export default function ManagerDashboard({ accessToken, onLogout }: ManagerDashb
         </header>
 
         <div className="dash-stats">
+          <div className="dash-stat dash-stat-pool">🏦 <strong>{company?.tokenBalance ?? '—'}</strong>&nbsp;tokens disponibles</div>
           <div className="dash-stat">👥 <strong>{employees?.length ?? 0}</strong>&nbsp;employés</div>
           <div className="dash-stat">🪙 <strong>{totalDistributed}</strong>&nbsp;tokens distribués</div>
           <button className="dash-invite" type="button" onClick={handleGenerateInvite}>
@@ -121,26 +216,95 @@ export default function ManagerDashboard({ accessToken, onLogout }: ManagerDashb
         {!loading && !error && employees && employees.length > 0 && (
           <ul className="emp-list">
             {employees.map((e) => (
-              <li className="emp-row" key={e.id}>
-                <div className="emp-avatar">{initials(e)}</div>
-                <div className="emp-main">
-                  <div className="emp-name">
-                    {e.firstName} {e.lastName}
-                    {e.isEmailVerified ? (
-                      <span className="emp-badge verified">✓ vérifié</span>
-                    ) : (
-                      <span className="emp-badge pending">en attente</span>
-                    )}
+              <li className="emp-item" key={e.id}>
+                <div className="emp-row">
+                  <div className="emp-avatar">{initials(e)}</div>
+                  <div className="emp-main">
+                    <div className="emp-name">
+                      {e.firstName} {e.lastName}
+                      {e.isEmailVerified ? (
+                        <span className="emp-badge verified">✓ vérifié</span>
+                      ) : (
+                        <span className="emp-badge pending">en attente</span>
+                      )}
+                    </div>
+                    <div className="emp-sub">{e.email} · inscrit le {formatDate(e.createdAt)}</div>
                   </div>
-                  <div className="emp-sub">{e.email} · inscrit le {formatDate(e.createdAt)}</div>
+                  <div className="emp-balance">
+                    <div className="emp-balance-num">{e.balance}</div>
+                    <div className="emp-balance-label">tokens</div>
+                  </div>
+                  <button
+                    type="button"
+                    className="emp-attrib-btn"
+                    onClick={() => (attribOpenId === e.id ? closeAttrib() : openAttrib(e.id))}
+                  >
+                    {attribOpenId === e.id ? 'Annuler' : 'Attribuer'}
+                  </button>
+                  <button
+                    type="button"
+                    className="emp-delete-btn"
+                    title="Supprimer cet employé"
+                    disabled={deletingId === e.id}
+                    onClick={() => handleDelete(e)}
+                  >
+                    {deletingId === e.id ? '…' : '🗑️'}
+                  </button>
                 </div>
-                <div className="emp-balance">
-                  <div className="emp-balance-num">{e.balance}</div>
-                  <div className="emp-balance-label">tokens</div>
-                </div>
+
+                {attribOpenId === e.id && (
+                  <form
+                    className="emp-attrib-form"
+                    onSubmit={(ev) => {
+                      ev.preventDefault();
+                      submitAttrib(e.id);
+                    }}
+                  >
+                    <input
+                      type="number"
+                      min="1"
+                      step="1"
+                      placeholder="Montant"
+                      value={attribAmount}
+                      onChange={(ev) => setAttribAmount(ev.target.value)}
+                    />
+                    <input
+                      type="text"
+                      placeholder="Raison (obligatoire)"
+                      value={attribReason}
+                      onChange={(ev) => setAttribReason(ev.target.value)}
+                    />
+                    <button type="submit" className="emp-attrib-submit" disabled={attribSubmitting}>
+                      {attribSubmitting ? '…' : 'Valider'}
+                    </button>
+                    {attribError && <p className="emp-attrib-error">{attribError}</p>}
+                  </form>
+                )}
               </li>
             ))}
           </ul>
+        )}
+
+        {!loading && !error && (
+          <section className="history">
+            <h2 className="history-title">Historique des transactions</h2>
+            {attributions.length === 0 ? (
+              <p className="dash-msg">Aucune transaction pour l'instant.</p>
+            ) : (
+              <ul className="history-list">
+                {attributions.map((a) => (
+                  <li className="history-row" key={a.id}>
+                    <span className="history-emp">
+                      {a.employee.firstName} {a.employee.lastName}
+                    </span>
+                    <span className="history-reason">{a.reason}</span>
+                    <span className="history-date">{formatDate(a.createdAt)}</span>
+                    <span className="history-amount">+{a.amount}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
         )}
       </div>
     </div>
