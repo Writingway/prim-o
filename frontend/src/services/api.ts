@@ -1,7 +1,16 @@
 // Client API minimal pour parler au backend Prim'O.
 // En dev, l'URL est relative (/api) et Vite la proxifie vers le backend
 
-import { Role, Employee, Company, AttributionHistory, ReceivedToken, SpentToken, Paginated, Offer } from "../types/types";
+import { 
+  Role, 
+  Employee, 
+  ReceivedToken,
+  Company,
+  AttributionHistory,
+  Paginated,
+  SpentToken,
+  Offer,
+} from "../types/types";
 
 // (voir vite.config.js) → pas de souci CORS ni de port Windows/WSL.
 const API_URL = import.meta.env.VITE_API_URL || '/api';
@@ -28,10 +37,11 @@ async function post(path: string, body?: unknown) {
   return { ok: res.ok, status: res.status, data };
 }
 
-// GET authentifié : joint l'access token en Bearer.
-async function get(path: string, accessToken: string) {
+// GET : joint l'access token en Bearer s'il est fourni.
+// Token optionnel pour les routes publiques (ex. vitrine des offres).
+async function get(path: string, accessToken?: string) {
   const res = await fetch(`${API_URL}${path}`, {
-    headers: { Authorization: `Bearer ${accessToken}` },
+    headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
     credentials: 'include',
   });
 
@@ -86,24 +96,84 @@ async function authPost(path: string, accessToken: string, body?: unknown) {
   return { ok: res.ok, status: res.status, data };
 }
 
-// GET public (sans token) — pour la vitrine d'offres.
-async function getPublic(path: string) {
-  const res = await fetch(`${API_URL}${path}`);
+// DELETE authentifié avec corps JSON optionnel (désactivation d'offre).
+async function authDelete(path: string, accessToken: string, body?: unknown) {
+  const res = await fetch(`${API_URL}${path}`, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    credentials: 'include',
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+
   let data = null;
   try {
     data = await res.json();
   } catch {
-    // pas de corps JSON — on ignore.
+    // Pas de corps JSON — on ignore.
   }
+
   return { ok: res.ok, status: res.status, data };
 }
 
-// Vitrine publique des offres partenaires actives.
-export function listOffers() {
-  return getPublic('/offers') as Promise<{
+// PATCH authentifié : mise à jour partielle (édition d'offre).
+async function authPatch(path: string, accessToken: string, body?: unknown) {
+  const res = await fetch(`${API_URL}${path}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    credentials: 'include',
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+
+  let data = null;
+  try {
+    data = await res.json();
+  } catch {
+    // Pas de corps JSON — on ignore.
+  }
+
+  return { ok: res.ok, status: res.status, data };
+}
+
+// Vitrine des offres partenaires. Token optionnel : public sur la landing,
+// authentifié côté admin.
+export function listOffers(token?: string) {
+  return get('/offers', token) as Promise<{
     ok: boolean;
     status: number;
     data: { offers: Offer[] } | null;
+  }>;
+}
+
+// Crée une offre (admin). isActive/id sont posés côté serveur.
+export function createOffer(token: string, payload: Omit<Offer, 'id' | 'isActive'>) {
+  return authPost('/offers', token, payload) as Promise<{
+    ok: boolean;
+    status: number;
+    data: { offer: Offer } | null;
+  }>;
+}
+
+// Met à jour une offre (admin).
+export function updateOffer(token: string, offerId: string, payload: Partial<Omit<Offer, 'id'>>) {
+  return authPatch(`/offers/${offerId}`, token, payload) as Promise<{
+    ok: boolean;
+    status: number;
+    data: { offer: Offer } | null;
+  }>;
+}
+
+// Désactive une offre (soft delete, admin).
+export function deactivateOffer(token: string, offerId: string) {
+  return authDelete(`/offers/${offerId}`, token) as Promise<{
+    ok: boolean;
+    status: number;
+    data: { offer: Offer } | null;
   }>;
 }
 
@@ -203,15 +273,25 @@ export function login(payload: { email: string; password: string }) {
   return post('/auth/login', payload);
 }
 
-// Source de vérité du rôle = le payload du JWT (et non le sélecteur du formulaire).
-// Le backend émet le rôle en MAJUSCULES (enum Prisma) → on repasse en minuscules.
-export function roleFromToken(accessToken: string): Role {
-  const payload = JSON.parse(atob(accessToken.split('.')[1]));
-  return String(payload.role).toLowerCase() as Role;
+// Refresh silencieux : au boot de l'app, échange le cookie refresh (httpOnly)
+// contre un nouvel accessToken. Permet de rester connecté après un F5,
+// l'accessToken n'étant gardé qu'en mémoire (state React).
+export function refresh() {
+  return post('/auth/refresh') as Promise<{
+    ok: boolean;
+    status: number;
+    data: { accessToken: string } | null;
+  }>;
 }
 
 // Déconnexion : révoque le refresh côté serveur et supprime le cookie.
 export function logout() {
   return post('/auth/logout');
+}
+// Source de vérité du rôle = le payload du JWT (et non le sélecteur du formulaire).
+// Le backend émet le rôle en MAJUSCULES (enum Prisma) → on repasse en minuscules.
+export function roleFromToken(accessToken: string): Role {
+  const payload = JSON.parse(atob(accessToken.split('.')[1]));
+  return String(payload.role).toLowerCase() as Role;
 }
 

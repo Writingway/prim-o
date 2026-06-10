@@ -5,6 +5,12 @@ export type Role = 'manager' | 'employee' | 'admin';
 // Mode du formulaire d'auth.
 export type Mode = 'login' | 'register';
 
+export type ApiResponse<T> = {
+  ok: boolean;
+  status: number;
+  data: T | null;
+};
+
 // Session renvoyée après une connexion réussie.
 export type AuthSession = {
   accessToken: string;
@@ -22,13 +28,16 @@ export type Employee = {
   createdAt: string;
 };
 
+export type OfferCategory = 'FOOD' | 'SHOPPING' | 'CULTURE' | 'TRAVEL' | 'WELLNESS' | 'OTHER';
+
 // Offre partenaire (GET /api/offers, vitrine publique).
 export type Offer = {
   id: string;
   partnerName: string;
   cost: number;
   discountPercent: number;
-  category: 'FOOD' | 'SHOPPING' | 'CULTURE' | 'TRAVEL' | 'WELLNESS' | 'OTHER';
+  category: OfferCategory;
+  isActive: boolean;
 };
 
 // Entreprise du manager (GET /api/company).

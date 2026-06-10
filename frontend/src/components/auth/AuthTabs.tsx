@@ -12,15 +12,13 @@ export default function AuthTabs({ mode, onChange }: AuthTabsProps) {
       <button
         type="button"
         className={mode === 'login' ? 'active' : ''}
-        onClick={() => onChange('login')}
-      >
+        onClick={() => onChange('login')}>
         Se connecter
       </button>
       <button
         type="button"
         className={mode === 'register' ? 'active' : ''}
-        onClick={() => onChange('register')}
-      >
+        onClick={() => onChange('register')}>
         S'inscrire
       </button>
     </div>

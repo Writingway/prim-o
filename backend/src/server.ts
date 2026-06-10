@@ -11,11 +11,15 @@ import employeeRouter from './routes/employee.routes';
 import attributionRouter from './routes/attribution.routes';
 import cookieParser from 'cookie-parser';
 import inviteRouter from './routes/invite.routes';
-import companyRouter from './routes/company.routes';
 import offerRouter from './routes/offer.routes';
+import companyRouter from './routes/company.routes';
 
 
 const app = express();
+
+// API dynamique authentifiée : pas d'ETag → pas de 304 (qui casse fetch,
+// res.ok devenant false et le body vide côté client).
+app.set('etag', false);
 
 // 1. Sécurité headers
 app.use(helmet());

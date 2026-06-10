@@ -1,5 +1,25 @@
+/* Charte graphique PRIM'O — appliquée globalement.
+   Principale : #00A19A (teal). Secondaire : #000000. Fond : #FFFFFF.
+   Police principale : Poppins. Mobile-first. */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
 :root {
-  font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
+  /* Tokens charte */
+  --primo-teal: #00a19a;
+  --primo-teal-dark: #00827c;
+  --primo-teal-soft: #e6f6f5;
+  --primo-ink: #000000;
+  --primo-bg: #ffffff;
+
+  /* Neutres / état (hors charte mais nécessaires UI) */
+  --primo-gray: #6b7280;
+  --primo-gray-light: #9ca3af;
+  --primo-border: #e3e3e8;
+  --primo-error: #dc2626;
+  --primo-success: #059669;
+
+  font-family: 'Poppins', system-ui, 'Segoe UI', Roboto, sans-serif;
+  color: var(--primo-ink);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -10,4 +30,14 @@
 
 body {
   margin: 0;
+  background: var(--primo-bg);
+  font-family: inherit;
+  /* Mobile-first : base petit écran, enrichie ensuite via min-width. */
+  font-size: 15px;
+}
+
+@media (min-width: 768px) {
+  body {
+    font-size: 16px;
+  }
 }
