@@ -13,6 +13,8 @@ import cookieParser from 'cookie-parser';
 import inviteRouter from './routes/invite.routes';
 import offerRouter from './routes/offer.routes';
 import companyRouter from './routes/company.routes';
+import stripeRouter from './routes/stripe.routes';
+
 
 
 const app = express();
@@ -51,6 +53,10 @@ app.use('/api/attributions', attributionRouter);
 app.use('/api/invites', inviteRouter);
 app.use('/api/company', companyRouter);
 app.use('/api/offers', offerRouter);
+
+//Stripe endpoints
+app.use('/api/stripe', stripeRouter);
+
 
 app.use(errorHandler);
 
