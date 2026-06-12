@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { listOffers } from '../services/api';
 import type { Offer } from '../types/types';
 import './LandingPage.css';
+import Layout from '../components/layout/Layout';
 
 type LandingPageProps = {
   isLoggedIn: boolean;
@@ -47,32 +48,30 @@ export default function LandingPage({
   }, []);
 
   return (
+    <Layout
+      headerActions={
+        isLoggedIn ? (
+          <>
+            <button className="app-btn app-btn-primary" type="button" onClick={onDashboard}>
+              Mon tableau de bord
+            </button>
+            <button className="app-btn app-btn-ghost" type="button" onClick={onLogout}>
+              Se déconnecter
+            </button>
+          </>
+        ) : (
+          <>
+            <button className="app-btn app-btn-ghost" type="button" onClick={onLogin}>
+              Se connecter
+            </button>
+            <button className="app-btn app-btn-primary" type="button" onClick={onRegister}>
+              S'inscrire
+            </button>
+          </>
+        )
+      }
+    >
     <div className="landing-wrapper">
-      <header className="landing-header">
-        <span className="landing-brand">Prim'O</span>
-        <nav className="landing-nav">
-          {isLoggedIn ? (
-            <>
-              <button className="landing-btn landing-btn-primary" type="button" onClick={onDashboard}>
-                Mon tableau de bord
-              </button>
-              <button className="landing-btn landing-btn-ghost" type="button" onClick={onLogout}>
-                Se déconnecter
-              </button>
-            </>
-          ) : (
-            <>
-              <button className="landing-btn landing-btn-ghost" type="button" onClick={onLogin}>
-                Se connecter
-              </button>
-              <button className="landing-btn landing-btn-primary" type="button" onClick={onRegister}>
-                S'inscrire
-              </button>
-            </>
-          )}
-        </nav>
-      </header>
-
       <section className="landing-hero">
         <h1 className="landing-hero-title">Tes efforts récompensés instantanément</h1>
         <p className="landing-hero-sub">
@@ -105,5 +104,6 @@ export default function LandingPage({
         )}
       </section>
     </div>
+  </Layout>
   );
 }

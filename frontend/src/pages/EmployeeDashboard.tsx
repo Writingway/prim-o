@@ -7,9 +7,9 @@ import {
 } from '../services/api';
 import type { ReceivedToken, SpentToken } from '../types/types';
 import './EmployeeDashboard.css';
+import Layout from '../components/layout/Layout';
 
 type EmployeeDashboardProps = {
-  accessToken: string;
   onLogout: () => void;
   onBack: () => void;
 };
@@ -19,7 +19,7 @@ const PAGE_SIZE = 10;
 const formatDate = (iso: string) =>
   new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
-export default function EmployeeDashboard({ accessToken, onLogout, onBack }: EmployeeDashboardProps) {
+export default function EmployeeDashboard({ onLogout, onBack }: EmployeeDashboardProps) {
   const [balance, setBalance] = useState<number | null>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
@@ -39,9 +39,9 @@ export default function EmployeeDashboard({ accessToken, onLogout, onBack }: Emp
     setError('');
     try {
       const [balRes, recRes, spRes] = await Promise.all([
-        getEmployeeBalance(accessToken),
-        getEmployeeReceived(accessToken, 1, PAGE_SIZE),
-        getEmployeeSpent(accessToken, 1, PAGE_SIZE),
+        getEmployeeBalance(),
+        getEmployeeReceived(1, PAGE_SIZE),
+        getEmployeeSpent(1, PAGE_SIZE),
       ]);
 
       if (balRes.status === 401) {
@@ -79,7 +79,7 @@ export default function EmployeeDashboard({ accessToken, onLogout, onBack }: Emp
   // « Voir plus » : charge la page suivante et l'ajoute à la liste existante.
   const loadMoreReceived = async () => {
     const next = receivedPage + 1;
-    const res = await getEmployeeReceived(accessToken, next, PAGE_SIZE);
+    const res = await getEmployeeReceived(next, PAGE_SIZE);
     if (res.ok && res.data) {
       setReceived((prev) => [...prev, ...res.data!.items]);
       setReceivedPage(next);
@@ -89,7 +89,7 @@ export default function EmployeeDashboard({ accessToken, onLogout, onBack }: Emp
 
   const loadMoreSpent = async () => {
     const next = spentPage + 1;
-    const res = await getEmployeeSpent(accessToken, next, PAGE_SIZE);
+    const res = await getEmployeeSpent(next, PAGE_SIZE);
     if (res.ok && res.data) {
       setSpent((prev) => [...prev, ...res.data!.items]);
       setSpentPage(next);
@@ -107,19 +107,21 @@ export default function EmployeeDashboard({ accessToken, onLogout, onBack }: Emp
   };
 
   return (
+    <Layout
+      title="Prim'O — Mon espace"
+      headerActions={
+        <>
+          <button className="app-btn app-btn-ghost" type="button" onClick={onBack}>
+            ← Accueil
+          </button>
+          <button className="app-btn app-btn-ghost" type="button" onClick={handleLogout}>
+            Se déconnecter
+          </button>
+        </>
+      }
+    >
     <div className="emp-dash-wrapper">
       <div className="emp-dash-container">
-        <header className="emp-dash-header">
-          <h1 className="emp-dash-title">Prim'O — Mon espace</h1>
-          <div className="emp-dash-header-actions">
-            <button className="emp-dash-logout" type="button" onClick={onBack}>
-              ← Accueil
-            </button>
-            <button className="emp-dash-logout" type="button" onClick={handleLogout}>
-              Se déconnecter
-            </button>
-          </div>
-        </header>
 
         {loading && <p className="emp-dash-note">Chargement…</p>}
 
@@ -195,5 +197,6 @@ export default function EmployeeDashboard({ accessToken, onLogout, onBack }: Emp
         )}
       </div>
     </div>
+    </Layout>
   );
 }

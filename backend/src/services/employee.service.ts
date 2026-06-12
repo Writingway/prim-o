@@ -12,6 +12,7 @@ export async function listEmployeesByEmployer(companyId: string) {
       lastName: true,
       email: true,
       balance: true,
+      status: true,
       isEmailVerified: true,
       createdAt: true,
     },
@@ -32,10 +33,16 @@ export async function softDeleteEmployee(companyId: string, employeeId: string) 
     throw new Error('EMPLOYEE_NOT_IN_COMPANY');
   }
 
-  await prisma.user.update({
-    where: { id: employeeId },
-    data: { deletedAt: new Date() },
-  });
+  await prisma.$transaction([
+    prisma.user.update({
+      where: { id: employeeId },
+      data: { deletedAt: new Date() },
+    }),
+    prisma.refreshToken.updateMany({
+      where: { userId: employeeId, isRevoked: false },
+      data: { isRevoked: true },
+    }),
+  ]);
 }
 
 // Solde seul de l'employé. employeeId vient du JWT.

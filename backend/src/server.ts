@@ -13,6 +13,9 @@ import cookieParser from 'cookie-parser';
 import inviteRouter from './routes/invite.routes';
 import offerRouter from './routes/offer.routes';
 import companyRouter from './routes/company.routes';
+import adminRouter from './routes/admin.routes';
+import { requireAuth, requireAdmin } from './middleware/auth.middleware';
+import { startTokenCleanup } from './jobs/tokenCleanup';
 
 
 const app = express();
@@ -20,6 +23,8 @@ const app = express();
 // API dynamique authentifiée : pas d'ETag → pas de 304 (qui casse fetch,
 // res.ok devenant false et le body vide côté client).
 app.set('etag', false);
+
+if (config.NODE_ENV === 'production') app.set('trust proxy', 1);
 
 // 1. Sécurité headers
 app.use(helmet());
@@ -51,9 +56,13 @@ app.use('/api/attributions', attributionRouter);
 app.use('/api/invites', inviteRouter);
 app.use('/api/company', companyRouter);
 app.use('/api/offers', offerRouter);
+app.use('/api/admin', requireAuth, requireAdmin, adminRouter);
 
 app.use(errorHandler);
 
 app.listen(config.PORT, () => {
   console.log(`Serveur lancé sur http://localhost:${config.PORT}`);
 });
+
+// Démarre le job de nettoyage des tokens révoqués (tous les 24 heures).
+startTokenCleanup();

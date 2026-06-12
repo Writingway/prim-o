@@ -6,13 +6,14 @@ import {
   deleteEmployee,
   generateInviteCode,
   createAttribution,
+  approveEmployee as apiApproveEmployee,
   logout as apiLogout,
 } from '../services/api';
 import type { Employee, Company, AttributionHistory } from '../types/types';
 import './ManagerDashboard.css';
+import Layout from '../components/layout/Layout';
 
 type ManagerDashboardProps = {
-  accessToken: string;
   onLogout: () => void;
   onBack: () => void;
 };
@@ -24,7 +25,7 @@ const formatDate = (iso: string) =>
   new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
 // Dashboard employeur : liste des employés de son entreprise (lecture seule).
-export default function ManagerDashboard({ accessToken, onLogout, onBack }: ManagerDashboardProps) {
+export default function ManagerDashboard({ onLogout, onBack }: ManagerDashboardProps) {
   const [employees, setEmployees] = useState<Employee[] | null>(null);
   const [company, setCompany] = useState<Company | null>(null);
   const [attributions, setAttributions] = useState<AttributionHistory[]>([]);
@@ -46,9 +47,9 @@ export default function ManagerDashboard({ accessToken, onLogout, onBack }: Mana
     setError('');
     try {
       const [empRes, compRes, attrRes] = await Promise.all([
-        listEmployees(accessToken),
-        getCompany(accessToken),
-        listAttributions(accessToken),
+        listEmployees(),
+        getCompany(),
+        listAttributions(),
       ]);
 
       if (empRes.status === 401) {
@@ -76,7 +77,7 @@ export default function ManagerDashboard({ accessToken, onLogout, onBack }: Mana
     }
     setDeletingId(e.id);
     try {
-      const res = await deleteEmployee(accessToken, e.id);
+      const res = await deleteEmployee(e.id);
       if (res.ok) {
         await load(); // recharge liste + solde + historique
       } else {
@@ -106,7 +107,7 @@ export default function ManagerDashboard({ accessToken, onLogout, onBack }: Mana
   const handleGenerateInvite = async () => {
     setInviteError('');
     try {
-      const res = await generateInviteCode(accessToken);
+      const res = await generateInviteCode();
       if (res.ok && res.data?.invite) {
         setInviteCode(res.data.invite.code);
       } else if (res.status === 401) {
@@ -145,7 +146,7 @@ export default function ManagerDashboard({ accessToken, onLogout, onBack }: Mana
 
     setAttribSubmitting(true);
     try {
-      const res = await createAttribution(accessToken, { employeeId, amount, reason: attribReason.trim() });
+      const res = await createAttribution({ employeeId, amount, reason: attribReason.trim() });
       if (res.ok) {
         closeAttrib();
         await load(); // recharge la liste → le solde de l'employé est à jour
@@ -168,20 +169,40 @@ export default function ManagerDashboard({ accessToken, onLogout, onBack }: Mana
 
   const totalDistributed = (employees ?? []).reduce((sum, e) => sum + e.balance, 0);
 
+  //Approved button for manager when employee is pending
+  const approveEmployee = async (employeeId: string) => {
+    try {
+      // Passe par api.ts : profite du wrapper 401 → refresh → retry.
+      const res = await apiApproveEmployee(employeeId);
+      if (res.ok) {
+        await load();
+      } else if (res.status === 401) {
+        setError('Session expirée, reconnecte-toi.');
+      } else {
+        setError("Impossible d'approuver cet employé.");
+      }
+    } catch {
+      setError('Impossible de joindre le serveur.');
+    }
+  };
+
+
   return (
+    <Layout
+      title="Prim'O — Mes employés"
+      headerActions={
+        <>
+          <button className="app-btn app-btn-ghost" type="button" onClick={onBack}>
+            ← Accueil
+          </button>
+          <button className="app-btn app-btn-ghost" type="button" onClick={handleLogout}>
+            Se déconnecter
+          </button>
+        </>
+      }
+    >
     <div className="dash-wrapper">
       <div className="dash-container">
-        <header className="dash-header">
-          <h1 className="dash-title">Prim'O — Mes employés</h1>
-          <div className="dash-header-actions">
-            <button className="dash-logout" type="button" onClick={onBack}>
-              ← Accueil
-            </button>
-            <button className="dash-logout" type="button" onClick={handleLogout}>
-              Se déconnecter
-            </button>
-          </div>
-        </header>
 
         <div className="dash-stats">
           <div className="dash-stat dash-stat-pool">🏦 <strong>{company?.tokenBalance ?? '—'}</strong>&nbsp;tokens disponibles</div>
@@ -231,7 +252,12 @@ export default function ManagerDashboard({ accessToken, onLogout, onBack }: Mana
                       {e.isEmailVerified ? (
                         <span className="emp-badge verified">✓ vérifié</span>
                       ) : (
-                        <span className="emp-badge pending">en attente</span>
+                          <button
+                          type="button"
+                          className="emp-attrib-btn"
+                          onClick={() => approveEmployee(e.id)}>
+                          Approuver
+                        </button>
                       )}
                     </div>
                     <div className="emp-sub">{e.email} · inscrit le {formatDate(e.createdAt)}</div>
@@ -314,5 +340,6 @@ export default function ManagerDashboard({ accessToken, onLogout, onBack }: Mana
         )}
       </div>
     </div>
+    </Layout>
   );
 }
