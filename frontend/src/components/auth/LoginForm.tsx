@@ -29,7 +29,13 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
 
       if (res.ok) {
         const accessToken = res.data.accessToken;
-        onLoginSuccess(accessToken, roleFromToken(accessToken));
+        const role = roleFromToken(accessToken);
+        if (!role) {
+          setError('Token illisible, impossible de déterminer le rôle.');
+          setLoading(false);
+          return;
+        }
+        onLoginSuccess(accessToken, role);
         return;
       } else if (res.status === 401) {
         setError('Email ou mot de passe incorrect.');

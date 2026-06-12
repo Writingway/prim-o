@@ -5,7 +5,7 @@ import ManagerDashboard from './pages/ManagerDashboard';
 import EmployeeDashboard from './pages/EmployeeDashboard';
 import AdminPage from './pages/AdminPage';
 import type { AuthSession, Role, Mode } from './types/types';
-import { refresh, roleFromToken, logout as apiLogout } from './services/api';
+import { refresh, roleFromToken, logout as apiLogout, setAccessToken, registerSessionExpired } from './services/api';
 
 
 function App() {
@@ -22,11 +22,21 @@ function App() {
   // nouvel accessToken. Sans ça, un F5 vide le state React → déconnexion.
   useEffect(() => {
     let alive = true;
+    // Session définitivement morte (refresh impossible) : api.ts nous
+    // prévient ici → retour à l'état visiteur, proprement, une seule fois.
+    registerSessionExpired(() => {
+      setSession(null);
+      setLoggedView('landing');
+    });
     refresh()
       .then((res) => {
         if (alive && res.ok && res.data?.accessToken) {
           const token = res.data.accessToken;
-          setSession({ accessToken: token, role: roleFromToken(token) });
+          const role = roleFromToken(token);
+          if (role){
+            setSession({ accessToken: token, role });
+          }
+          // role null → token illisible → on reste déconnecté, l'app ne plante pas
         }
       })
       .catch(() => {})
@@ -40,12 +50,14 @@ function App() {
 
 
   const handleLoginSuccess = (accessToken: string, role: Role) => {
+    setAccessToken(accessToken); // api.ts devient porteur du token
     setSession({ accessToken, role });
     setLoggedView('landing'); // après login → accueil, pas directement le dashboard
   };
 
   const handleLogout = () => {
     apiLogout().catch(() => {}); // on tente de révoquer côté serveur, mais on continue même en cas d'échec réseau
+    setAccessToken(null);
     setSession(null);
     setPublicView('landing');
     setLoggedView('landing');
@@ -87,7 +99,6 @@ function App() {
   if (loggedView === 'dashboard' && session.role === 'manager') {
     return (
       <ManagerDashboard
-        accessToken={session.accessToken}
         onLogout={handleLogout}
         onBack={() => setLoggedView('landing')}
       />
@@ -96,14 +107,18 @@ function App() {
   if (loggedView === 'dashboard' && session.role === 'employee') {
     return (
       <EmployeeDashboard
-        accessToken={session.accessToken}
         onLogout={handleLogout}
         onBack={() => setLoggedView('landing')}
       />
     );
   }
-  if (session.role === 'admin') {
-    return <AdminPage accessToken={session.accessToken} onLogout={handleLogout} />;
+  if (loggedView === 'dashboard' && session.role === 'admin') {
+    return (
+      <AdminPage
+        onLogout={handleLogout}
+        onBack={() => setLoggedView('landing')}
+      />
+    );
   }
 
   // Connecté mais sur l'accueil (loggedView === 'landing') : on rend le hub.

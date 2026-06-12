@@ -6,17 +6,18 @@ import {
   loginController,
   logoutController
  } from '../controllers/auth.controller';
+import { requireAuth } from '../middleware/auth.middleware';
+import { refreshLimiter, loginLimiter } from '../lib/rateLimit';
 
 const router = Router();
 
 router.post('/manager/register', registerManagerController);
 router.post('/employee/register', registerUserController);
-router.post('/refresh', refreshController);
-router.post('/login', loginController);
+router.post('/refresh', refreshLimiter, refreshController);
+router.post('/login', loginLimiter, loginController);
 router.post('/logout', logoutController);
 
 
-import { requireAuth } from '../middleware/auth.middleware';
 router.get('/me', requireAuth, (req, res) => {
   res.json({ user: req.user });
 });

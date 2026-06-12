@@ -2,15 +2,16 @@ import { useEffect, useState } from 'react';
 import { listOffers, createOffer, updateOffer, deactivateOffer } from '../services/api';
 import type { Offer, OfferCategory } from '../types/types';
 import './AdminPage.css';
+import Layout from '../components/layout/Layout';
 
-type AdminPageProps = { accessToken: string; onLogout: () => void };
+type AdminPageProps = { onLogout: () => void; onBack: () => void };
 
 const CATEGORIES: OfferCategory[] = ['FOOD', 'SHOPPING', 'CULTURE', 'TRAVEL', 'WELLNESS', 'OTHER'];
 
 // Form vide pour une nouvelle offre.
 const emptyForm = { partnerName: '', cost: '', discountPercent: '', category: 'FOOD' as OfferCategory };
 
-export default function AdminPage({ accessToken, onLogout }: AdminPageProps) {
+export default function AdminPage({ onLogout, onBack }: AdminPageProps) {
   const [offers, setOffers] = useState<Offer[] | null>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
@@ -29,7 +30,7 @@ export default function AdminPage({ accessToken, onLogout }: AdminPageProps) {
     setLoading(true);
     setError('');
     try {
-      const res = await listOffers(accessToken);
+      const res = await listOffers();
       if (res.ok && res.data) {
         setOffers(res.data.offers);
       } else if (res.status === 401) {
@@ -99,8 +100,8 @@ export default function AdminPage({ accessToken, onLogout }: AdminPageProps) {
         category: form.category,
       };
       const res = editingId
-        ? await updateOffer(accessToken, editingId, payload)
-        : await createOffer(accessToken, payload);
+        ? await updateOffer(editingId, payload)
+        : await createOffer(payload);
 
       if (res.ok) {
         flash(editingId ? 'Offre mise à jour.' : 'Offre créée.');
@@ -122,8 +123,8 @@ export default function AdminPage({ accessToken, onLogout }: AdminPageProps) {
     try {
       // Désactivation = soft delete dédié ; réactivation = update isActive.
       const res = offer.isActive
-        ? await deactivateOffer(accessToken, offer.id)
-        : await updateOffer(accessToken, offer.id, { isActive: true });
+        ? await deactivateOffer(offer.id)
+        : await updateOffer(offer.id, { isActive: true });
       if (res.ok) {
         flash(offer.isActive ? 'Offre désactivée.' : 'Offre réactivée.');
         load();
@@ -139,16 +140,20 @@ export default function AdminPage({ accessToken, onLogout }: AdminPageProps) {
   };
 
   return (
+    <Layout
+      title="Admin · Offres"
+      headerActions={
+        <>
+          <button className="app-btn app-btn-primary" type="button" onClick={openCreate}>+ Nouvelle offre</button>
+          <button className="app-btn app-btn-ghost" type="button" onClick={onBack}>
+            ← Accueil
+          </button>
+          <button className="app-btn app-btn-ghost" type="button" onClick={onLogout}>Se déconnecter</button>
+        </>
+      }
+    >
     <div className="admin-wrapper">
       <div className="admin-container">
-        <header className="admin-header">
-          <h1 className="admin-title">Admin · Offres</h1>
-          <div className="admin-header-actions">
-            <button className="admin-btn-primary" onClick={openCreate}>+ Nouvelle offre</button>
-            <button className="admin-btn-ghost" onClick={onLogout}>Se déconnecter</button>
-          </div>
-        </header>
-
         {notice && <p className="admin-notice">{notice}</p>}
 
         {showForm && (
@@ -251,5 +256,6 @@ export default function AdminPage({ accessToken, onLogout }: AdminPageProps) {
         )}
       </div>
     </div>
+    </Layout>
   );
 }
