@@ -2,7 +2,7 @@ import type { Request, Response, NextFunction } from 'express';
 import { Prisma } from '@prisma/client';
 import { AppError } from '../middleware/error.middleware';
 import { createOfferSchema, updateOfferSchema } from '../schemas/offer.schemas';
-import { listOffers, listActiveOffers, getOffer, createOffer, updateOffer, deactivateOffer } from '../services/offer.service';
+import { listOffers, listActiveOffers, getOffer, createOffer, updateOffer, deactivateOffer, getActiveOffer } from '../services/offer.service';
 
 
 export async function listOffersController(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -23,7 +23,9 @@ export async function getOfferController(req: Request, res: Response, next: Next
       next(new AppError(400, 'ID de l\'offre requis.')); 
       return;
     }
-    const offer = await getOffer(String(id));
+    const offer = req.user?.role === 'ADMIN'
+    ? await getOffer(String(id))      // admin : tout, y compris désactivées
+    : await getActiveOffer(String(id)); // public : actives, champs vitrine
     if (!offer) {
       next(new AppError(404, 'Offre non trouvée.'));
       return;
@@ -57,6 +59,7 @@ export async function updateOfferController(req: Request, res: Response, next: N
   } catch (err) {
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
       next(new AppError(404, 'Offre non trouvée.'));
+      return;
     }
     next(err);
   }

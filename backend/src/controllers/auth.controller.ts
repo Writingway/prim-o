@@ -91,6 +91,8 @@ export async function loginController(
     const { accessToken, refreshToken } = await login(input);
     res.cookie('refreshToken', refreshToken, { ...refreshCookieOptions });
     res.status(200).json({ accessToken });
+
+
   } catch (err) {
     if (err instanceof Error && err.message === 'INVALID_CREDENTIALS') {
       next(new AppError(401, 'Email ou mot de passe invalide.'));
