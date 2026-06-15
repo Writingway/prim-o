@@ -13,11 +13,14 @@ import cookieParser from 'cookie-parser';
 import inviteRouter from './routes/invite.routes';
 import offerRouter from './routes/offer.routes';
 import companyRouter from './routes/company.routes';
-import stripeRouter from './routes/stripe.routes';
 
 import adminRouter from './routes/admin.routes';
 import { requireAuth, requireAdmin } from './middleware/auth.middleware';
 import { startTokenCleanup } from './jobs/tokenCleanup';
+
+//stripe
+import stripeRouter from './routes/stripe.routes';
+import { stripeWebhookController } from './controllers/stripeWebhook.controller';
 
 
 const app = express();
@@ -40,9 +43,14 @@ app.use(rateLimit({
   legacyHeaders: false,
   message: { error: 'Trop de requêtes, réessaie dans 1 minute.' },
 }));
+
 // En dev : logs détaillés colorés
 // En prod : format court (économise les logs)
 app.use(morgan(config.NODE_ENV === 'production' ? 'combined' : 'dev'));
+
+// Webhook Stripe : corps BRUT obligatoire (vérif de signature) → AVANT express.json().
+app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), stripeWebhookController);
+
 // 4. Parse JSON
 app.use(express.json());
 // Parser cookies
