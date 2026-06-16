@@ -26,8 +26,8 @@ export async function createCheckoutSession(
       createdById: managerId,
       tokenAmount: String(amount),
     },
-    success_url: `${config.CLIENT_URL}/dashboard?payment=success`,
-    cancel_url: `${config.CLIENT_URL}/dashboard?payment=cancel`,
+    success_url: `${config.CLIENT_URL}/?payment=success`,
+    cancel_url: `${config.CLIENT_URL}/?payment=cancel`,
   });
 
   if (!session.url) {
