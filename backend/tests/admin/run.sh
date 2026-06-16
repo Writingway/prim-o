@@ -62,6 +62,7 @@ ADMIN_ID=$(printf '%s' "$USERS_JSON"  | jq -r '.items[] | select(.role=="ADMIN")
 EMP_ID=$(printf '%s' "$USERS_JSON"    | jq -r '.items[] | select(.role=="EMPLOYEE") | .id' | head -1)
 DEL_EMP_ID=$(printf '%s' "$USERS_JSON"| jq -r '.items[] | select(.role=="EMPLOYEE") | .id' | sed -n '2p')
 TESTCO_ID=$(printf '%s' "$USERS_JSON" | jq -r '[.items[].companyId] | map(select(. != null)) | last')
+CID=$(curl -s "$B/admin/companies" -H "Authorization: Bearer $ADMIN_TOKEN" | jq -r '.items[0].id')
 
 log "# Prim'O — Admin API test report"
 log ""
@@ -95,6 +96,19 @@ req "Reject an employee"                      PATCH  "/admin/users/$EMP_ID"     
 req "Re-approve the same employee"            PATCH  "/admin/users/$EMP_ID"          "$ADMIN_TOKEN" '{"status":"APPROVED"}'
 req "Self-modification blocked -> 400"        PATCH  "/admin/users/$ADMIN_ID"        "$ADMIN_TOKEN" '{"status":"REJECTED"}'
 req "Reject self-delete via guard -> 400"     DELETE "/admin/users/$ADMIN_ID"        "$ADMIN_TOKEN" ""
+
+log "## 4b. Dashboard & companies (reads)"
+req "Dashboard stats"                         GET    "/admin/stats"                  "$ADMIN_TOKEN" ""
+req "List companies (paginated)"              GET    "/admin/companies?page=1&limit=20" "$ADMIN_TOKEN" ""
+req "Get one company by id"                   GET    "/admin/companies/$CID"         "$ADMIN_TOKEN" ""
+req "Company bad UUID -> 400"                 GET    "/admin/companies/not-a-uuid"   "$ADMIN_TOKEN" ""
+req "Company unknown UUID -> 404"             GET    "/admin/companies/00000000-0000-0000-0000-000000000000" "$ADMIN_TOKEN" ""
+req "Create a company"                        POST   "/admin/companies"              "$ADMIN_TOKEN" '{"name":"Doc Test Co"}'
+req "Create company without name -> 400"      POST   "/admin/companies"              "$ADMIN_TOKEN" '{}'
+
+log "## 4c. Audit ledgers (global, read-only)"
+req "List attributions"                       GET    "/admin/attributions?limit=5"   "$ADMIN_TOKEN" ""
+req "List redemptions"                        GET    "/admin/redemptions?limit=5"    "$ADMIN_TOKEN" ""
 
 log "## 5. Company — cascade delete then restore (reversible)"
 req "Soft-delete a company (cascade)"         DELETE "/admin/companies/$TESTCO_ID"   "$ADMIN_TOKEN" ""
