@@ -1,8 +1,18 @@
 import { useEffect, useState } from 'react';
-import { listOffers, createOffer, updateOffer, deactivateOffer } from '../services/api';
-import type { Offer, OfferCategory } from '../types/types';
+import { 
+  listOffers, 
+  createOffer, 
+  updateOffer, 
+  deactivateOffer,
+  getAdminStats
+} from '../services/api';
+import type { Offer, OfferCategory, AdminStats } from '../types/types';
 import './AdminPage.css';
 import Layout from '../components/layout/Layout';
+import { useConfirm } from '../components/ui/ConfirmDialog';
+import AdminUsers from './AdminUsers';
+import AdminCompanies from './AdminCompanies';
+import AdminLedgers from './AdminLedgers';
 
 type AdminPageProps = { onLogout: () => void; onBack: () => void };
 
@@ -12,7 +22,10 @@ const CATEGORIES: OfferCategory[] = ['FOOD', 'SHOPPING', 'CULTURE', 'TRAVEL', 'W
 const emptyForm = { partnerName: '', cost: '', discountPercent: '', category: 'FOOD' as OfferCategory };
 
 export default function AdminPage({ onLogout, onBack }: AdminPageProps) {
+  const { confirm, confirmDialog } = useConfirm();
+  const [tab, setTab] = useState<'offers' | 'users' | 'companies' | 'ledgers'>('offers');
   const [offers, setOffers] = useState<Offer[] | null>(null);
+  const [stats, setStats] = useState<AdminStats | null>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
 
@@ -30,20 +43,22 @@ export default function AdminPage({ onLogout, onBack }: AdminPageProps) {
     setLoading(true);
     setError('');
     try {
-      const res = await listOffers();
-      if (res.ok && res.data) {
-        setOffers(res.data.offers);
-      } else if (res.status === 401) {
+      const [offersRes, statsRes] = await Promise.all([listOffers(), getAdminStats()]);
+      if (offersRes.ok && offersRes.data) {
+        setOffers(offersRes.data.offers);
+      } else if (offersRes.status === 401) {
         setError('Session expirée, reconnecte-toi.');
       } else {
         setError('Impossible de charger les offres.');
       }
+      if (statsRes.ok && statsRes.data) setStats(statsRes.data);
     } catch {
       setError('Impossible de joindre le serveur. Le backend est-il lancé ?');
     } finally {
       setLoading(false);
     }
   };
+
 
   useEffect(() => {
     load();
@@ -120,6 +135,15 @@ export default function AdminPage({ onLogout, onBack }: AdminPageProps) {
   };
 
   const handleToggle = async (offer: Offer) => {
+    const ok = await confirm({
+      title: offer.isActive ? 'Désactiver cette offre ?' : 'Réactiver cette offre ?',
+      message: offer.isActive
+        ? `Désactiver « ${offer.partnerName} » ? Elle ne sera plus visible.`
+        : `Réactiver « ${offer.partnerName} » ?`,
+      confirmLabel: offer.isActive ? 'Désactiver' : 'Réactiver',
+      danger: offer.isActive,
+    });
+    if (!ok) return;
     try {
       // Désactivation = soft delete dédié ; réactivation = update isActive.
       const res = offer.isActive
@@ -141,10 +165,9 @@ export default function AdminPage({ onLogout, onBack }: AdminPageProps) {
 
   return (
     <Layout
-      title="Admin · Offres"
+      title="Admin"
       headerActions={
         <>
-          <button className="app-btn app-btn-primary" type="button" onClick={openCreate}>+ Nouvelle offre</button>
           <button className="app-btn app-btn-ghost" type="button" onClick={onBack}>
             ← Accueil
           </button>
@@ -154,8 +177,64 @@ export default function AdminPage({ onLogout, onBack }: AdminPageProps) {
     >
     <div className="admin-wrapper">
       <div className="admin-container">
+        {stats && (
+          <div className="admin-stats">
+            <div className="admin-stat-card">
+              <span className="admin-stat-value">{stats.companies}</span>
+              <span className="admin-stat-label">Entreprises</span>
+            </div>
+            <div className="admin-stat-card">
+              <span className="admin-stat-value">{stats.users}</span>
+              <span className="admin-stat-label">Utilisateurs</span>
+            </div>
+            <div className="admin-stat-card">
+              <span className="admin-stat-value">{stats.managers}</span>
+              <span className="admin-stat-label">Managers</span>
+            </div>
+          </div>
+        )}
+
         {notice && <p className="admin-notice">{notice}</p>}
 
+        <div className="admin-tabs">
+          <button
+            type="button"
+            className={`admin-tab ${tab === 'offers' ? 'active' : ''}`}
+            onClick={() => setTab('offers')}
+          >
+            Offres
+          </button>
+          <button
+            type="button"
+            className={`admin-tab ${tab === 'users' ? 'active' : ''}`}
+            onClick={() => setTab('users')}
+          >
+            Utilisateurs
+          </button>
+          <button
+            type="button"
+            className={`admin-tab ${tab === 'companies' ? 'active' : ''}`}
+            onClick={() => setTab('companies')}
+          >
+            Entreprises
+          </button>
+          <button
+            type="button"
+            className={`admin-tab ${tab === 'ledgers' ? 'active' : ''}`}
+            onClick={() => setTab('ledgers')}
+          >
+            Registres
+          </button>
+        </div>
+
+        {tab === 'offers' && (
+          <>
+        <div className="admin-offers-bar">
+          <h2 className="admin-section-title">Offres</h2>
+          {!showForm && (
+            <button className="admin-btn-primary" type="button" onClick={openCreate}>+ Nouvelle offre</button>
+          )}
+        </div>
         {showForm && (
           <form className="admin-form" onSubmit={handleSubmit}>
             <h2 className="admin-form-title">{editingId ? "Modifier l'offre" : 'Nouvelle offre'}</h2>
@@ -232,16 +311,16 @@ export default function AdminPage({ onLogout, onBack }: AdminPageProps) {
               <tbody>
                 {offers.map((offer) => (
                   <tr key={offer.id} className={offer.isActive ? '' : 'admin-row-inactive'}>
-                    <td>{offer.partnerName}</td>
-                    <td>{offer.cost}</td>
-                    <td>{offer.discountPercent}%</td>
-                    <td>{offer.category}</td>
-                    <td>
+                    <td data-label="Partenaire">{offer.partnerName}</td>
+                    <td data-label="Coût">{offer.cost}</td>
+                    <td data-label="Réduction">{offer.discountPercent}%</td>
+                    <td data-label="Catégorie">{offer.category}</td>
+                    <td data-label="Statut">
                       <span className={`admin-badge ${offer.isActive ? 'active' : 'inactive'}`}>
                         {offer.isActive ? 'Active' : 'Désactivée'}
                       </span>
                     </td>
-                    <td className="admin-actions">
+                    <td className="admin-actions" data-label="Actions">
                       <button className="admin-btn-link" onClick={() => openEdit(offer)}>Modifier</button>
                       <button className="admin-btn-link" onClick={() => handleToggle(offer)}>
                         {offer.isActive ? 'Désactiver' : 'Réactiver'}
@@ -254,8 +333,15 @@ export default function AdminPage({ onLogout, onBack }: AdminPageProps) {
             </div>
           )
         )}
+          </>
+        )}
+
+        {tab === 'users' && <AdminUsers onFlash={flash} />}
+        {tab === 'companies' && <AdminCompanies onFlash={flash} />}
+        {tab === 'ledgers' && <AdminLedgers />}
       </div>
     </div>
+    {confirmDialog}
     </Layout>
   );
 }

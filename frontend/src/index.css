@@ -28,6 +28,20 @@
   box-sizing: border-box;
 }
 
+/* Garde-fou global : la PAGE ne scrolle jamais horizontalement sur mobile.
+   Les zones larges (tables) scrollent dans leur propre wrapper, pas la page. */
+html, body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* Médias ne dépassent jamais leur conteneur. */
+img, video, canvas, svg {
+  max-width: 100%;
+  height: auto;
+}
+
+
 body {
   margin: 0;
   background: var(--primo-bg);

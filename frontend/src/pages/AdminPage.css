@@ -151,6 +151,7 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
+  min-width: 0;            /* clé : sans ça l'input number force la largeur → overflow-x */
   font-size: 13px;
   font-weight: 500;
   color: var(--primo-gray);
@@ -158,6 +159,8 @@
 
 .admin-form-grid input,
 .admin-form-grid select {
+  width: 100%;
+  min-width: 0;            /* l'input ne dépasse jamais sa colonne */
   padding: 9px 11px;
   border: 1px solid var(--primo-border);
   border-radius: 8px;
@@ -182,6 +185,7 @@
 
 .admin-form-actions {
   display: flex;
+  flex-wrap: wrap;         /* boutons se replient au lieu de déborder */
   gap: 8px;
   margin-top: 16px;
 }
@@ -254,4 +258,201 @@
 
 .admin-table {
   min-width: 560px;
+}
+
+.admin-stats {
+  display: grid;
+  /* auto-fit : les cartes se replient au lieu de déborder.
+     min(100%, 140px) : une carte ne dépasse jamais la largeur dispo. */
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr));
+  gap: 12px;
+  margin-bottom: 1.5rem;
+}
+.admin-stat-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;            /* clé : autorise le rétrécissement sous le contenu */
+  padding: 1.25rem;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+.admin-stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1;
+  overflow-wrap: anywhere; /* gros nombres se cassent au lieu de déborder */
+}
+.admin-stat-label {
+  font-size: 0.85rem;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+/* Onglets Offres / Utilisateurs */
+.admin-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--primo-border);
+}
+.admin-tab {
+  border: none;
+  background: none;
+  padding: 10px 16px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--primo-gray);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+.admin-tab.active {
+  color: var(--primo-teal-dark);
+  border-bottom-color: var(--primo-teal);
+}
+
+/* Barre de filtres (utilisateurs) — se replie, ne déborde jamais */
+.admin-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.admin-filters select,
+.admin-filter-search {
+  min-width: 0;
+  padding: 8px 11px;
+  border: 1px solid var(--primo-border);
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--primo-ink);
+  background: #fff;
+}
+.admin-filter-search {
+  flex: 1 1 200px;   /* prend la place dispo, se rétrécit sans déborder */
+}
+
+.admin-btn-danger {
+  color: var(--primo-error);
+}
+
+/* Création entreprise : champ + bouton en ligne, se replie sur mobile */
+.admin-inline-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.admin-inline-form input {
+  flex: 1 1 220px;
+  min-width: 0;
+  padding: 9px 11px;
+  border: 1px solid var(--primo-border);
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--primo-ink);
+  background: #fff;
+}
+
+/* Sous-onglets des registres (Attributions / Redemptions) */
+.admin-subtabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 16px;
+}
+
+/* Pagination */
+.admin-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 16px;
+}
+.admin-page-info {
+  font-size: 13px;
+  color: var(--primo-gray);
+}
+
+/* Mobile (<560px) : on abandonne le scroll horizontal. Chaque ligne devient
+   une carte empilée (label à gauche via data-label, valeur à droite).
+   Les <td> doivent porter un attribut data-label="…" dans le JSX. */
+@media (max-width: 559px) {
+  .admin-table-scroll {
+    overflow-x: visible;
+  }
+  .admin-table {
+    min-width: 0;          /* annule le 560px → plus de débordement */
+    border: none;
+  }
+  .admin-table thead {
+    display: none;         /* l'en-tête est porté par data-label */
+  }
+  .admin-table,
+  .admin-table tbody,
+  .admin-table tr,
+  .admin-table td {
+    display: block;
+    width: 100%;
+  }
+  .admin-table tr {
+    margin-bottom: 12px;
+    border: 1px solid var(--primo-border);
+    border-radius: 12px;
+    overflow: hidden;
+    background: #fff;
+  }
+  .admin-table td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    text-align: right;
+    border-bottom: 1px solid var(--primo-border);
+  }
+  .admin-table tr td:last-child {
+    border-bottom: none;
+  }
+  .admin-table td::before {
+    content: attr(data-label);
+    flex: 0 0 auto;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    color: var(--primo-gray);
+    text-align: left;
+  }
+  /* Cellule actions : boutons alignés à droite, peuvent se replier */
+  .admin-table td.admin-actions {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+}
+
+/* Barre d'en-tête de la section Offres : titre à gauche, bouton "Nouvelle
+   offre" à droite (déplacé depuis le header global). */
+.admin-offers-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.admin-section-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #1a1a1f;
 }
