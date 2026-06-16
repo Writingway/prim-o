@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { safeText } from '../lib/validation';
 
 export const createAttributionSchema = z.object({
-  employeeId: z.string().uuid(),
+  employeeId: z.uuid(),
   amount:     z.number().int().positive(),
   reason:     safeText(1),
 });

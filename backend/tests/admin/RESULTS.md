@@ -39,30 +39,6 @@ curl -X GET "http://localhost:4000/api/admin/users" \
       "createdAt": "2026-06-05T13:24:50.100Z"
     },
     {
-      "id": "5a6512ed-eab2-4ca2-bc4a-45afd612829a",
-      "email": "marie.martin@acme.fr",
-      "role": "EMPLOYEE",
-      "status": "APPROVED",
-      "firstName": "Marie",
-      "lastName": "Martin",
-      "balance": 50,
-      "isEmailVerified": true,
-      "companyId": "44c6c786-b910-402a-8c69-6202ff6c4d89",
-      "createdAt": "2026-06-03T11:38:21.891Z"
-    },
-    {
-      "id": "d8d5394c-a845-43a6-99fb-45cd50e348f7",
-      "email": "jean.dupont@acme.fr",
-      "role": "EMPLOYEE",
-      "status": "APPROVED",
-      "firstName": "Jean",
-      "lastName": "Dupont",
-      "balance": 30,
-      "isEmailVerified": true,
-      "companyId": "44c6c786-b910-402a-8c69-6202ff6c4d89",
-      "createdAt": "2026-06-03T11:38:21.641Z"
-    },
-    {
       "id": "31a9280a-2956-4cf2-b9a9-8347bdbbfa07",
       "email": "test@testco.fr",
       "role": "MANAGER",
@@ -99,7 +75,7 @@ curl -X GET "http://localhost:4000/api/admin/users" \
       "createdAt": "2026-06-03T11:38:20.866Z"
     }
   ],
-  "total": 6,
+  "total": 4,
   "page": 1,
   "hasMore": false
 }
@@ -333,6 +309,263 @@ curl -X DELETE "http://localhost:4000/api/admin/users/f959328b-262d-4860-b94d-62
 }
 ```
 
+## 4b. Dashboard & companies (reads)
+### Dashboard stats
+
+```bash
+curl -X GET "http://localhost:4000/api/admin/stats" \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+**→ HTTP 200**
+
+```json
+{
+  "companies": 4,
+  "users": 4,
+  "managers": 2
+}
+```
+
+### List companies (paginated)
+
+```bash
+curl -X GET "http://localhost:4000/api/admin/companies?page=1&limit=20" \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+**→ HTTP 200**
+
+```json
+{
+  "items": [
+    {
+      "id": "4e31a724-8cda-49bf-a4b1-e67fdf93aa2c",
+      "name": "Doc Test Co",
+      "tokenBalance": 0,
+      "createdAt": "2026-06-15T13:59:34.346Z",
+      "_count": {
+        "users": 0
+      }
+    },
+    {
+      "id": "7e11304b-e7e7-4cb9-9fb8-d3301599f577",
+      "name": "Nouvelle Entreprise",
+      "tokenBalance": 0,
+      "createdAt": "2026-06-15T13:39:50.524Z",
+      "_count": {
+        "users": 0
+      }
+    },
+    {
+      "id": "1b5667d8-999e-4f03-a050-0dd8a992e404",
+      "name": "TestCo",
+      "tokenBalance": 200,
+      "createdAt": "2026-06-03T11:38:20.877Z",
+      "_count": {
+        "users": 1
+      }
+    },
+    {
+      "id": "44c6c786-b910-402a-8c69-6202ff6c4d89",
+      "name": "Acme",
+      "tokenBalance": 420,
+      "createdAt": "2026-06-03T11:38:20.872Z",
+      "_count": {
+        "users": 4
+      }
+    }
+  ],
+  "total": 4,
+  "page": 1,
+  "hasMore": false
+}
+```
+
+### Get one company by id
+
+```bash
+curl -X GET "http://localhost:4000/api/admin/companies/4e31a724-8cda-49bf-a4b1-e67fdf93aa2c" \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+**→ HTTP 200**
+
+```json
+{
+  "company": {
+    "id": "4e31a724-8cda-49bf-a4b1-e67fdf93aa2c",
+    "name": "Doc Test Co",
+    "tokenBalance": 0,
+    "createdAt": "2026-06-15T13:59:34.346Z",
+    "_count": {
+      "users": 0
+    }
+  }
+}
+```
+
+### Company bad UUID -> 400
+
+```bash
+curl -X GET "http://localhost:4000/api/admin/companies/not-a-uuid" \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+**→ HTTP 400**
+
+```json
+{
+  "error": "Données invalides.",
+  "details": [
+    {
+      "origin": "string",
+      "code": "invalid_format",
+      "format": "uuid",
+      "pattern": "/^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$/",
+      "path": [],
+      "message": "Invalid UUID"
+    }
+  ]
+}
+```
+
+### Company unknown UUID -> 404
+
+```bash
+curl -X GET "http://localhost:4000/api/admin/companies/00000000-0000-0000-0000-000000000000" \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+**→ HTTP 404**
+
+```json
+{
+  "error": "Entreprise introuvable."
+}
+```
+
+### Create a company
+
+```bash
+curl -X POST "http://localhost:4000/api/admin/companies" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Doc Test Co"}'
+```
+
+**→ HTTP 201**
+
+```json
+{
+  "company": {
+    "id": "73e0f8ee-eecd-40ed-b443-8a6c27209cb1",
+    "name": "Doc Test Co",
+    "tokenBalance": 0,
+    "createdAt": "2026-06-15T14:02:00.802Z"
+  }
+}
+```
+
+### Create company without name -> 400
+
+```bash
+curl -X POST "http://localhost:4000/api/admin/companies" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+
+**→ HTTP 400**
+
+```json
+{
+  "error": "Données invalides.",
+  "details": [
+    {
+      "expected": "string",
+      "code": "invalid_type",
+      "path": [
+        "name"
+      ],
+      "message": "Invalid input: expected string, received undefined"
+    }
+  ]
+}
+```
+
+## 4c. Audit ledgers (global, read-only)
+### List attributions
+
+```bash
+curl -X GET "http://localhost:4000/api/admin/attributions?limit=5" \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+**→ HTTP 200**
+
+```json
+{
+  "items": [
+    {
+      "id": "793ff1c1-d236-473e-8b5a-f256b9eb7c98",
+      "amount": 30,
+      "reason": "Excellent travail sur le projet client Q1",
+      "createdAt": "2026-06-03T11:38:21.897Z",
+      "company": {
+        "name": "Acme"
+      },
+      "manager": {
+        "firstName": "Boss",
+        "lastName": "Acme"
+      },
+      "employee": {
+        "firstName": "Jean",
+        "lastName": "Dupont"
+      }
+    },
+    {
+      "id": "aabd5e96-7421-4732-ab98-9fbd67056cfa",
+      "amount": 50,
+      "reason": "Dépassement des objectifs de vente",
+      "createdAt": "2026-06-03T11:38:21.897Z",
+      "company": {
+        "name": "Acme"
+      },
+      "manager": {
+        "firstName": "Boss",
+        "lastName": "Acme"
+      },
+      "employee": {
+        "firstName": "Marie",
+        "lastName": "Martin"
+      }
+    }
+  ],
+  "total": 2,
+  "page": 1,
+  "hasMore": false
+}
+```
+
+### List redemptions
+
+```bash
+curl -X GET "http://localhost:4000/api/admin/redemptions?limit=5" \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+**→ HTTP 200**
+
+```json
+{
+  "items": [],
+  "total": 0,
+  "page": 1,
+  "hasMore": false
+}
+```
+
 ## 5. Company — cascade delete then restore (reversible)
 ### Soft-delete a company (cascade)
 
@@ -346,7 +579,7 @@ curl -X DELETE "http://localhost:4000/api/admin/companies/44c6c786-b910-402a-8c6
 ```json
 {
   "companyId": "44c6c786-b910-402a-8c69-6202ff6c4d89",
-  "usersDeleted": 4
+  "usersDeleted": 2
 }
 ```
 
@@ -362,7 +595,7 @@ curl -X POST "http://localhost:4000/api/admin/companies/44c6c786-b910-402a-8c69-
 ```json
 {
   "companyId": "44c6c786-b910-402a-8c69-6202ff6c4d89",
-  "usersRestored": 4
+  "usersRestored": 2
 }
 ```
 
@@ -370,15 +603,22 @@ curl -X POST "http://localhost:4000/api/admin/companies/44c6c786-b910-402a-8c69-
 ### Soft-delete an employee
 
 ```bash
-curl -X DELETE "http://localhost:4000/api/admin/users/5a6512ed-eab2-4ca2-bc4a-45afd612829a" \
+curl -X DELETE "http://localhost:4000/api/admin/users/" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
-**→ HTTP 200**
+**→ HTTP 404**
 
 ```json
-{
-  "id": "5a6512ed-eab2-4ca2-bc4a-45afd612829a"
-}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Error</title>
+</head>
+<body>
+<pre>Cannot DELETE /api/admin/users/</pre>
+</body>
+</html>
 ```
 

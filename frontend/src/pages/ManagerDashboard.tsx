@@ -12,6 +12,7 @@ import {
 import type { Employee, Company, AttributionHistory } from '../types/types';
 import './ManagerDashboard.css';
 import Layout from '../components/layout/Layout';
+import { useConfirm } from '../components/ui/ConfirmDialog';
 
 type ManagerDashboardProps = {
   onLogout: () => void;
@@ -26,6 +27,7 @@ const formatDate = (iso: string) =>
 
 // Dashboard employeur : liste des employés de son entreprise (lecture seule).
 export default function ManagerDashboard({ onLogout, onBack }: ManagerDashboardProps) {
+  const { confirm, confirmDialog } = useConfirm();
   const [employees, setEmployees] = useState<Employee[] | null>(null);
   const [company, setCompany] = useState<Company | null>(null);
   const [attributions, setAttributions] = useState<AttributionHistory[]>([]);
@@ -72,9 +74,13 @@ export default function ManagerDashboard({ onLogout, onBack }: ManagerDashboardP
   };
 
   const handleDelete = async (e: Employee) => {
-    if (!window.confirm(`Supprimer ${e.firstName} ${e.lastName} ? Son historique est conservé.`)) {
-      return;
-    }
+    const ok = await confirm({
+      title: 'Supprimer cet employé ?',
+      message: `Supprimer ${e.firstName} ${e.lastName} ? Son historique est conservé.`,
+      confirmLabel: 'Supprimer',
+      danger: true,
+    });
+    if (!ok) return;
     setDeletingId(e.id);
     try {
       const res = await deleteEmployee(e.id);
@@ -340,6 +346,7 @@ export default function ManagerDashboard({ onLogout, onBack }: ManagerDashboardP
         )}
       </div>
     </div>
+    {confirmDialog}
     </Layout>
   );
 }
