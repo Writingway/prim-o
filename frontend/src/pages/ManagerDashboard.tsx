@@ -7,6 +7,7 @@ import {
   generateInviteCode,
   createAttribution,
   approveEmployee as apiApproveEmployee,
+  createCheckout,
   logout as apiLogout,
 } from '../services/api';
 import type { Employee, Company, AttributionHistory } from '../types/types';
@@ -36,6 +37,12 @@ export default function ManagerDashboard({ onLogout, onBack }: ManagerDashboardP
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [inviteCode, setInviteCode] = useState<string | null>(null);
   const [inviteError, setInviteError] = useState('');
+
+  // Recharge du pool via Stripe.
+  const [rechargeAmount, setRechargeAmount] = useState('');
+  const [rechargeError, setRechargeError] = useState('');
+  const [recharging, setRecharging] = useState(false);
+  const [paymentNotice, setPaymentNotice] = useState<'success' | 'cancel' | null>(null);
 
   // Formulaire d'attribution inline : un seul ouvert à la fois.
   const [attribOpenId, setAttribOpenId] = useState<string | null>(null);
@@ -125,6 +132,45 @@ export default function ManagerDashboard({ onLogout, onBack }: ManagerDashboardP
       setInviteError('Impossible de joindre le serveur.');
     }
   };
+
+  const handleRecharge = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setRechargeError('');
+    const amount = Number(rechargeAmount);
+    if (!Number.isInteger(amount) || amount <= 0) {
+      setRechargeError('Le montant doit être un entier positif.');
+      return;
+    }
+    setRecharging(true);
+    try {
+      const res = await createCheckout(amount);
+      if (res.ok && res.data?.url) {
+        window.location.href = res.data.url; // on quitte le SPA pour la page Stripe
+      } else if (res.status === 401) {
+        setRechargeError('Session expirée, reconnecte-toi.');
+      } else {
+        setRechargeError('Impossible de démarrer le paiement.');
+      }
+    } catch {
+      setRechargeError('Impossible de joindre le serveur.');
+    } finally {
+      setRecharging(false);
+    }
+  };
+
+  // Retour de Stripe : lit ?payment=success|cancel, affiche un message,
+  // nettoie l'URL, et recharge le solde (le webhook crédite en ~1-2 s).
+  useEffect(() => {
+    const payment = new URLSearchParams(window.location.search).get('payment');
+    if (payment === 'success' || payment === 'cancel') {
+      setPaymentNotice(payment);
+      window.history.replaceState({}, '', window.location.pathname);
+      if (payment === 'success') {
+        setTimeout(() => { load(); }, 1500);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const openAttrib = (id: string) => {
     setAttribOpenId(id);
@@ -218,6 +264,28 @@ export default function ManagerDashboard({ onLogout, onBack }: ManagerDashboardP
             Générer un code d'invitation
           </button>
         </div>
+
+        {paymentNotice === 'success' && (
+          <div className="dash-msg">✅ Paiement réussi ! Ton pool va être crédité dans un instant.</div>
+        )}
+        {paymentNotice === 'cancel' && (
+          <div className="dash-msg dash-error">Paiement annulé.</div>
+        )}
+
+        <form className="dash-recharge" onSubmit={handleRecharge}>
+          <input
+            type="number"
+            min="1"
+            step="1"
+            placeholder="Nb de tokens"
+            value={rechargeAmount}
+            onChange={(e) => setRechargeAmount(e.target.value)}
+          />
+          <button className="dash-invite" type="submit" disabled={recharging}>
+            {recharging ? '…' : '💳 Recharger le pool'}
+          </button>
+          {rechargeError && <p className="dash-msg dash-error">{rechargeError}</p>}
+        </form>
 
         {inviteCode && (
           <div className="dash-msg">
