@@ -108,13 +108,19 @@ Au moment de l'inscription, une case de consentement a été ajoutée au formula
 
 Enfin, l'analyse des cookies a été faite : Prim'O n'utilise qu'un seul cookie, le cookie de session `httpOnly` servant à l'authentification. Étant strictement nécessaire au fonctionnement du service, il est exempté de consentement (lignes directrices CNIL / directive ePrivacy) et ne requiert donc aucun bandeau. Aucun cookie de mesure d'audience ou de publicité n'est posé ; un bandeau de consentement ne deviendra obligatoire que si de tels outils sont ajoutés un jour.
 
+## Partie C — documentation organisationnelle
+
+Le registre des activités de traitement (article 30) a été rédigé dans un fichier dédié, `Documentation/registre-traitements.md`. Il recense les quatre traitements identifiés dans Prim'O — gestion des comptes, authentification et sécurité, attribution et utilisation des récompenses, gestion des entreprises clientes — avec pour chacun la finalité, la base légale, les personnes et les données concernées, les destinataires, la durée de conservation et les mesures de sécurité. Comme pour les pages légales, les informations relevant de décisions officielles (identité de la société, hébergeur, transferts hors UE) sont laissées en `[À COMPLÉTER]`. Ce registre est volontairement tenu dans le dépôt à ce stade ; il pourra être migré vers un tableur partagé ou un outil de conformité dédié quand l'organisation grandira. À terme, Prim'O devra aussi tenir un registre en tant que sous-traitant (article 30.2), puisqu'elle traite les données des salariés pour le compte des entreprises clientes.
+
+La politique de conservation (article 5) est intégrée à ce registre. La règle retenue pour les comptes inactifs est l'anonymisation après trois ans d'inactivité. Cette règle est documentée dès maintenant ; son application automatique — un champ `lastLoginAt`, une migration et un job planifié sur le modèle de `tokenCleanup` — est reportée à un moment ultérieur, de préférence après synchronisation avec `develop` pour éviter un conflit sur `schema.prisma`. Le job réutilisera la fonction `anonymizeUser` de la partie A.
+
 ## Ce qu'il reste à faire
 
 La partie A est terminée : les quatre droits self-service (accès, portabilité, rectification, effacement) sont implémentés, stylés et testés. Le seul report assumé est la vraie vérification d'email par lien (création du token, envoi et route de consommation), regroupée avec l'intégration de Brevo ; en attendant, la rectification d'email reste fonctionnelle et sans verrouillage grâce au comportement rôle-dépendant décrit plus haut.
 
 La partie B est terminée côté code (pages légales, navigation, consentement, analyse des cookies). Il reste une tâche non technique : remplir tous les marqueurs `[À COMPLÉTER]` des pages légales avec les informations officielles de la société (raison sociale, SIRET, adresse, hébergeur, email de contact RGPD, ressort des tribunaux), idéalement après relecture juridique.
 
-La partie C reste également à faire : rédiger le registre des activités de traitement (article 30) et définir une politique de conservation précise (article 5), par exemple l'anonymisation automatique des comptes inactifs après un certain nombre d'années.
+La partie C est faite côté documentation : le registre des traitements existe et la politique de conservation est définie (anonymisation des comptes inactifs après trois ans). Reste à coder le job qui l'applique — champ `lastLoginAt`, migration et tâche planifiée — idéalement après synchronisation avec `develop`.
 
 Enfin, de façon transverse, il faudra valider que le site impose bien HTTPS en production (article 32) et vérifier que les journaux applicatifs ne contiennent pas de données personnelles sensibles.
 

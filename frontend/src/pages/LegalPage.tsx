@@ -53,11 +53,13 @@ function PrivacyPolicy() {
 
       <h2>5. Combien de temps conservons-nous vos données ?</h2>
       <p>
-        Vos données de compte sont conservées tant que votre compte est actif. À sa
-        suppression, vos données identifiantes sont anonymisées. Les écritures liées aux
-        récompenses sont conservées de façon anonymisée pour répondre à nos obligations
-        comptables (jusqu'à 10 ans).
+        Vos données de compte sont conservées tant que votre compte est actif. Un compte
+        resté inactif pendant 3 ans est anonymisé. À la suppression de votre compte, vos
+        données identifiantes sont également anonymisées. Les écritures liées aux récompenses
+        sont conservées de façon anonymisée pour répondre à nos obligations comptables
+        (jusqu'à 10 ans).
       </p>
+
 
       <h2>6. Vos droits</h2>
       <p>
