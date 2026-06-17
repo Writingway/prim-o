@@ -14,6 +14,7 @@ import inviteRouter from './routes/invite.routes';
 import offerRouter from './routes/offer.routes';
 import companyRouter from './routes/company.routes';
 import adminRouter from './routes/admin.routes';
+import privacyRouter from './routes/privacy.routes';
 import { requireAuth, requireAdmin } from './middleware/auth.middleware';
 import { startTokenCleanup } from './jobs/tokenCleanup';
 
@@ -51,6 +52,7 @@ app.get('/health', (req, res) => {
 });
 
 app.use('/api/auth', authRouter);
+app.use('/api/me', privacyRouter);
 app.use('/api/employees', employeeRouter);
 app.use('/api/attributions', attributionRouter);
 app.use('/api/invites', inviteRouter);

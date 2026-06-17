@@ -12,6 +12,7 @@ import {
 import type { Employee, Company, AttributionHistory } from '../types/types';
 import './ManagerDashboard.css';
 import Layout from '../components/layout/Layout';
+import PrivacySection from '../components/privacy/PrivacySection';
 
 type ManagerDashboardProps = {
   onLogout: () => void;
@@ -338,6 +339,7 @@ export default function ManagerDashboard({ onLogout, onBack }: ManagerDashboardP
             )}
           </section>
         )}
+        {!loading && <PrivacySection onAccountDeleted={onLogout} />}
       </div>
     </div>
     </Layout>

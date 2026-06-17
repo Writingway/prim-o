@@ -236,6 +236,24 @@ export function getEmployeeSpent(page = 1, limit = 10) {
   }>;
 }
 
+// ─── RGPD : données personnelles de l'utilisateur connecté ───────
+
+// Export de toutes mes données (art. 15 & 20). Le backend renvoie un JSON ;
+// c'est le composant qui en fait un fichier téléchargeable (étape 2).
+export function exportMyData() {
+  return authRequest('GET', '/me/export') as Promise<{
+    ok: boolean;
+    status: number;
+    data: Record<string, unknown> | null;
+  }>;
+}
+
+// Suppression (anonymisation) de mon compte, confirmée par mot de passe (art. 17).
+// 204 attendu en succès ; 401 si le mot de passe est incorrect.
+export function deleteMyAccount(password: string) {
+  return authRequest('DELETE', '/me', { password });
+}
+
 // Génère un code d'invitation (manager connecté).
 // Aucun body : le code est créé côté serveur avec les défauts backend.
 export function generateInviteCode() {
