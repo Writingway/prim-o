@@ -155,6 +155,8 @@ model CompanyTokenPurchase {
   companyId   String   @db.Uuid
   createdById String   @db.Uuid              // l'ADMIN qui a crédité
   createdAt   DateTime @default(now())
+  stripeSessionId String?  @unique   // id de la session Stripe (cs_...) — garantit l'idempotence
+
 
   company   Company @relation(fields: [companyId], references: [id])
   createdBy User    @relation("PurchaseCreatedBy", fields: [createdById], references: [id])

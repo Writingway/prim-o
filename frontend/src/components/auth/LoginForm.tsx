@@ -28,9 +28,9 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
       const res = await login(form);
 
       if (res.ok) {
-        const accessToken = res.data.accessToken;
-        const role = roleFromToken(accessToken);
-        if (!role) {
+        const accessToken = res.data?.accessToken;
+        const role = accessToken ? roleFromToken(accessToken) : null;
+        if (!accessToken || !role) {
           setError('Token illisible, impossible de déterminer le rôle.');
           setLoading(false);
           return;

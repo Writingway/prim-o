@@ -9,6 +9,8 @@ export default defineConfig({
     // strictPort : échoue clairement au lieu de glisser sur un autre port en douce.
     port: 5180,
     strictPort: true,
+    host: true,
+    allowedHosts: ['.trycloudflare.com', '.trycloudflare.com'],
     // Proxy : les appels du front vers /api sont transmis au backend (port 4000).
     // Le navigateur ne parle qu'au front → règle les soucis WSL/CORS en dev.
     proxy: {

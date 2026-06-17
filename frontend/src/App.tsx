@@ -49,6 +49,10 @@ function App() {
           const role = roleFromToken(token);
           if (role){
             setSession({ accessToken: token, role });
+            // Retour d'un paiement Stripe → ouvrir directement le dashboard.
+            if (new URLSearchParams(window.location.search).get('payment')) {
+              setLoggedView('dashboard');
+            }
           }
           // role null → token illisible → on reste déconnecté, l'app ne plante pas
         }

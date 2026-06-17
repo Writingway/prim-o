@@ -1,6 +1,8 @@
 import type { Request, Response, NextFunction } from 'express';
 import { verifyAccessToken } from '../lib/token';
 import { AppError } from './error.middleware';
+import { prisma } from '../lib/db';
+
 
 export function requireAuth(req: Request, res: Response, next: NextFunction): void {
   const header = req.headers.authorization;
@@ -45,10 +47,24 @@ export function optionalAuth(req: Request, _res: Response, next: NextFunction): 
   next();
 }
 
-export function requireAdmin(req: Request, res: Response, next: NextFunction): void {
+export async function requireAdmin(req: Request, res: Response, next: NextFunction): Promise<void> {
+  // Token says ADMIN, but role/status can change mid-session. The 15-min
+  // access token would otherwise honor a stale role. Re-check live.
   if (req.user?.role !== 'ADMIN') {
     next(new AppError(403, 'Accès réservé aux administrateurs.'));
     return;
   }
-  next(); // route accessible aux admins
+  try {
+    const user = await prisma.user.findFirst({
+      where: { id: req.user.id, deletedAt: null },
+      select: { role: true, status: true },
+    });
+    if (!user || user.role !== 'ADMIN' || user.status !== 'APPROVED') {
+      next(new AppError(403, 'Accès réservé aux administrateurs.'));
+      return;
+    }
+    next();
+  } catch (err) {
+    next(err);
+  }
 }
