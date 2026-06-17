@@ -4,13 +4,27 @@ import AuthPage from './pages/AuthPage';
 import ManagerDashboard from './pages/ManagerDashboard';
 import EmployeeDashboard from './pages/EmployeeDashboard';
 import AdminPage from './pages/AdminPage';
+import LegalPage, { type LegalPageKey } from './pages/LegalPage';
 import type { AuthSession, Role, Mode } from './types/types';
 import { refresh, roleFromToken, logout as apiLogout, setAccessToken, registerSessionExpired } from './services/api';
 
+// Lit la page légale depuis le hash de l'URL (#privacy, #mentions, #cgu).
+function legalFromHash(): LegalPageKey | null {
+  const h = window.location.hash.replace('#', '');
+  return h === 'privacy' || h === 'mentions' || h === 'cgu' ? h : null;
+}
 
 function App() {
   // Session connectée gardée en mémoire, ou null si déconnecté.
   const [session, setSession] = useState<AuthSession | null>(null);
+  const [legalPage, setLegalPage] = useState<LegalPageKey | null>(legalFromHash);
+
+  useEffect(() => {
+    const onHash = () => setLegalPage(legalFromHash());
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
+  }, []);
+
   const [booting, setBooting] = useState(true); // true tant que le refresh n'a pas répondu
   // Visiteur non connecté : page d'accueil (hub) ou page d'auth.
   const [publicView, setPublicView] = useState<'landing' | 'auth'>('landing');
@@ -62,6 +76,11 @@ function App() {
     setPublicView('landing');
     setLoggedView('landing');
   };
+
+    // Pages légales : affichées par-dessus tout (connecté ou non) via le hash.
+  if (legalPage) {
+    return <LegalPage page={legalPage} onBack={() => { window.location.hash = ''; }} />;
+  }
 
   // Booting : on attend la réponse du refresh pour savoir si on est connecté ou pas. 
   if (booting) {

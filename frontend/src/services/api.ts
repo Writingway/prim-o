@@ -254,6 +254,24 @@ export function deleteMyAccount(password: string) {
   return authRequest('DELETE', '/me', { password });
 }
 
+// RGPD : profil de l'utilisateur connecté (pré-remplit la rectification).
+export function getMyProfile() {
+  return authRequest('GET', '/me') as Promise<{
+    ok: boolean;
+    status: number;
+    data: { profile: { email: string; firstName: string | null; lastName: string | null; role: string; isEmailVerified: boolean } } | null;
+  }>;
+}
+
+// RGPD : rectification du profil (art. 16). N'envoie que les champs modifiés.
+export function updateMyProfile(payload: { firstName?: string; lastName?: string; email?: string }) {
+  return authRequest('PATCH', '/me', payload) as Promise<{
+    ok: boolean;
+    status: number;
+    data: { profile: { email: string; firstName: string | null; lastName: string | null; isEmailVerified: boolean } } | { error: string } | null;
+  }>;
+}
+
 // Génère un code d'invitation (manager connecté).
 // Aucun body : le code est créé côté serveur avec les défauts backend.
 export function generateInviteCode() {

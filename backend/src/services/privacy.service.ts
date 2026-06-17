@@ -1,7 +1,6 @@
 import bcrypt from 'bcrypt'
 import type { Prisma } from '@prisma/client'
 import { prisma } from '../lib/db';
-import { generateRefreshToken } from '../lib/token';
 import type { UpdateProfileInput } from '../schemas/privacy.schemas';
 
 // ============================================================
@@ -139,7 +138,7 @@ export async function anonymizeUser(tx: Prisma.TransactionClient, userId: string
 export async function updateOwnProfile(userId: string, input: UpdateProfileInput) {
   const user = await prisma.user.findFirst({
     where: { id: userId, deletedAt: null },
-    select: { id: true, email: true },
+    select: { id: true, email: true, role: true },
   });
   if (!user) {
     throw new Error('USER_NOT_FOUND');
@@ -151,7 +150,6 @@ export async function updateOwnProfile(userId: string, input: UpdateProfileInput
   if (input.lastName !== undefined) data.lastName = input.lastName;
 
   // Email : seulement s'il est fourni ET différent de l'actuel.
-  let emailChanged = false;
   if (input.email !== undefined && input.email !== user.email) {
     const newEmail = input.email; // ici TS sait que c'est bien un string
     const taken = await prisma.user.findFirst({
@@ -161,34 +159,27 @@ export async function updateOwnProfile(userId: string, input: UpdateProfileInput
     if (taken) throw new Error('EMAIL_TAKEN');
 
     data.email = newEmail;
-    data.isEmailVerified = false; // l'email change → doit être re-vérifié
-    emailChanged = true;
+    // Un EMPLOYÉ qui change d'email doit être re-validé par son manager
+    // (le bouton « Approuver » repassera isEmailVerified à true). Pour un
+    // MANAGER, on ne touche pas au drapeau : il n'a pas d'off-ramp et serait
+    // bloqué au login. La vraie vérification par lien viendra avec Brevo.
+    if (user.role === 'EMPLOYEE') {
+      data.isEmailVerified = false;
+    }
   }
 
-  // Transaction : mise à jour du profil + (si email changé) création du
-  // token de re-vérification. L'envoi réel viendra avec Brevo.
-  const updated = await prisma.$transaction(async (tx) => {
-    const u = await tx.user.update({
-      where: { id: userId },
-      data,
-      select: {
-        id: true, email: true, firstName: true, lastName: true,
-        role: true, isEmailVerified: true,
-      },
-    });
-
-    if (emailChanged) {
-      const { hash } = generateRefreshToken();
-      await tx.emailVerificationToken.create({
-        data: { userId, tokenHash: hash, expiresAt: new Date(Date.now() + 86_400_000) },
-      });
-    }
-
-    return u;
+  const updated = await prisma.user.update({
+    where: { id: userId },
+    data,
+    select: {
+      id: true, email: true, firstName: true, lastName: true,
+      role: true, isEmailVerified: true,
+    },
   });
 
   return updated;
 }
+
 
 // Suppression self-service : exige le mot de passe en confirmation
 // d'une action irréversible.
@@ -209,4 +200,17 @@ export async function deleteOwnAccount(userId: string, password: string): Promis
   await prisma.$transaction(async (tx) => {
     await anonymizeUser(tx, userId);
   });
+}
+
+// Profil de l'utilisateur connecté (pour pré-remplir la rectification).
+// Ne renvoie jamais passwordHash.
+export async function getMyProfile(userId: string) {
+  const user = await prisma.user.findFirst({
+    where: { id: userId, deletedAt: null },
+    select: { id: true, email: true, firstName: true, lastName: true, role: true, isEmailVerified: true },
+  });
+  if (!user) {
+    throw new Error('USER_NOT_FOUND');
+  }
+  return user;
 }

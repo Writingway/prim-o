@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
 import { AppError } from '../middleware/error.middleware';
 import { deleteAccountSchema, updateProfileSchema } from '../schemas/privacy.schemas';
-import { exportUserData, deleteOwnAccount, updateOwnProfile } from '../services/privacy.service';
+import { exportUserData, deleteOwnAccount, updateOwnProfile, getMyProfile } from '../services/privacy.service';
 
 // GET /api/me/export — l'utilisateur connecté télécharge toutes ses
 // données personnelles (RGPD art. 15 & 20). L'id vient du JWT, jamais
@@ -94,6 +94,29 @@ export async function updateMyProfileController(
         next(new AppError(409, 'Cet email est déjà utilisé.'));
         return;
       }
+    }
+    next(err);
+  }
+}
+
+// GET /api/me — profil de l'utilisateur connecté.
+export async function getMyProfileController(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      next(new AppError(401, 'Non authentifié.'));
+      return;
+    }
+    const profile = await getMyProfile(userId);
+    res.status(200).json({ profile });
+  } catch (err) {
+    if (err instanceof Error && err.message === 'USER_NOT_FOUND') {
+      next(new AppError(404, 'Utilisateur introuvable.'));
+      return;
     }
     next(err);
   }

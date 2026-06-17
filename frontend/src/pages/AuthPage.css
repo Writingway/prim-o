@@ -156,3 +156,22 @@
   font-size: 14px;
   text-align: center;
 }
+
+.auth-consent {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+  color: #4b5563;
+  text-align: left;
+}
+
+.auth-consent input {
+  width: auto;        /* sinon la checkbox hérite de la largeur 100% des inputs */
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.auth-consent a {
+  color: #00a19a;
+}

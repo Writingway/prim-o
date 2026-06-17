@@ -9,6 +9,7 @@ import type { ReceivedToken, SpentToken } from '../types/types';
 import './EmployeeDashboard.css';
 import Layout from '../components/layout/Layout';
 import PrivacySection from '../components/privacy/PrivacySection';
+import EditProfile from '../components/privacy/EditProfile';
 
 
 type EmployeeDashboardProps = {
@@ -197,6 +198,7 @@ export default function EmployeeDashboard({ onLogout, onBack }: EmployeeDashboar
             </section>
           </>
         )}
+        {!loading && <EditProfile />}        
         {!loading && <PrivacySection onAccountDeleted={onLogout} />}
       </div>
     </div>

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { exportMyData, deleteMyAccount } from '../../services/api';
+import './privacy.css';
 
 type PrivacySectionProps = {
   // Appelé après une suppression réussie : le parent doit clore la session
@@ -25,7 +26,7 @@ export default function PrivacySection({ onAccountDeleted }: PrivacySectionProps
     try {
       const res = await exportMyData();
       if (!res.ok || !res.data) {
-        setExportError("Impossible de récupérer tes données. Réessaie.");
+        setExportError('Impossible de récupérer tes données. Réessaie.');
         return;
       }
       const blob = new Blob([JSON.stringify(res.data, null, 2)], { type: 'application/json' });
@@ -68,40 +69,42 @@ export default function PrivacySection({ onAccountDeleted }: PrivacySectionProps
       <h2 className="emp-dash-section-title">Mes données personnelles</h2>
 
       {/* Export (RGPD art. 15 & 20) */}
-      <p className="emp-dash-muted">
+      <p className="priv-help">
         Tu peux télécharger l'ensemble des données que nous détenons sur toi.
       </p>
-      <button className="app-btn" type="button" onClick={handleExport} disabled={exporting}>
+      <button className="priv-btn priv-btn-primary" type="button" onClick={handleExport} disabled={exporting}>
         {exporting ? 'Préparation…' : 'Télécharger mes données'}
       </button>
-      {exportError && <p className="emp-dash-error">{exportError}</p>}
+      {exportError && <p className="priv-msg-error">{exportError}</p>}
+
+      <hr className="priv-divider" />
 
       {/* Suppression (RGPD art. 17) */}
-      <hr style={{ margin: '1.5rem 0', opacity: 0.2 }} />
-      <p className="emp-dash-muted">
+      <p className="priv-help">
         La suppression de ton compte est <strong>définitive</strong> : tes informations
         personnelles seront effacées. Cette action est irréversible.
       </p>
 
       {!confirming ? (
-        <button className="app-btn" type="button" onClick={() => setConfirming(true)}>
+        <button className="priv-btn priv-btn-danger" type="button" onClick={() => setConfirming(true)}>
           Supprimer mon compte
         </button>
       ) : (
-        <div className="privacy-confirm">
-          <label htmlFor="confirm-pwd" className="emp-dash-muted">
-            Confirme avec ton mot de passe :
-          </label>
-          <input
-            id="confirm-pwd"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            autoComplete="current-password"
-          />
-          <div className="privacy-confirm-actions">
+        <div className="priv-form">
+          <div className="priv-field">
+            <label htmlFor="confirm-pwd">Confirme avec ton mot de passe</label>
+            <input
+              id="confirm-pwd"
+              className="priv-input"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="current-password"
+            />
+          </div>
+          <div className="priv-actions">
             <button
-              className="app-btn"
+              className="priv-btn priv-btn-danger-solid"
               type="button"
               onClick={handleDelete}
               disabled={deleting || password.length === 0}
@@ -109,14 +112,19 @@ export default function PrivacySection({ onAccountDeleted }: PrivacySectionProps
               {deleting ? 'Suppression…' : 'Confirmer la suppression'}
             </button>
             <button
-              className="app-btn app-btn-ghost"
+              className="priv-btn priv-btn-secondary"
               type="button"
-              onClick={() => { setConfirming(false); setPassword(''); setDeleteError(''); }}
+              onClick={() => {
+                setConfirming(false);
+                setPassword('');
+                setDeleteError('');
+              }}
+              disabled={deleting}
             >
               Annuler
             </button>
           </div>
-          {deleteError && <p className="emp-dash-error">{deleteError}</p>}
+          {deleteError && <p className="priv-msg-error">{deleteError}</p>}
         </div>
       )}
     </section>
