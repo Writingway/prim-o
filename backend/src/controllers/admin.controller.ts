@@ -17,7 +17,8 @@ import {
   listCompanies,
   createCompany,
   listAttributions,
-  listRedemptions
+  listRedemptions,
+  listPurchases
 } from '../services/admin.service';
 
 // Global dashboard stats for the admin (not scoped to one company).
@@ -160,6 +161,18 @@ export async function listRedemptionsController(
   try {
     const q = paginationQuerySchema.parse(req.query);
     const result = await listRedemptions(q);
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function listPurchasesController(
+  req: Request, res: Response, next: NextFunction
+): Promise<void> {
+  try {
+    const q = paginationQuerySchema.parse(req.query);
+    const result = await listPurchases(q);
     res.json(result);
   } catch (err) {
     next(err);

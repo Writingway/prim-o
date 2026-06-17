@@ -14,7 +14,8 @@ import {
   listCompaniesController,
   createCompanyController,
   listAttributionsController,
-  listRedemptionsController
+  listRedemptionsController,
+  listPurchasesController
 } from '../controllers/admin.controller';
 
 const router = Router();
@@ -38,5 +39,6 @@ router.get('/companies', listCompaniesController);
 router.post('/companies', createCompanyController);
 router.get('/attributions', listAttributionsController);
 router.get('/redemptions', listRedemptionsController);
+router.get('/purchases', listPurchasesController);
 
 export default router;

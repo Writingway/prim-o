@@ -277,3 +277,29 @@ export async function listRedemptions(q: PaginationQuery) {
   ]);
   return { items, total, page: q.page, hasMore: q.page * q.limit < total };
 }
+
+// Global ledger: every Stripe top-up recorded in DB (admin view).
+// Filtré sur stripeSessionId != null → uniquement les vrais paiements Stripe
+// (exclut d'éventuels crédits manuels sans session).
+export async function listPurchases(q: PaginationQuery) {
+  const where: Prisma.CompanyTokenPurchaseWhereInput = { stripeSessionId: { not: null } };
+  const [items, total] = await Promise.all([
+    prisma.companyTokenPurchase.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      skip: (q.page - 1) * q.limit,
+      take: q.limit,
+      select: {
+        id: true,
+        amount: true,
+        note: true,
+        stripeSessionId: true,
+        createdAt: true,
+        company:   { select: { name: true } },
+        createdBy: { select: { firstName: true, lastName: true } },
+      },
+    }),
+    prisma.companyTokenPurchase.count({ where }),
+  ]);
+  return { items, total, page: q.page, hasMore: q.page * q.limit < total };
+}

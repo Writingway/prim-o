@@ -65,48 +65,6 @@ export async function registerUser(input: RegisterUserInput) {
   });
 }
 
-// export async function refreshTokens(rawToken: string) {
-//   const tokenHash = hashRefreshToken(rawToken);
-//   const stored = await prisma.refreshToken.findUnique({ where: { tokenHash } });
-
-//   if (!stored) throw new Error('INVALID_REFRESH');
-
-//   // DÉTECTION DE VOL : token révoqué = quelqu'un réutilise un vieux token
-//   if (stored.isRevoked) {
-//     await prisma.refreshToken.updateMany({
-//       where: { userId: stored.userId, isRevoked: false },
-//       data: { isRevoked: true },
-//     });
-//     throw new Error('INVALID_REFRESH');
-//   }
-
-//   if (stored.expiresAt < new Date()) throw new Error('INVALID_REFRESH');
-
-//   // ROTATION atomique
-//   const { raw, hash } = generateRefreshToken();
-//   const newToken = await prisma.$transaction(async (tx) => {
-//     const created = await tx.refreshToken.create({
-//       data: {
-//         tokenHash: hash,
-//         expiresAt: new Date(Date.now() + REFRESH_TTL_MS),
-//         userId: stored.userId,
-//       },
-//     });
-//     await tx.refreshToken.update({
-//       where: { id: stored.id },
-//       data: { isRevoked: true, replacedById: created.id },
-//     });
-//     return created;
-//   });
-
-//   const userId = stored.userId;
-//   const user = await prisma.user.findUnique({ where: { id: userId } });
-//   if (!user || user.deletedAt !== null || user.status !== 'APPROVED') throw new Error('INVALID_REFRESH');
-//   const accessToken = signAccessToken(userId, user.role, user.companyId ?? undefined);
-
-//   return { accessToken, refreshToken: raw };
-// }
-
 export async function refreshTokens(rawToken: string) {
   const tokenHash = hashRefreshToken(rawToken);
   const stored = await prisma.refreshToken.findUnique({ where: { tokenHash } });
