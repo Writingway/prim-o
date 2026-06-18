@@ -146,10 +146,36 @@
   }
 }
 
-/* Échange employé : bouton sur la carte */
-.offer-redeem-btn {
-  margin-top: 12px;
-  width: 100%;
+/* Carte cliquable → détail */
+.offer-card-clickable {
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.offer-card-clickable:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.offer-details-hint {
+  display: block;
+  margin-top: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #00a19a;
+}
+
+/* Indicateurs de stock dans la modale détail */
+.offer-stock-ok {
+  color: #059669;
+  font-weight: 600;
+  margin: 4px 0 0;
+}
+
+.offer-stock-ko {
+  color: #dc2626;
+  font-weight: 600;
+  margin: 4px 0 0;
 }
 
 .landing-redeem-error {
