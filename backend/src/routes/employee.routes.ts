@@ -7,6 +7,7 @@ import {
   getEmployeeReceivedController,
   getEmployeeSpentController
 } from '../controllers/employee.controller';
+import { redeemOfferController } from '../controllers/redemption.controller';
 
 const router = Router();
 
@@ -18,5 +19,8 @@ router.delete('/:id', requireAuth, deleteEmployeeController);
 router.get('/me', requireAuth, getEmployeeBalanceController);
 router.get('/me/received', requireAuth, getEmployeeReceivedController);
 router.get('/me/spent', requireAuth, getEmployeeSpentController);
+
+// Échange de tokens contre un code promo (employé connecté).
+router.post('/me/redeem', requireAuth, redeemOfferController);
 
 export default router;

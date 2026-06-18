@@ -24,3 +24,26 @@ export const createAttribution = (payload: { employeeId: string; amount: number;
   authRequest<
     { attribution: { id: string; amount: number; reason: string; createdAt: string } } | { error: string }
   >('POST', '/attributions', payload);
+
+// Un manager de l'entreprise (pour l'allocation côté patron).
+export type CompanyManager = {
+  id: string;
+  firstName: string | null;
+  lastName: string | null;
+  email: string;
+  balance: number;
+};
+
+// Liste les managers de l'entreprise (patron).
+export const listManagers = () =>
+  authRequest<{ managers: CompanyManager[] }>('GET', '/attributions/managers');
+
+// Solde perso de l'utilisateur courant (manager : tokens alloués par le patron).
+export const getMyBalance = () =>
+  authRequest<{ balance: number }>('GET', '/attributions/my-balance');
+
+// Allocation patron → manager (débite le pool, crédite le solde du manager).
+export const allocateTokens = (managerId: string, amount: number) =>
+  authRequest<
+    { manager: { id: string; firstName: string | null; lastName: string | null; balance: number } } | { error: string }
+  >('POST', '/attributions/allocate', { managerId, amount });

@@ -29,6 +29,7 @@ export type AdminCompany = {
   id: string;
   name: string;
   tokenBalance: number;
+  status: AdminStatus;
   createdAt: string;
   _count: { users: number };
 };

@@ -8,4 +8,9 @@ export type Offer = {
   discountPercent: number;
   category: OfferCategory;
   isActive: boolean;
+  // Stock de codes promo (présent uniquement dans la liste admin).
+  availableCodes?: number;
+  usedCodes?: number;
+  // Indicateur de dispo côté vitrine (≥1 code dispo), sans révéler le nombre.
+  available?: boolean;
 };
