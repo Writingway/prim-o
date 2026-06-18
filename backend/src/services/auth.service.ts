@@ -152,6 +152,11 @@ export async function login(input: LoginInput) {
     },
   });
 
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { lastLoginAt: new Date() },
+  });
+
   const accessToken = signAccessToken(user.id, user.role, user.companyId ?? undefined);
   return { accessToken, refreshToken };
 }

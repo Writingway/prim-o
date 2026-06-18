@@ -79,6 +79,7 @@ model User {
   lastName        String?
   balance         Int        @default(0)          // PORTEFEUILLE EMPLOYÉ uniquement. Reste 0 pour MANAGER/ADMIN. CHECK >= 0 en SQL.
   isEmailVerified Boolean    @default(false)
+  lastLoginAt     DateTime?                       // RGPD : dernière connexion ; sert au job d'anonymisation des comptes inactifs (3 ans). Null = jamais connecté → repli sur createdAt.
   status          UserStatus @default(PENDING)
   companyId       String?    @db.Uuid             // null UNIQUEMENT pour ADMIN
   createdAt       DateTime   @default(now())
