@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Fragment } from 'react';
 import { 
-  listOffers, 
-  createOffer, 
-  updateOffer, 
+  listOffers,
+  createOffer,
+  updateOffer,
   deactivateOffer,
-  getAdminStats
+  getAdminStats,
+  addPromoCodes
 } from '../services/api';
 import type { Offer, OfferCategory, AdminStats } from '../types/types';
 import './AdminPage.css';
@@ -38,6 +39,12 @@ export default function AdminPage({ onLogout, onBack }: AdminPageProps) {
 
   // Message de confirmation transitoire (remplace les alert()).
   const [notice, setNotice] = useState('');
+
+  // Panneau « Gérer les codes » : ouvert pour une offre à la fois.
+  const [codesOpenId, setCodesOpenId] = useState<string | null>(null);
+  const [codesText, setCodesText] = useState('');
+  const [codesError, setCodesError] = useState('');
+  const [codesSubmitting, setCodesSubmitting] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -160,6 +167,46 @@ export default function AdminPage({ onLogout, onBack }: AdminPageProps) {
       }
     } catch {
       setError('Impossible de joindre le serveur.');
+    }
+  };
+
+  const toggleCodes = (offerId: string) => {
+    setCodesOpenId((cur) => (cur === offerId ? null : offerId));
+    setCodesText('');
+    setCodesError('');
+  };
+
+  const handleAddCodes = async (offer: Offer) => {
+    setCodesError('');
+    // Découpe le texte collé en lignes → un code par ligne.
+    const codes = codesText
+      .split('\n')
+      .map((c) => c.trim())
+      .filter((c) => c.length > 0);
+    if (codes.length === 0) {
+      setCodesError('Colle au moins un code (un par ligne).');
+      return;
+    }
+    setCodesSubmitting(true);
+    try {
+      const res = await addPromoCodes(offer.id, codes);
+      if (res.ok && res.data) {
+        flash(`✅ ${res.data.added} code(s) ajouté(s), ${res.data.skipped} ignoré(s).`);
+        setCodesText('');
+        setCodesOpenId(null);
+        load(); // rafraîchit le badge de stock
+      } else if (res.status === 401) {
+        setError('Session expirée, reconnecte-toi.');
+        onLogout();
+      } else if (res.status === 404) {
+        setCodesError('Offre introuvable.');
+      } else {
+        setCodesError("Impossible d'ajouter les codes.");
+      }
+    } catch {
+      setCodesError('Impossible de joindre le serveur.');
+    } finally {
+      setCodesSubmitting(false);
     }
   };
 
@@ -305,12 +352,14 @@ export default function AdminPage({ onLogout, onBack }: AdminPageProps) {
                   <th>Réduction</th>
                   <th>Catégorie</th>
                   <th>Statut</th>
+                  <th>Codes</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {offers.map((offer) => (
-                  <tr key={offer.id} className={offer.isActive ? '' : 'admin-row-inactive'}>
+                  <Fragment key={offer.id}>
+                  <tr className={offer.isActive ? '' : 'admin-row-inactive'}>
                     <td data-label="Partenaire">{offer.partnerName}</td>
                     <td data-label="Coût">{offer.cost}</td>
                     <td data-label="Réduction">{offer.discountPercent}%</td>
@@ -320,13 +369,43 @@ export default function AdminPage({ onLogout, onBack }: AdminPageProps) {
                         {offer.isActive ? 'Active' : 'Désactivée'}
                       </span>
                     </td>
+                    <td data-label="Codes">
+                      🎟️ {offer.availableCodes ?? 0} dispo · {offer.usedCodes ?? 0} utilisés
+                    </td>
                     <td className="admin-actions" data-label="Actions">
                       <button className="admin-btn-link" onClick={() => openEdit(offer)}>Modifier</button>
                       <button className="admin-btn-link" onClick={() => handleToggle(offer)}>
                         {offer.isActive ? 'Désactiver' : 'Réactiver'}
                       </button>
+                      <button className="admin-btn-link" onClick={() => toggleCodes(offer.id)}>
+                        {codesOpenId === offer.id ? 'Fermer' : 'Gérer les codes'}
+                      </button>
                     </td>
                   </tr>
+                  {codesOpenId === offer.id && (
+                    <tr className="admin-codes-row">
+                      <td colSpan={7}>
+                        <div className="admin-codes-panel">
+                          <label>Coller les codes ({offer.partnerName}) — un par ligne :</label>
+                          <textarea
+                            rows={5}
+                            value={codesText}
+                            onChange={(e) => setCodesText(e.target.value)}
+                            placeholder={'AMZN-XXXX-1111\nAMZN-XXXX-2222\n...'}
+                          />
+                          {codesError && <p className="admin-error">{codesError}</p>}
+                          <button
+                            className="admin-btn-primary"
+                            disabled={codesSubmitting}
+                            onClick={() => handleAddCodes(offer)}
+                          >
+                            {codesSubmitting ? '…' : 'Ajouter les codes'}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                  </Fragment>
                 ))}
               </tbody>
             </table>

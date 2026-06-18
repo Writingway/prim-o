@@ -4,7 +4,8 @@ import {
   updateOfferController,
   deactivateOfferController,
 } from '../controllers/offer.controller';
-import { 
+import { addPromoCodesController } from '../controllers/promoCode.controller';
+import {
   softDeleteCompanyController, 
   restoreCompanyController,
   listUsersController,
@@ -23,6 +24,9 @@ const router = Router();
 router.post('/offers', createOfferController);
 router.patch('/offers/:id', updateOfferController);
 router.delete('/offers/:id', deactivateOfferController);
+
+// Ajout en lot de codes promo à une offre.
+router.post('/offers/:offerId/promo-codes', addPromoCodesController);
 
 // Soft-delete a company and everything tied to it.
 router.delete('/companies/:id', softDeleteCompanyController);

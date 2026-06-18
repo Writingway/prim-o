@@ -10,3 +10,4 @@ export * from "./employees";
 export * from "./company";
 export * from "./admin";
 export * from "./stripe";
+export * from "./promoCodes";

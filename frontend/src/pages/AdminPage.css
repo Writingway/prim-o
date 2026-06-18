@@ -191,6 +191,39 @@
 }
 
 /* Table des offres */
+/* Panneau « Gérer les codes » (ligne dépliée sous une offre) */
+.admin-codes-row > td {
+  background: #f9fafb;
+}
+
+.admin-codes-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 4px;
+}
+
+.admin-codes-panel label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #4b5563;
+}
+
+.admin-codes-panel textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  border: 1px solid var(--primo-border);
+  border-radius: 8px;
+  font-family: monospace;
+  font-size: 13px;
+  resize: vertical;
+}
+
+.admin-codes-panel .admin-btn-primary {
+  align-self: flex-start;
+}
+
 .admin-table {
   width: 100%;
   border-collapse: collapse;
