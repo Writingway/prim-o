@@ -1,4 +1,4 @@
-import { useEffect, useState, Fragment } from 'react';
+import { useEffect, useState, useRef, Fragment } from 'react';
 import { 
   listOffers,
   createOffer,
@@ -45,6 +45,7 @@ export default function AdminPage({ onLogout, onBack }: AdminPageProps) {
   const [codesText, setCodesText] = useState('');
   const [codesError, setCodesError] = useState('');
   const [codesSubmitting, setCodesSubmitting] = useState(false);
+  const csvInputRef = useRef<HTMLInputElement>(null);
 
   const load = async () => {
     setLoading(true);
@@ -176,11 +177,36 @@ export default function AdminPage({ onLogout, onBack }: AdminPageProps) {
     setCodesError('');
   };
 
+  // Lit un fichier CSV côté navigateur et remplit le textarea avec les codes
+  // (un par ligne). On gère le séparateur ligne ET virgule, et on ignore une
+  // éventuelle ligne d'en-tête « code ».
+  const handleCsvFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setCodesError('');
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const raw = String(reader.result ?? '');
+      const codes = raw
+        .split(/[\r\n,;]+/)        // lignes, virgules ou points-virgules
+        .map((c) => c.trim())
+        .filter((c) => c.length > 0 && c.toLowerCase() !== 'code'); // saute l'en-tête éventuel
+      if (codes.length === 0) {
+        setCodesError('Aucun code trouvé dans le fichier.');
+      } else {
+        setCodesText(codes.join('\n')); // l'admin vérifie avant d'ajouter
+      }
+    };
+    reader.onerror = () => setCodesError('Impossible de lire le fichier.');
+    reader.readAsText(file);
+    e.target.value = ''; // permet de re-sélectionner le même fichier
+  };
+
   const handleAddCodes = async (offer: Offer) => {
     setCodesError('');
-    // Découpe le texte collé en lignes → un code par ligne.
+    // Découpe sur retour à la ligne, virgule ou point-virgule (même logique que le CSV).
     const codes = codesText
-      .split('\n')
+      .split(/[\r\n,;]+/)
       .map((c) => c.trim())
       .filter((c) => c.length > 0);
     if (codes.length === 0) {
@@ -386,7 +412,6 @@ export default function AdminPage({ onLogout, onBack }: AdminPageProps) {
                     <tr className="admin-codes-row">
                       <td colSpan={7}>
                         <div className="admin-codes-panel">
-                          <label>Coller les codes ({offer.partnerName}) — un par ligne :</label>
                           <textarea
                             rows={5}
                             value={codesText}
@@ -394,13 +419,30 @@ export default function AdminPage({ onLogout, onBack }: AdminPageProps) {
                             placeholder={'AMZN-XXXX-1111\nAMZN-XXXX-2222\n...'}
                           />
                           {codesError && <p className="admin-error">{codesError}</p>}
-                          <button
-                            className="admin-btn-primary"
-                            disabled={codesSubmitting}
-                            onClick={() => handleAddCodes(offer)}
-                          >
-                            {codesSubmitting ? '…' : 'Ajouter les codes'}
-                          </button>
+                          <input
+                            ref={csvInputRef}
+                            type="file"
+                            accept=".csv,text/csv,text/plain"
+                            style={{ display: 'none' }}
+                            onChange={handleCsvFile}
+                          />
+                          <div className="admin-codes-actions">
+                            <button
+                              type="button"
+                              className="admin-btn-ghost"
+                              onClick={() => csvInputRef.current?.click()}
+                            >
+                              📄 Importer un CSV
+                            </button>
+                            <button
+                              type="button"
+                              className="admin-btn-primary"
+                              disabled={codesSubmitting}
+                              onClick={() => handleAddCodes(offer)}
+                            >
+                              {codesSubmitting ? '…' : 'Ajouter les codes'}
+                            </button>
+                          </div>
                         </div>
                       </td>
                     </tr>

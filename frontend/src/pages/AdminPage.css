@@ -220,8 +220,16 @@
   resize: vertical;
 }
 
-.admin-codes-panel .admin-btn-primary {
-  align-self: flex-start;
+.admin-codes-hint {
+  margin: 0;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.admin-codes-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .admin-table {
