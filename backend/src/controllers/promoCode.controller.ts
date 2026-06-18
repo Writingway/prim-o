@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
 import { AppError } from '../middleware/error.middleware';
 import { addPromoCodesSchema } from '../schemas/promoCode.schemas';
-import { addPromoCodes, listPromoCodes } from '../services/promoCode.service';
+import { addPromoCodes, listPromoCodes, deletePromoCode } from '../services/promoCode.service';
 
 // POST /api/admin/offers/:offerId/promo-codes — ajout en lot (admin).
 export async function addPromoCodesController(
@@ -45,6 +45,32 @@ export async function listPromoCodesController(
     if (err instanceof Error && err.message === 'OFFER_NOT_FOUND') {
       next(new AppError(404, 'Offre introuvable.'));
       return;
+    }
+    next(err);
+  }
+}
+
+// DELETE /api/admin/promo-codes/:id — supprime un code non utilisé (admin).
+export async function deletePromoCodeController(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      next(new AppError(400, 'ID du code requis.'));
+      return;
+    }
+    await deletePromoCode(String(id));
+    res.status(200).json({ ok: true });
+  } catch (err) {
+    if (err instanceof Error) {
+      if (err.message === 'CODE_NOT_FOUND') { next(new AppError(404, 'Code introuvable.')); return; }
+      if (err.message === 'CODE_USED') {
+        next(new AppError(409, 'Impossible de supprimer un code déjà utilisé.'));
+        return;
+      }
     }
     next(err);
   }

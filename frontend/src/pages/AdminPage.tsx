@@ -6,7 +6,8 @@ import {
   deactivateOffer,
   getAdminStats,
   addPromoCodes,
-  listPromoCodes
+  listPromoCodes,
+  deletePromoCode
 } from '../services/api';
 import type { AdminPromoCode } from '../services/api';
 import type { Offer, OfferCategory, AdminStats } from '../types/types';
@@ -190,6 +191,31 @@ export default function AdminPage({ onLogout, onBack }: AdminPageProps) {
       } finally {
         setCodesListLoading(false);
       }
+    }
+  };
+
+  const handleDeleteCode = async (codeId: string) => {
+    setCodesError('');
+    const ok = await confirm({
+      title: 'Supprimer ce code ?',
+      message: 'Ce code disponible sera définitivement supprimé.',
+      confirmLabel: 'Supprimer',
+      danger: true,
+    });
+    if (!ok) return;
+    const res = await deletePromoCode(codeId);
+    if (res.ok) {
+      flash('Code supprimé.');
+      load(); // rafraîchit les compteurs de stock
+    } else if (res.status === 409) {
+      setCodesError('Ce code a déjà été utilisé, impossible de le supprimer.');
+    } else {
+      setCodesError('Impossible de supprimer ce code.');
+    }
+    // Dans tous les cas, on resynchronise la liste affichée.
+    if (codesOpenId) {
+      const r = await listPromoCodes(codesOpenId);
+      if (r.ok && r.data) setCodesList(r.data.codes);
     }
   };
 
@@ -473,7 +499,17 @@ export default function AdminPage({ onLogout, onBack }: AdminPageProps) {
                                         utilisé{c.usedAt ? ` le ${new Date(c.usedAt).toLocaleDateString('fr-FR')}` : ''}
                                       </span>
                                     ) : (
-                                      <span className="admin-badge active">dispo</span>
+                                      <>
+                                        <span className="admin-badge active">dispo</span>
+                                        <button
+                                          type="button"
+                                          className="admin-btn-link"
+                                          title="Supprimer ce code"
+                                          onClick={() => handleDeleteCode(c.id)}
+                                        >
+                                          🗑️
+                                        </button>
+                                      </>
                                     )}
                                   </li>
                                 ))}

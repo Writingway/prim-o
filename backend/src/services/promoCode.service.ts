@@ -29,6 +29,24 @@ export async function addPromoCodes(
   return { added: result.count, skipped: unique.length - result.count };
 }
 
+// Supprime un code promo — UNIQUEMENT s'il est encore disponible (non utilisé).
+// Atomique : le deleteMany gardé (isUsed:false) ne touchera jamais un code
+// qui vient d'être réclamé par un employé (sinon on casserait sa redemption).
+export async function deletePromoCode(codeId: string): Promise<void> {
+  const result = await prisma.promoCode.deleteMany({
+    where: { id: codeId, isUsed: false },
+  });
+  if (result.count === 0) {
+    // 0 supprimé → soit le code n'existe pas, soit il est déjà utilisé.
+    const existing = await prisma.promoCode.findUnique({
+      where: { id: codeId },
+      select: { isUsed: true },
+    });
+    if (!existing) throw new Error('CODE_NOT_FOUND');
+    throw new Error('CODE_USED');
+  }
+}
+
 // Liste les codes d'une offre (dispo d'abord, puis utilisés). Lecture admin.
 export async function listPromoCodes(offerId: string) {
   const offer = await prisma.partnerOffer.findUnique({
