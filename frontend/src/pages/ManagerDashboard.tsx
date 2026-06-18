@@ -13,6 +13,8 @@ import {
 import type { Employee, Company, AttributionHistory } from '../types/types';
 import './ManagerDashboard.css';
 import Layout from '../components/layout/Layout';
+import PrivacySection from '../components/privacy/PrivacySection';
+import EditProfile from '../components/privacy/EditProfile';
 import { useConfirm } from '../components/ui/ConfirmDialog';
 
 type ManagerDashboardProps = {
@@ -412,6 +414,8 @@ export default function ManagerDashboard({ onLogout, onBack }: ManagerDashboardP
             )}
           </section>
         )}
+        {!loading && <EditProfile />}
+        {!loading && <PrivacySection onAccountDeleted={onLogout} />}
       </div>
     </div>
     {confirmDialog}
