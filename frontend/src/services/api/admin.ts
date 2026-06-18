@@ -49,6 +49,10 @@ export const listAdminCompanies = (page = 1, limit = 20) =>
 export const createAdminCompany = (name: string) =>
   authRequest<{ company: AdminCompany }>('POST', '/admin/companies', { name });
 
+// Valide ou rejette une entreprise en attente (PENDING → APPROVED/REJECTED).
+export const setCompanyStatus = (id: string, status: 'APPROVED' | 'REJECTED') =>
+  authRequest<{ company: AdminCompany }>('PATCH', `/admin/companies/${id}/status`, { status });
+
 // Soft-delete en cascade (users + sessions + invites). Renvoie le nb d'users touchés.
 export const deleteAdminCompany = (id: string) =>
   authRequest<{ companyId: string; usersDeleted: number }>('DELETE', `/admin/companies/${id}`);
