@@ -17,7 +17,7 @@ type AuthPageProps = {
 // - un mode : login / register
 // Le formulaire affiché dépend de ces deux réglages.
 export default function AuthPage({ onLoginSuccess, initialMode = 'login', onBack }: AuthPageProps) {
-  const [role, setRole] = useState<Role>('manager');
+  const [role, setRole] = useState<Role>('owner');
   const [mode, setMode] = useState<Mode>(initialMode);
   const [successMessage, setSuccessMessage] = useState('');
 

@@ -9,6 +9,12 @@ export type CreateCompanyInput = z.infer<typeof createCompanySchema>;
 
 export const idParamSchema = z.uuid();   // reject garbage :id with clean 400
 
+// Validation d'une entreprise par l'admin : APPROVED ou REJECTED uniquement.
+export const companyStatusSchema = z.object({
+  status: z.enum(['APPROVED', 'REJECTED']),
+});
+export type CompanyStatusInput = z.infer<typeof companyStatusSchema>;
+
 export const listUsersQuerySchema = z.object({
   page:      z.coerce.number().int().min(1).default(1),
   limit:     z.coerce.number().int().min(1).max(100).default(20),

@@ -1,72 +1,73 @@
-# Company Onboarding Redesign — Account-First
+# Refonte de l'Onboarding Entreprise — Account-First
 
-**Date:** 2026-06-17
-**Status:** Approved (design)
+**Date :** 2026-06-17
+**Statut :** Approuvé (design)
 
-## Problem
+## Problème
 
-Current registration creates a Company + OWNER user in a single call. Two problems:
+L'inscription actuelle crée une Entreprise + un utilisateur OWNER en un seul appel. Deux problèmes :
 
-1. **Conflated concerns.** A user's identity and their membership in a company are coupled into one action. Not a sound model — a person is a user; belonging to a company is separate.
-2. **Lockout bug.** The OWNER user is created with `status` defaulting to `PENDING`, so the owner cannot log in to their own account until an admin manually flips it.
+1. **Préoccupations confondues.** L'identité d'un utilisateur et son appartenance à une entreprise sont couplées en une seule action. Modèle peu solide — une personne est un utilisateur ; appartenir à une entreprise est séparé.
+2. **Bug de verrouillage.** L'utilisateur OWNER est créé avec `status` par défaut à `PENDING`, donc le propriétaire ne peut pas se connecter à son propre compte tant qu'un admin ne le bascule pas manuellement.
 
-## Decision
+## Décision
 
-Move to **account-first onboarding** (standard SaaS pattern — Slack/Notion/Linear): identity ≠ org membership.
+Passer à un **onboarding account-first** (pattern SaaS standard — Slack/Notion/Linear) : identité ≠ appartenance à une organisation.
 
-A user registers/logs in as a plain user. A user with no company lands on a choice screen: **Créer une entreprise** or **Rejoindre une entreprise**.
+Un utilisateur s'inscrit / se connecte en tant qu'utilisateur simple. Un utilisateur sans entreprise atterrit sur un écran de choix : **Créer une entreprise** ou **Rejoindre une entreprise**.
 
-**Scope guard:** single-company membership is kept. `User.companyId` stays a single nullable FK. No many-to-many `Membership` join table — multi-org is not a requirement and that refactor would touch every `companyId` reference (YAGNI).
+**Garde-fou de périmètre :** l'appartenance à une seule entreprise est conservée. `User.companyId` reste une FK unique nullable. Pas de table de jointure `Membership` many-to-many — le multi-org n'est pas une exigence et ce refactor toucherait chaque référence à `companyId` (YAGNI).
 
 ## Design
 
-### 1. Schema (Prisma migration)
+### 1. Schéma (migration Prisma)
 
-- `User.role` → **nullable**. `null` = floating user, not yet in a company.
-- `User.companyId` — already nullable. Relax the "null only for ADMIN" rule: `null` = ADMIN **or** not-yet-joined.
-- Floating user state: `role = null`, `companyId = null`, `status = APPROVED`. Identity is valid immediately; company capability is gated on `Company.status`, not user status.
+- `User.role` → **nullable**. `null` = utilisateur flottant, pas encore dans une entreprise.
+- `User.companyId` — déjà nullable. Assouplir la règle « null seulement pour ADMIN » : `null` = ADMIN **ou** pas encore rattaché.
+- État utilisateur flottant : `role = null`, `companyId = null`. L'identité est valide immédiatement (sous réserve de `isEmailVerified`) ; la capacité entreprise est gérée sur `Company.status`.
 
-State semantics, kept distinct:
-- `User.status` — used for **employees** awaiting *manager* approval (unchanged).
-- `Company.status` — company awaiting *admin* approval. The real gate for owner/company capability.
+Sémantique des états :
+- `User.status` — **supprimé** (enum `UserStatus` + colonne + check `USER_NOT_APPROVED`). Devenu redondant : l'approbation onboarding passe désormais par le code d'invitation, la validation email par `isEmailVerified`, et la désactivation d'un employé parti par `deletedAt` (soft-delete, déjà présent). Disparaissent avec : `approveEmployee`, l'écran « employés en attente » du manager. Rejoindre via code = actif direct.
+- `isEmailVerified` — **conservé**. Validation email, gate indépendant au login.
+- `Company.status` — entreprise en attente de validation *admin*. Le vrai gate de la capacité propriétaire/entreprise.
 
-### 2. Auth endpoints (replace the old two)
+### 2. Endpoints d'authentification (remplacent les deux anciens)
 
-- `POST /auth/register` — creates a floating user, returns tokens → logged in immediately.
-- `POST /auth/create-company` *(authenticated)* — creates a `PENDING` company, sets caller `role = OWNER`, `companyId`.
-- `POST /auth/join-company` *(authenticated)* — invite-code path; sets `role = EMPLOYEE` (or the code's role), `companyId`, and user status per the existing invite flow. Adapts current `registerUser`.
-- Old `POST /auth/register-company` and `POST /auth/register-user` are removed.
+- `POST /auth/register` — crée un utilisateur flottant, renvoie les tokens → connecté immédiatement.
+- `POST /auth/create-company` *(authentifié)* — crée une entreprise `PENDING`, met l'appelant `role = OWNER`, `companyId`.
+- `POST /auth/join-company` *(authentifié)* — chemin par code d'invitation ; met `role = EMPLOYEE` (ou le rôle du code) + `companyId`. Le code valide = employé actif direct, plus d'approbation manager. Adapte le `registerUser` actuel.
+- Les anciens `POST /auth/register-company` et `POST /auth/register-user` sont supprimés.
 
-### 3. Routing after login (frontend)
+### 3. Routage après connexion (frontend)
 
-- `companyId == null` → **onboarding screen: Créer une entreprise / Rejoindre une entreprise.**
-- Has a company → dashboard, gated on `Company.status`:
-  - `PENDING` → banner *"Company under review — an admin will approve soon."* Allowed: view dashboard, edit profile + company name. Greyed with "available after approval": buy tokens, invite employees, create attributions.
-  - `APPROVED` → full dashboard.
-  - `REJECTED` → blocked state, "company rejected" message.
+- `companyId == null` → **écran d'onboarding : Créer une entreprise / Rejoindre une entreprise.**
+- A une entreprise → dashboard, gardé sur `Company.status` :
+  - `PENDING` → bannière *« Entreprise en cours de validation — un admin va l'approuver bientôt. »* Autorisé : voir le dashboard, modifier profil + nom d'entreprise. Grisé avec « disponible après validation » : acheter des tokens, inviter des employés, créer des attributions.
+  - `APPROVED` → dashboard complet.
+  - `REJECTED` → état bloqué, message « entreprise rejetée ».
 
-### 4. `/me` endpoint
+### 4. Endpoint `/me`
 
-Returns `role`, `companyId`, and `company.status` so the frontend can route correctly.
+Renvoie `role`, `companyId`, et `company.status` pour que le frontend route correctement.
 
-### 5. Backend guards (defense in depth — do not trust the frontend)
+### 5. Gardes backend (défense en profondeur — ne pas faire confiance au frontend)
 
-Company actions (buy tokens / invite employees / create attribution) require:
-`companyId != null` + appropriate role + `Company.status === APPROVED`.
-Otherwise `403 COMPANY_NOT_APPROVED`.
+Les actions entreprise (acheter des tokens / inviter des employés / créer une attribution) exigent :
+`companyId != null` + rôle approprié + `Company.status === APPROVED`.
+Sinon `403 COMPANY_NOT_APPROVED`.
 
-### 6. Admin approve/reject (AdminCompanies frontend deltas)
+### 6. Validation/Rejet admin (deltas frontend AdminCompanies)
 
-Status badge + Approve/Reject buttons.
-- Approve → `Company.status = APPROVED`. Owner already usable; nothing else needed.
-- Reject → `Company.status = REJECTED`.
+Badge de statut + boutons Approuver/Rejeter.
+- Approuver → `Company.status = APPROVED`. Le propriétaire est déjà utilisable ; rien d'autre à faire.
+- Rejeter → `Company.status = REJECTED`.
 
-### 7. Testing (smoke.sh)
+### 7. Tests (smoke.sh)
 
-- register (floating) → login → create-company → buy tokens (expect **403**, company PENDING) → admin approve → buy tokens (expect **200**).
-- register → join-company with invite code → employee dashboard.
+- register (flottant) → login → create-company → acheter tokens (attendu **403**, entreprise PENDING) → admin approuve → acheter tokens (attendu **200**).
+- register → join-company avec code d'invitation → dashboard employé.
 
-## Open checks before implementation
+## Vérifications à faire avant l'implémentation
 
-- Confirm whether `admin.service` already has approve/reject and what it sets.
-- Confirm `/me`-style endpoint exists and what it currently returns.
+- Confirmer si `admin.service` a déjà approve/reject et ce qu'il définit.
+- Confirmer qu'un endpoint de type `/me` existe et ce qu'il renvoie actuellement.

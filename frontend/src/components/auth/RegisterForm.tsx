@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { ChangeEvent, SyntheticEvent } from 'react';
-import { registerManager, registerEmployee } from '../../services/api';
+import { registerCompany, registerEmployee } from '../../services/api';
 import type { Role } from '../../types/types';
 
 // Corps d'erreur de validation renvoyé par le backend (ZodError -> details[]).
@@ -48,8 +48,8 @@ export default function RegisterForm({ role, onSuccess }: RegisterFormProps) {
 
     try {
       const res =
-        role === 'manager'
-          ? await registerManager({
+        role === 'owner'
+          ? await registerCompany({
               companyName: form.companyName,
               firstName: form.firstName,
               lastName: form.lastName,
@@ -87,7 +87,7 @@ export default function RegisterForm({ role, onSuccess }: RegisterFormProps) {
 
   return (
     <form className="auth-form" onSubmit={handleSubmit}>
-      {role === 'manager' && (
+      {role === 'owner' && (
         <input
           name="companyName"
           placeholder="Nom de l'entreprise"

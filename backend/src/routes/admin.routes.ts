@@ -13,6 +13,7 @@ import {
   getStatsController,
   listCompaniesController,
   createCompanyController,
+  setCompanyStatusController,
   listAttributionsController,
   listRedemptionsController,
   listPurchasesController
@@ -28,6 +29,7 @@ router.delete('/offers/:id', deactivateOfferController);
 // Soft-delete a company and everything tied to it.
 router.delete('/companies/:id', softDeleteCompanyController);
 router.post('/companies/:id/restore', restoreCompanyController);
+router.patch('/companies/:id/status', setCompanyStatusController);
 
 router.get('/users', listUsersController);
 router.patch('/users/:id', updateUserController);

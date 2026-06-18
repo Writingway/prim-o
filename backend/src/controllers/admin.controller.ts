@@ -5,7 +5,8 @@ import {
   listUsersQuerySchema, 
   paginationQuerySchema, 
   updateUserSchema,
-  createCompanySchema
+  createCompanySchema,
+  companyStatusSchema
 } from '../schemas/admin.schemas';
 import {  
   listUsers, 
@@ -16,6 +17,7 @@ import {
   getStats,
   listCompanies,
   createCompany,
+  setCompanyStatus,
   listAttributions,
   listRedemptions,
   listPurchases
@@ -103,6 +105,23 @@ export async function restoreCompanyController(
       const emails = err.message.slice('EMAIL_TAKEN:'.length);
       next(new AppError(409, `Restauration impossible : email(s) déjà réutilisé(s) : ${emails}.`));
       return;
+    }
+    next(err);
+  }
+}
+
+// Valide/rejette une entreprise (file d'attente admin). PENDING -> APPROVED/REJECTED.
+export async function setCompanyStatusController(
+  req: Request, res: Response, next: NextFunction
+): Promise<void> {
+  try {
+    const companyId = idParamSchema.parse(req.params.id);
+    const { status } = companyStatusSchema.parse(req.body);
+    const company = await setCompanyStatus(companyId, status);
+    res.json({ company });
+  } catch (err) {
+    if (err instanceof Error && err.message === 'COMPANY_NOT_FOUND') {
+      next(new AppError(404, 'Entreprise introuvable.')); return;
     }
     next(err);
   }

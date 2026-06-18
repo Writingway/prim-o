@@ -10,12 +10,13 @@ import {
   createCheckout,
   logout as apiLogout,
 } from '../services/api';
-import type { Employee, Company, AttributionHistory } from '../types/types';
+import type { Employee, Company, AttributionHistory, Role } from '../types/types';
 import './ManagerDashboard.css';
 import Layout from '../components/layout/Layout';
 import { useConfirm } from '../components/ui/ConfirmDialog';
 
 type ManagerDashboardProps = {
+  role: Role;
   onLogout: () => void;
   onBack: () => void;
 };
@@ -27,7 +28,7 @@ const formatDate = (iso: string) =>
   new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
 // Dashboard employeur : liste des employés de son entreprise (lecture seule).
-export default function ManagerDashboard({ onLogout, onBack }: ManagerDashboardProps) {
+export default function ManagerDashboard({ role, onLogout, onBack }: ManagerDashboardProps) {
   const { confirm, confirmDialog } = useConfirm();
   const [employees, setEmployees] = useState<Employee[] | null>(null);
   const [company, setCompany] = useState<Company | null>(null);
@@ -117,10 +118,10 @@ export default function ManagerDashboard({ onLogout, onBack }: ManagerDashboardP
     onLogout();
   };
 
-  const handleGenerateInvite = async () => {
+  const handleGenerateInvite = async (inviteRole: 'MANAGER' | 'EMPLOYEE' = 'EMPLOYEE') => {
     setInviteError('');
     try {
-      const res = await generateInviteCode();
+      const res = await generateInviteCode(inviteRole);
       if (res.ok && res.data?.invite) {
         setInviteCode(res.data.invite.code);
       } else if (res.status === 401) {
@@ -260,8 +261,13 @@ export default function ManagerDashboard({ onLogout, onBack }: ManagerDashboardP
           <div className="dash-stat dash-stat-pool">🏦 <strong>{company?.tokenBalance ?? '—'}</strong>&nbsp;tokens disponibles</div>
           <div className="dash-stat">👥 <strong>{employees?.length ?? 0}</strong>&nbsp;employés</div>
           <div className="dash-stat">🪙 <strong>{totalDistributed}</strong>&nbsp;tokens distribués</div>
-          <button className="dash-invite" type="button" onClick={handleGenerateInvite}>
-            Générer un code d'invitation
+          {role === 'owner' && (
+            <button className="dash-invite" type="button" onClick={() => handleGenerateInvite('MANAGER')}>
+              Code manager
+            </button>
+          )}
+          <button className="dash-invite" type="button" onClick={() => handleGenerateInvite('EMPLOYEE')}>
+            Code employé
           </button>
         </div>
 
@@ -272,20 +278,22 @@ export default function ManagerDashboard({ onLogout, onBack }: ManagerDashboardP
           <div className="dash-msg dash-error">Paiement annulé.</div>
         )}
 
-        <form className="dash-recharge" onSubmit={handleRecharge}>
-          <input
-            type="number"
-            min="1"
-            step="1"
-            placeholder="Nb de tokens"
-            value={rechargeAmount}
-            onChange={(e) => setRechargeAmount(e.target.value)}
-          />
-          <button className="dash-invite" type="submit" disabled={recharging}>
-            {recharging ? '…' : '💳 Recharger le pool'}
-          </button>
-          {rechargeError && <p className="dash-msg dash-error">{rechargeError}</p>}
-        </form>
+        {role === 'owner' && (
+          <form className="dash-recharge" onSubmit={handleRecharge}>
+            <input
+              type="number"
+              min="1"
+              step="1"
+              placeholder="Nb de tokens"
+              value={rechargeAmount}
+              onChange={(e) => setRechargeAmount(e.target.value)}
+            />
+            <button className="dash-invite" type="submit" disabled={recharging}>
+              {recharging ? '…' : '💳 Recharger le pool'}
+            </button>
+            {rechargeError && <p className="dash-msg dash-error">{rechargeError}</p>}
+          </form>
+        )}
 
         {inviteCode && (
           <div className="dash-msg">

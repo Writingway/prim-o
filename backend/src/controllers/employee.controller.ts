@@ -8,6 +8,7 @@ import {
   getEmployeeSpent,
 } from '../services/employee.service';
 import { prisma } from '../lib/db';
+import { requireManagerOrOwner } from '../middleware/authz';
 
 // Lit page/limit depuis la query, avec valeurs par défaut et bornes sûres.
 function parsePaging(req: Request): { page: number; limit: number } {
@@ -24,16 +25,8 @@ export async function listEmployeesController(
   next: NextFunction
 ): Promise<void> {
   try {
-    if (req.user?.role !== 'MANAGER') {
-      next(new AppError(403, 'Accès réservé aux manager.'));
-      return;
-    }
-
-    const companyId = req.user?.companyId;
-    if (!companyId) {
-      next(new AppError(403, 'Aucune entreprise associée.'));
-      return;
-    }
+    const companyId = requireManagerOrOwner(req, next);
+    if (!companyId) return;
 
     const employees = await listEmployeesByEmployer(companyId);
     res.status(200).json({ employees });
@@ -49,16 +42,8 @@ export async function deleteEmployeeController(
   next: NextFunction
 ): Promise<void> {
   try {
-    if (req.user?.role !== 'MANAGER') {
-      next(new AppError(403, 'Accès réservé aux manager.'));
-      return;
-    }
-
-    const companyId = req.user?.companyId;
-    if (!companyId) {
-      next(new AppError(403, 'Aucune entreprise associée.'));
-      return;
-    }
+    const companyId = requireManagerOrOwner(req, next);
+    if (!companyId) return;
 
     const id = req.params.id;
     if (typeof id !== 'string') {
@@ -157,16 +142,8 @@ export async function approveEmployeeController(
   next: NextFunction
 ): Promise<void> {
   try {
-    if (req.user?.role !== 'MANAGER') {
-      next(new AppError(403, 'Accès réservé aux manager.'));
-      return;
-    }
-
-    const companyId = req.user?.companyId;
-    if (!companyId) {
-      next(new AppError(403, 'Aucune entreprise associée.'));
-      return;
-    }
+    const companyId = requireManagerOrOwner(req, next);
+    if (!companyId) return;
 
     const id = req.params.id;
     if (typeof id !== 'string') {
@@ -199,6 +176,11 @@ async function approveEmployee(companyId: string, employeeId: string) {
 
   if (!employee || employee.deletedAt !== null || employee.role !== 'EMPLOYEE') {
     throw new Error('EMPLOYEE_NOT_FOUND');
+  }
+
+  // Cloison multi-tenant : on n'approuve que les employés de SA propre entreprise.
+  if (employee.companyId !== companyId) {
+    throw new Error('EMPLOYEE_NOT_IN_COMPANY');
   }
 
   await prisma.user.update({

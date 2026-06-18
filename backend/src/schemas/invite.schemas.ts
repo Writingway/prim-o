@@ -8,6 +8,7 @@ import { z } from 'zod';
 export const generateInviteSchema = z.object({
   maxUses: z.number().int().min(1).max(100).optional().default(5),
   expiresInHours: z.number().int().min(1).max(24).optional().default(24),
+  role: z.enum(['EMPLOYEE', 'MANAGER']).optional().default('EMPLOYEE'),
 });
 
 export type GenerateInviteInput = z.infer<typeof generateInviteSchema>;
