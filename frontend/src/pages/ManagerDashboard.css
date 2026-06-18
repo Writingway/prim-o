@@ -75,6 +75,23 @@
   background: #00827c;
 }
 
+/* Formulaire de recharge du pool (Stripe) */
+.dash-recharge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.dash-recharge input[type='number'] {
+  width: 130px;
+  padding: 8px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
 /* Messages d'état */
 .dash-msg {
   text-align: center;
