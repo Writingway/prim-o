@@ -16,7 +16,6 @@ export async function generateInviteController(
       return;
     }
 
-
     const companyId = req.user.companyId;
     if (!companyId) {
       next(new AppError(403, 'Aucune entreprise associée.'));
