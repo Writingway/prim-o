@@ -53,3 +53,16 @@ export async function sendVerificationEmail(to: string, rawToken: string): Promi
   `;
   await sendEmail({ to, subject: "Vérifie ton adresse email — Prim'O", html });
 }
+
+// Construit + envoie l'email de réinitialisation. Le lien pointe vers le
+// FRONT (l'utilisateur doit saisir un nouveau mot de passe), pas le backend.
+export async function sendPasswordResetEmail(to: string, rawToken: string): Promise<void> {
+  const link = `${config.CLIENT_URL}/?reset-token=${encodeURIComponent(rawToken)}`;
+  const html = `
+    <p>Tu as demandé à réinitialiser ton mot de passe Prim'O.</p>
+    <p>Clique sur ce lien pour en choisir un nouveau :</p>
+    <p><a href="${link}">Réinitialiser mon mot de passe</a></p>
+    <p>Ce lien expire dans 1 heure. Si tu n'es pas à l'origine de cette demande, ignore cet email.</p>
+  `;
+  await sendEmail({ to, subject: "Réinitialise ton mot de passe — Prim'O", html });
+}

@@ -27,6 +27,12 @@ export function generateEmailVerificationToken(): { raw: string; hash: string } 
   return { raw, hash: hashRefreshToken(raw) };
 }
 
+// Token de réinitialisation de mot de passe : même schéma (raw + hash sha256).
+export function generatePasswordResetToken(): { raw: string; hash: string } {
+  const raw = crypto.randomBytes(32).toString('hex');
+  return { raw, hash: hashRefreshToken(raw) };
+}
+
 // 3. Hash d'un refresh reçu (pour le retrouver en DB au moment du refresh)
 export function hashRefreshToken(raw: string): string {
   return crypto.createHash('sha256').update(raw).digest('hex');

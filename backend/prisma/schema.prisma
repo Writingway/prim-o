@@ -89,6 +89,7 @@ model User {
   company       Company?                 @relation(fields: [companyId], references: [id])
   refreshTokens RefreshToken[]
   emailTokens   EmailVerificationToken[]
+  passwordResetTokens PasswordResetToken[]
 
   inviteCodesCreated   CompanyInviteCode[]    @relation("InviteCreatedBy")
   attributionsSent     Attribution[]          @relation("AttribManager")   // en tant que manager
@@ -119,6 +120,21 @@ model RefreshToken {
 
 // Stocke le lien de confirmation email (règle 3)
 model EmailVerificationToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  userId String @db.Uuid
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// Stocke le lien de réinitialisation du mot de passe (usage unique, TTL court).
+// Même schéma que la vérification email : token haché, le raw part dans le lien.
+model PasswordResetToken {
   id        String    @id @default(uuid()) @db.Uuid
   tokenHash String    @unique
   expiresAt DateTime

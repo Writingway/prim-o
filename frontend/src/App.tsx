@@ -5,6 +5,7 @@ import ManagerDashboard from './pages/ManagerDashboard';
 import EmployeeDashboard from './pages/EmployeeDashboard';
 import AdminPage from './pages/AdminPage';
 import LegalPage, { type LegalPageKey } from './pages/LegalPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 import type { AuthSession, Role, Mode } from './types/types';
 import { refresh, roleFromToken, logout as apiLogout, setAccessToken, registerSessionExpired } from './services/api';
 
@@ -22,11 +23,17 @@ function verifiedFromQuery(): { type: 'success' | 'error'; text: string } | null
   return null;
 }
 
+// Lien de réinitialisation de mot de passe reçu par mail (…/?reset-token=…).
+function resetTokenFromQuery(): string | null {
+  return new URLSearchParams(window.location.search).get('reset-token');
+}
+
 function App() {
   // Session connectée gardée en mémoire, ou null si déconnecté.
   const [session, setSession] = useState<AuthSession | null>(null);
   const [legalPage, setLegalPage] = useState<LegalPageKey | null>(legalFromHash);
   const [verifyNotice] = useState(verifiedFromQuery);
+  const [resetToken, setResetToken] = useState(resetTokenFromQuery);
 
   useEffect(() => {
     const onHash = () => setLegalPage(legalFromHash());
@@ -104,6 +111,23 @@ function App() {
   };
 
     // Pages légales : affichées par-dessus tout (connecté ou non) via le hash.
+  // Reset mot de passe : affiché par-dessus tout (l'utilisateur n'est pas connecté).
+  if (resetToken) {
+    return (
+      <ResetPasswordPage
+        token={resetToken}
+        onDone={() => {
+          const url = new URL(window.location.href);
+          url.searchParams.delete('reset-token');
+          window.history.replaceState({}, '', url.pathname + url.search + url.hash);
+          setResetToken(null);
+          setAuthMode('login');
+          setPublicView('auth');
+        }}
+      />
+    );
+  }
+
   if (legalPage) {
     return <LegalPage page={legalPage} onBack={() => { window.location.hash = ''; }} />;
   }

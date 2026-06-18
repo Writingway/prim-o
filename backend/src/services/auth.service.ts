@@ -4,6 +4,7 @@ import {
   signAccessToken,
   generateRefreshToken,
   generateEmailVerificationToken,
+  generatePasswordResetToken,
   REFRESH_TTL_MS,
   hashRefreshToken
 } from '../lib/token';
@@ -12,7 +13,7 @@ import type {
   RegisterCompanyInput,
   RegisterUserInput 
 } from '../schemas/auth.schemas';
-import { sendVerificationEmail } from '../lib/mail';
+import { sendVerificationEmail, sendPasswordResetEmail } from '../lib/mail';
 import { Role } from "@prisma/client";
 
 
@@ -205,6 +206,80 @@ export async function verifyEmail(rawToken: string): Promise<void> {
     await tx.user.update({
       where: { id: stored.userId },
       data: { isEmailVerified: true },
+    });
+  });
+}
+
+// Renvoie un email de vérification. Silencieux par conception : ne révèle
+// jamais si l'email existe ou est déjà vérifié (le controller répond pareil
+// dans tous les cas). Invalide les anciens liens pour n'en garder qu'un actif.
+export async function resendVerification(email: string): Promise<void> {
+  const user = await prisma.user.findFirst({
+    where: { email, deletedAt: null, isEmailVerified: false },
+    select: { id: true, email: true },
+  });
+  if (!user) return; // inexistant OU déjà vérifié → on ne fait rien
+
+  const { raw, hash } = generateEmailVerificationToken();
+  await prisma.$transaction(async (tx) => {
+    await tx.emailVerificationToken.deleteMany({ where: { userId: user.id, usedAt: null } });
+    await tx.emailVerificationToken.create({
+      data: { userId: user.id, tokenHash: hash, expiresAt: new Date(Date.now() + 86_400_000) },
+    });
+  });
+
+  await sendVerificationEmail(user.email, raw);
+}
+
+// Mot de passe oublié : génère un token de reset (TTL 1h) et envoie le lien.
+// Silencieux par conception (anti-énumération) : le controller répond pareil
+// que l'email existe ou non. Invalide les anciens liens (un seul actif).
+export async function requestPasswordReset(email: string): Promise<void> {
+  const user = await prisma.user.findFirst({
+    where: { email, deletedAt: null },
+    select: { id: true, email: true },
+  });
+  if (!user) return;
+
+  const { raw, hash } = generatePasswordResetToken();
+  await prisma.$transaction(async (tx) => {
+    await tx.passwordResetToken.deleteMany({ where: { userId: user.id, usedAt: null } });
+    await tx.passwordResetToken.create({
+      data: { userId: user.id, tokenHash: hash, expiresAt: new Date(Date.now() + 3_600_000) },
+    });
+  });
+
+  await sendPasswordResetEmail(user.email, raw);
+}
+
+// Consomme un token de reset et change le mot de passe. Atomique, et
+// RÉVOQUE TOUTES LES SESSIONS (refresh) de l'user : changer son mot de
+// passe déconnecte partout (défense contre un compte compromis).
+export async function resetPassword(rawToken: string, newPassword: string): Promise<void> {
+  const tokenHash = hashRefreshToken(rawToken);
+  const stored = await prisma.passwordResetToken.findUnique({ where: { tokenHash } });
+
+  if (!stored) throw new Error('INVALID_RESET');
+  if (stored.usedAt !== null) throw new Error('INVALID_RESET');
+  if (stored.expiresAt < new Date()) throw new Error('INVALID_RESET');
+
+  const passwordHash = await bcrypt.hash(newPassword, 12);
+
+  await prisma.$transaction(async (tx) => {
+    const consumed = await tx.passwordResetToken.updateMany({
+      where: { id: stored.id, usedAt: null },
+      data: { usedAt: new Date() },
+    });
+    if (consumed.count === 0) throw new Error('INVALID_RESET');
+
+    await tx.user.update({
+      where: { id: stored.userId },
+      data: { passwordHash },
+    });
+
+    await tx.refreshToken.updateMany({
+      where: { userId: stored.userId, isRevoked: false },
+      data: { isRevoked: true },
     });
   });
 }
