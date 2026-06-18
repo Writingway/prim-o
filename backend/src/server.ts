@@ -40,7 +40,7 @@ app.use(cors({origin: config.CLIENT_URL, credentials: true}));
 // 3. Rate limiting
 app.use(rateLimit({
   windowMs: 60 * 1000,
-  max: 30,
+  max: 300,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Trop de requêtes, réessaie dans 1 minute.' },

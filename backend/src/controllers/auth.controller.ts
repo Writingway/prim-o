@@ -9,8 +9,10 @@ import {
   registerUser,
   refreshTokens,
   login,
-  logout
+  logout,
+  verifyEmail
 } from '../services/auth.service';
+
 
 const refreshCookieOptions = {
   httpOnly: true,
@@ -120,6 +122,26 @@ export async function logoutController(req: Request, res: Response, next: NextFu
     res.clearCookie('refreshToken', { path: '/api/auth' });
     res.status(204).end();
   } catch (err) {
+    next(err);
+  }
+}
+
+// GET /api/auth/verify-email?token=... — cliqué depuis l'email.
+// Consomme le token côté serveur puis REDIRIGE vers le front avec un flag.
+export async function verifyEmailController(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const token = req.query.token;
+    if (typeof token !== 'string' || token.length === 0) {
+      res.redirect(`${config.CLIENT_URL}/?verified=0&reason=missing`);
+      return;
+    }
+    await verifyEmail(token);
+    res.redirect(`${config.CLIENT_URL}/?verified=1`);
+  } catch (err) {
+    if (err instanceof Error && err.message === 'INVALID_VERIFICATION') {
+      res.redirect(`${config.CLIENT_URL}/?verified=0&reason=invalid`);
+      return;
+    }
     next(err);
   }
 }

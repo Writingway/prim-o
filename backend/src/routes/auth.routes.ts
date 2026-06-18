@@ -4,7 +4,8 @@ import {
   registerUserController,
   refreshController,
   loginController,
-  logoutController
+  logoutController,
+  verifyEmailController
  } from '../controllers/auth.controller';
 import { requireAuth } from '../middleware/auth.middleware';
 import { refreshLimiter, loginLimiter } from '../lib/rateLimit';
@@ -16,6 +17,7 @@ router.post('/register-user', registerUserController);
 router.post('/refresh', refreshLimiter, refreshController);
 router.post('/login', loginLimiter, loginController);
 router.post('/logout', logoutController);
+router.get('/verify-email', verifyEmailController);
 
 
 router.get('/me', requireAuth, (req, res) => {

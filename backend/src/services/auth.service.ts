@@ -1,16 +1,18 @@
 import bcrypt from "bcrypt";
 import {prisma} from "../lib/db";
 import {
-  signAccessToken, 
-  generateRefreshToken, 
-  REFRESH_TTL_MS, 
-  hashRefreshToken 
+  signAccessToken,
+  generateRefreshToken,
+  generateEmailVerificationToken,
+  REFRESH_TTL_MS,
+  hashRefreshToken
 } from '../lib/token';
 import type { 
   LoginInput, 
   RegisterCompanyInput,
   RegisterUserInput 
 } from '../schemas/auth.schemas';
+import { sendVerificationEmail } from '../lib/mail';
 import { Role } from "@prisma/client";
 
 
@@ -23,6 +25,7 @@ export async function registerCompany(input: RegisterCompanyInput) {
   }
 
   const passwordHash = await bcrypt.hash(password, 12);
+  const { raw, hash } = generateEmailVerificationToken();
 
   const result = await prisma.$transaction(async (tx) => {
     const company = await tx.company.create({ data: { name: companyName } });
@@ -33,22 +36,30 @@ export async function registerCompany(input: RegisterCompanyInput) {
         firstName,
         lastName,
         role: Role.OWNER,
-        isEmailVerified: true, // Dette Technique TODO: should be false and send email verification
-        companyId: company.id
-      }
+        status: 'APPROVED',      // l'OWNER n'a personne pour l'approuver → actif d'emblée (la capacité entreprise reste gardée par Company.status)
+        isEmailVerified: false,  // vérification par lien (Brevo)
+        companyId: company.id,
+      },
+    });
+    await tx.emailVerificationToken.create({
+      data: { userId: user.id, tokenHash: hash, expiresAt: new Date(Date.now() + 86_400_000) },
     });
     return { company, user };
   });
 
-  return { id: result.user.id, email: result.user.email, companyName: result.company.name }
-};
+  // Hors transaction : un échec d'envoi ne doit pas annuler l'inscription.
+  await sendVerificationEmail(result.user.email, raw);
+
+  return { id: result.user.id, email: result.user.email, companyName: result.company.name };
+}
+
 
 
 export async function registerUser(input: RegisterUserInput) {
   const { firstName, lastName, email, password, code } = input;
   const passwordHash = await bcrypt.hash(password, 12); // outside tx: slow
 
-  return prisma.$transaction(async (tx) => {
+  const { user, raw } = await prisma.$transaction(async (tx) => {
     const existing = await tx.user.findFirst({ where: { email, deletedAt: null } });
     if (existing) throw new Error('EMAIL_TAKEN');
 
@@ -64,13 +75,18 @@ export async function registerUser(input: RegisterUserInput) {
       passwordHash, role: rows[0].role, status: 'PENDING',
       isEmailVerified: false, companyId: rows[0].companyId } });
 
-    const { hash } = generateRefreshToken();
+    const { raw, hash } = generateEmailVerificationToken();
     await tx.emailVerificationToken.create({ data: { userId: user.id,
       tokenHash: hash, expiresAt: new Date(Date.now() + 86_400_000) } });
 
-    return { id: user.id, firstName, lastName, email, status: user.status };
+    return { user, raw };
   });
+
+  await sendVerificationEmail(user.email, raw);
+
+  return { id: user.id, firstName, lastName, email, status: user.status };
 }
+
 
 export async function refreshTokens(rawToken: string) {
   const tokenHash = hashRefreshToken(rawToken);
@@ -166,5 +182,29 @@ export async function logout(rawToken: string): Promise<void> {
   await prisma.refreshToken.updateMany({
     where: { tokenHash, isRevoked: false },
     data: { isRevoked: true },
+  });
+}
+
+// Consomme un token de vérification email reçu par lien. Atomique :
+// on ne marque utilisé que si ça ne l'est pas déjà (pas de double usage).
+export async function verifyEmail(rawToken: string): Promise<void> {
+  const tokenHash = hashRefreshToken(rawToken);
+  const stored = await prisma.emailVerificationToken.findUnique({ where: { tokenHash } });
+
+  if (!stored) throw new Error('INVALID_VERIFICATION');
+  if (stored.usedAt !== null) throw new Error('INVALID_VERIFICATION');
+  if (stored.expiresAt < new Date()) throw new Error('INVALID_VERIFICATION');
+
+  await prisma.$transaction(async (tx) => {
+    const consumed = await tx.emailVerificationToken.updateMany({
+      where: { id: stored.id, usedAt: null },
+      data: { usedAt: new Date() },
+    });
+    if (consumed.count === 0) throw new Error('INVALID_VERIFICATION');
+
+    await tx.user.update({
+      where: { id: stored.userId },
+      data: { isEmailVerified: true },
+    });
   });
 }
