@@ -191,6 +191,72 @@
 }
 
 /* Table des offres */
+/* Panneau « Gérer les codes » (ligne dépliée sous une offre) */
+.admin-codes-row > td {
+  background: #f9fafb;
+}
+
+.admin-codes-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 4px;
+}
+
+.admin-codes-panel label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #4b5563;
+}
+
+.admin-codes-panel textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  border: 1px solid var(--primo-border);
+  border-radius: 8px;
+  font-family: monospace;
+  font-size: 13px;
+  resize: vertical;
+}
+
+.admin-codes-hint {
+  margin: 0;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.admin-codes-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.admin-codes-list ul {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.admin-codes-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.admin-codes-list code {
+  font-family: monospace;
+  background: #f3f4f6;
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+
 .admin-table {
   width: 100%;
   border-collapse: collapse;

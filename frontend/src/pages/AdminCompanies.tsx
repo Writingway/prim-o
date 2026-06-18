@@ -4,6 +4,7 @@ import {
   createAdminCompany,
   deleteAdminCompany,
   restoreAdminCompany,
+  setCompanyStatus,
 } from '../services/api';
 import type { AdminCompany } from '../types/types';
 import { useConfirm } from '../components/ui/ConfirmDialog';
@@ -108,6 +109,36 @@ export default function AdminCompanies({ onFlash }: AdminCompaniesProps) {
     }
   };
 
+  const changeStatus = async (c: AdminCompany, status: 'APPROVED' | 'REJECTED') => {
+    const ok = await confirm({
+      title: status === 'APPROVED' ? 'Valider cette entreprise ?' : 'Rejeter cette entreprise ?',
+      message:
+        status === 'APPROVED'
+          ? `Valider « ${c.name} » ? Son patron pourra alors recharger le pool de tokens.`
+          : `Rejeter « ${c.name} » ?`,
+      confirmLabel: status === 'APPROVED' ? 'Valider' : 'Rejeter',
+      danger: status === 'REJECTED',
+    });
+    if (!ok) return;
+    setBusyId(c.id);
+    setError('');
+    try {
+      const res = await setCompanyStatus(c.id, status);
+      if (res.ok) {
+        onFlash(status === 'APPROVED' ? `« ${c.name} » validée.` : `« ${c.name} » rejetée.`);
+        load();
+      } else if (res.status === 401) {
+        setError('Session expirée, reconnecte-toi.');
+      } else {
+        setError((res.data as { error?: string } | null)?.error ?? 'Action impossible.');
+      }
+    } catch {
+      setError('Impossible de joindre le serveur.');
+    } finally {
+      setBusyId(null);
+    }
+  };
+
   const undoDelete = async () => {
     if (!lastDeleted) return;
     const ok = await confirm({
@@ -169,6 +200,7 @@ export default function AdminCompanies({ onFlash }: AdminCompaniesProps) {
                 <thead>
                   <tr>
                     <th>Nom</th>
+                    <th>Statut</th>
                     <th>Solde pool</th>
                     <th>Utilisateurs</th>
                     <th>Créée le</th>
@@ -179,10 +211,27 @@ export default function AdminCompanies({ onFlash }: AdminCompaniesProps) {
                   {companies.map((c) => (
                     <tr key={c.id}>
                       <td data-label="Nom">{c.name}</td>
+                      <td data-label="Statut">
+                        <span className={`admin-badge ${c.status === 'APPROVED' ? 'active' : 'inactive'}`}>
+                          {c.status === 'APPROVED' ? 'Validée' : c.status === 'PENDING' ? 'En attente' : 'Rejetée'}
+                        </span>
+                      </td>
                       <td data-label="Solde pool">{c.tokenBalance}</td>
                       <td data-label="Utilisateurs">{c._count.users}</td>
                       <td data-label="Créée le">{new Date(c.createdAt).toLocaleDateString('fr-FR')}</td>
                       <td className="admin-actions" data-label="Actions">
+                        {c.status !== 'APPROVED' && (
+                          <button className="admin-btn-link" disabled={busyId === c.id}
+                            onClick={() => changeStatus(c, 'APPROVED')}>
+                            Valider
+                          </button>
+                        )}
+                        {c.status === 'PENDING' && (
+                          <button className="admin-btn-link admin-btn-danger" disabled={busyId === c.id}
+                            onClick={() => changeStatus(c, 'REJECTED')}>
+                            Rejeter
+                          </button>
+                        )}
                         <button className="admin-btn-link admin-btn-danger" disabled={busyId === c.id}
                           onClick={() => remove(c)}>
                           Supprimer

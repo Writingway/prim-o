@@ -1,11 +1,15 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, Fragment } from 'react';
 import { 
-  listOffers, 
-  createOffer, 
-  updateOffer, 
+  listOffers,
+  createOffer,
+  updateOffer,
   deactivateOffer,
-  getAdminStats
+  getAdminStats,
+  addPromoCodes,
+  listPromoCodes,
+  deletePromoCode
 } from '../services/api';
+import type { AdminPromoCode } from '../services/api';
 import type { Offer, OfferCategory, AdminStats } from '../types/types';
 import './AdminPage.css';
 import Layout from '../components/layout/Layout';
@@ -38,6 +42,16 @@ export default function AdminPage({ onLogout, onBack }: AdminPageProps) {
 
   // Message de confirmation transitoire (remplace les alert()).
   const [notice, setNotice] = useState('');
+
+  // Panneau « Gérer les codes » : ouvert pour une offre à la fois.
+  const [codesOpenId, setCodesOpenId] = useState<string | null>(null);
+  const [codesText, setCodesText] = useState('');
+  const [codesError, setCodesError] = useState('');
+  const [codesSubmitting, setCodesSubmitting] = useState(false);
+  const csvInputRef = useRef<HTMLInputElement>(null);
+  // Liste des codes de l'offre ouverte (lecture).
+  const [codesList, setCodesList] = useState<AdminPromoCode[] | null>(null);
+  const [codesListLoading, setCodesListLoading] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -160,6 +174,107 @@ export default function AdminPage({ onLogout, onBack }: AdminPageProps) {
       }
     } catch {
       setError('Impossible de joindre le serveur.');
+    }
+  };
+
+  const toggleCodes = async (offerId: string) => {
+    const opening = codesOpenId !== offerId;
+    setCodesOpenId(opening ? offerId : null);
+    setCodesText('');
+    setCodesError('');
+    setCodesList(null);
+    if (opening) {
+      setCodesListLoading(true);
+      try {
+        const res = await listPromoCodes(offerId);
+        if (res.ok && res.data) setCodesList(res.data.codes);
+      } finally {
+        setCodesListLoading(false);
+      }
+    }
+  };
+
+  const handleDeleteCode = async (codeId: string) => {
+    setCodesError('');
+    const ok = await confirm({
+      title: 'Supprimer ce code ?',
+      message: 'Ce code disponible sera définitivement supprimé.',
+      confirmLabel: 'Supprimer',
+      danger: true,
+    });
+    if (!ok) return;
+    const res = await deletePromoCode(codeId);
+    if (res.ok) {
+      flash('Code supprimé.');
+      load(); // rafraîchit les compteurs de stock
+    } else if (res.status === 409) {
+      setCodesError('Ce code a déjà été utilisé, impossible de le supprimer.');
+    } else {
+      setCodesError('Impossible de supprimer ce code.');
+    }
+    // Dans tous les cas, on resynchronise la liste affichée.
+    if (codesOpenId) {
+      const r = await listPromoCodes(codesOpenId);
+      if (r.ok && r.data) setCodesList(r.data.codes);
+    }
+  };
+
+  // Lit un fichier CSV côté navigateur et remplit le textarea avec les codes
+  // (un par ligne). On gère le séparateur ligne ET virgule, et on ignore une
+  // éventuelle ligne d'en-tête « code ».
+  const handleCsvFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setCodesError('');
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const raw = String(reader.result ?? '');
+      const codes = raw
+        .split(/[\r\n,;]+/)        // lignes, virgules ou points-virgules
+        .map((c) => c.trim())
+        .filter((c) => c.length > 0 && c.toLowerCase() !== 'code'); // saute l'en-tête éventuel
+      if (codes.length === 0) {
+        setCodesError('Aucun code trouvé dans le fichier.');
+      } else {
+        setCodesText(codes.join('\n')); // l'admin vérifie avant d'ajouter
+      }
+    };
+    reader.onerror = () => setCodesError('Impossible de lire le fichier.');
+    reader.readAsText(file);
+    e.target.value = ''; // permet de re-sélectionner le même fichier
+  };
+
+  const handleAddCodes = async (offer: Offer) => {
+    setCodesError('');
+    // Découpe sur retour à la ligne, virgule ou point-virgule (même logique que le CSV).
+    const codes = codesText
+      .split(/[\r\n,;]+/)
+      .map((c) => c.trim())
+      .filter((c) => c.length > 0);
+    if (codes.length === 0) {
+      setCodesError('Colle au moins un code (un par ligne).');
+      return;
+    }
+    setCodesSubmitting(true);
+    try {
+      const res = await addPromoCodes(offer.id, codes);
+      if (res.ok && res.data) {
+        flash(`✅ ${res.data.added} code(s) ajouté(s), ${res.data.skipped} ignoré(s).`);
+        setCodesText('');
+        setCodesOpenId(null);
+        load(); // rafraîchit le badge de stock
+      } else if (res.status === 401) {
+        setError('Session expirée, reconnecte-toi.');
+        onLogout();
+      } else if (res.status === 404) {
+        setCodesError('Offre introuvable.');
+      } else {
+        setCodesError("Impossible d'ajouter les codes.");
+      }
+    } catch {
+      setCodesError('Impossible de joindre le serveur.');
+    } finally {
+      setCodesSubmitting(false);
     }
   };
 
@@ -305,12 +420,14 @@ export default function AdminPage({ onLogout, onBack }: AdminPageProps) {
                   <th>Réduction</th>
                   <th>Catégorie</th>
                   <th>Statut</th>
+                  <th>Codes</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {offers.map((offer) => (
-                  <tr key={offer.id} className={offer.isActive ? '' : 'admin-row-inactive'}>
+                  <Fragment key={offer.id}>
+                  <tr className={offer.isActive ? '' : 'admin-row-inactive'}>
                     <td data-label="Partenaire">{offer.partnerName}</td>
                     <td data-label="Coût">{offer.cost}</td>
                     <td data-label="Réduction">{offer.discountPercent}%</td>
@@ -320,13 +437,92 @@ export default function AdminPage({ onLogout, onBack }: AdminPageProps) {
                         {offer.isActive ? 'Active' : 'Désactivée'}
                       </span>
                     </td>
+                    <td data-label="Codes">
+                      🎟️ {offer.availableCodes ?? 0} dispo · {offer.usedCodes ?? 0} utilisés
+                    </td>
                     <td className="admin-actions" data-label="Actions">
                       <button className="admin-btn-link" onClick={() => openEdit(offer)}>Modifier</button>
                       <button className="admin-btn-link" onClick={() => handleToggle(offer)}>
                         {offer.isActive ? 'Désactiver' : 'Réactiver'}
                       </button>
+                      <button className="admin-btn-link" onClick={() => toggleCodes(offer.id)}>
+                        {codesOpenId === offer.id ? 'Fermer' : 'Gérer les codes'}
+                      </button>
                     </td>
                   </tr>
+                  {codesOpenId === offer.id && (
+                    <tr className="admin-codes-row">
+                      <td colSpan={7}>
+                        <div className="admin-codes-panel">
+                          <textarea
+                            rows={5}
+                            value={codesText}
+                            onChange={(e) => setCodesText(e.target.value)}
+                            placeholder={'AMZN-XXXX-1111\nAMZN-XXXX-2222\n...'}
+                          />
+                          {codesError && <p className="admin-error">{codesError}</p>}
+                          <input
+                            ref={csvInputRef}
+                            type="file"
+                            accept=".csv,text/csv,text/plain"
+                            style={{ display: 'none' }}
+                            onChange={handleCsvFile}
+                          />
+                          <div className="admin-codes-actions">
+                            <button
+                              type="button"
+                              className="admin-btn-ghost"
+                              onClick={() => csvInputRef.current?.click()}
+                            >
+                              📄 Importer un CSV
+                            </button>
+                            <button
+                              type="button"
+                              className="admin-btn-primary"
+                              disabled={codesSubmitting}
+                              onClick={() => handleAddCodes(offer)}
+                            >
+                              {codesSubmitting ? '…' : 'Ajouter les codes'}
+                            </button>
+                          </div>
+
+                          <div className="admin-codes-list">
+                            {codesListLoading ? (
+                              <p className="admin-msg">Chargement des codes…</p>
+                            ) : codesList && codesList.length > 0 ? (
+                              <ul>
+                                {codesList.map((c) => (
+                                  <li key={c.id}>
+                                    <code>{c.code}</code>{' '}
+                                    {c.isUsed ? (
+                                      <span className="admin-badge inactive">
+                                        utilisé{c.usedAt ? ` le ${new Date(c.usedAt).toLocaleDateString('fr-FR')}` : ''}
+                                      </span>
+                                    ) : (
+                                      <>
+                                        <span className="admin-badge active">dispo</span>
+                                        <button
+                                          type="button"
+                                          className="admin-btn-link"
+                                          title="Supprimer ce code"
+                                          onClick={() => handleDeleteCode(c.id)}
+                                        >
+                                          🗑️
+                                        </button>
+                                      </>
+                                    )}
+                                  </li>
+                                ))}
+                              </ul>
+                            ) : (
+                              <p className="admin-msg">Aucun code pour cette offre.</p>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                  </Fragment>
                 ))}
               </tbody>
             </table>
