@@ -28,3 +28,18 @@ export async function addPromoCodes(
   // 4) Compte-rendu : créés vs ignorés (déjà existants).
   return { added: result.count, skipped: unique.length - result.count };
 }
+
+// Liste les codes d'une offre (dispo d'abord, puis utilisés). Lecture admin.
+export async function listPromoCodes(offerId: string) {
+  const offer = await prisma.partnerOffer.findUnique({
+    where: { id: offerId },
+    select: { id: true },
+  });
+  if (!offer) throw new Error('OFFER_NOT_FOUND');
+
+  return prisma.promoCode.findMany({
+    where: { offerId },
+    orderBy: [{ isUsed: 'asc' }, { createdAt: 'asc' }],
+    select: { id: true, code: true, isUsed: true, usedAt: true },
+  });
+}

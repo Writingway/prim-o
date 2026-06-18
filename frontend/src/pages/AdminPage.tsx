@@ -5,8 +5,10 @@ import {
   updateOffer,
   deactivateOffer,
   getAdminStats,
-  addPromoCodes
+  addPromoCodes,
+  listPromoCodes
 } from '../services/api';
+import type { AdminPromoCode } from '../services/api';
 import type { Offer, OfferCategory, AdminStats } from '../types/types';
 import './AdminPage.css';
 import Layout from '../components/layout/Layout';
@@ -46,6 +48,9 @@ export default function AdminPage({ onLogout, onBack }: AdminPageProps) {
   const [codesError, setCodesError] = useState('');
   const [codesSubmitting, setCodesSubmitting] = useState(false);
   const csvInputRef = useRef<HTMLInputElement>(null);
+  // Liste des codes de l'offre ouverte (lecture).
+  const [codesList, setCodesList] = useState<AdminPromoCode[] | null>(null);
+  const [codesListLoading, setCodesListLoading] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -171,10 +176,21 @@ export default function AdminPage({ onLogout, onBack }: AdminPageProps) {
     }
   };
 
-  const toggleCodes = (offerId: string) => {
-    setCodesOpenId((cur) => (cur === offerId ? null : offerId));
+  const toggleCodes = async (offerId: string) => {
+    const opening = codesOpenId !== offerId;
+    setCodesOpenId(opening ? offerId : null);
     setCodesText('');
     setCodesError('');
+    setCodesList(null);
+    if (opening) {
+      setCodesListLoading(true);
+      try {
+        const res = await listPromoCodes(offerId);
+        if (res.ok && res.data) setCodesList(res.data.codes);
+      } finally {
+        setCodesListLoading(false);
+      }
+    }
   };
 
   // Lit un fichier CSV côté navigateur et remplit le textarea avec les codes
@@ -442,6 +458,29 @@ export default function AdminPage({ onLogout, onBack }: AdminPageProps) {
                             >
                               {codesSubmitting ? '…' : 'Ajouter les codes'}
                             </button>
+                          </div>
+
+                          <div className="admin-codes-list">
+                            {codesListLoading ? (
+                              <p className="admin-msg">Chargement des codes…</p>
+                            ) : codesList && codesList.length > 0 ? (
+                              <ul>
+                                {codesList.map((c) => (
+                                  <li key={c.id}>
+                                    <code>{c.code}</code>{' '}
+                                    {c.isUsed ? (
+                                      <span className="admin-badge inactive">
+                                        utilisé{c.usedAt ? ` le ${new Date(c.usedAt).toLocaleDateString('fr-FR')}` : ''}
+                                      </span>
+                                    ) : (
+                                      <span className="admin-badge active">dispo</span>
+                                    )}
+                                  </li>
+                                ))}
+                              </ul>
+                            ) : (
+                              <p className="admin-msg">Aucun code pour cette offre.</p>
+                            )}
                           </div>
                         </div>
                       </td>

@@ -4,7 +4,7 @@ import {
   updateOfferController,
   deactivateOfferController,
 } from '../controllers/offer.controller';
-import { addPromoCodesController } from '../controllers/promoCode.controller';
+import { addPromoCodesController, listPromoCodesController } from '../controllers/promoCode.controller';
 import {
   softDeleteCompanyController, 
   restoreCompanyController,
@@ -25,7 +25,8 @@ router.post('/offers', createOfferController);
 router.patch('/offers/:id', updateOfferController);
 router.delete('/offers/:id', deactivateOfferController);
 
-// Ajout en lot de codes promo à une offre.
+// Codes promo d'une offre : liste (lecture) + ajout en lot.
+router.get('/offers/:offerId/promo-codes', listPromoCodesController);
 router.post('/offers/:offerId/promo-codes', addPromoCodesController);
 
 // Soft-delete a company and everything tied to it.
