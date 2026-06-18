@@ -11,10 +11,11 @@ export const listAttributions = () =>
 
 // Génère un code d'invitation (manager connecté).
 // Aucun body : le code est créé côté serveur avec les défauts backend.
-export const generateInviteCode = () =>
+export const generateInviteCode = (role: 'MANAGER' | 'EMPLOYEE' = 'EMPLOYEE') =>
   authRequest<{ invite: { code: string; maxUses: number; expiresAt: string; createdAt: string } }>(
     'POST',
     '/invites/generate',
+    { role },
   );
 
 // Attribue des tokens à un employé (manager connecté).

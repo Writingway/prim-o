@@ -25,10 +25,11 @@ export async function createAttribution(
   // Vérification pool entreprise
   const company = await prisma.company.findUnique({
     where: { id: companyId },
-    select: { tokenBalance: true },
+    select: { tokenBalance: true, status: true },
   });
 
   if (!company) throw new Error('COMPANY_NOT_FOUND');
+  if (company.status !== 'APPROVED') throw new Error('COMPANY_INACTIVE');
   if (company.tokenBalance - amount < 0) throw new Error('INSUFFICIENT_POOL');
 
 

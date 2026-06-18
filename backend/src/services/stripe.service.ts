@@ -1,5 +1,6 @@
 import { stripe } from '../lib/stripe';
 import { config } from '../config';
+import { prisma } from '../lib/db';
 
 // Crée une session de paiement Stripe Checkout pour recharger le pool.
 // Renvoie l'URL hébergée par Stripe vers laquelle rediriger le manager.
@@ -8,6 +9,16 @@ export async function createCheckoutSession(
   companyId: string,
   amount: number,
 ): Promise<string> {
+  // Cloison entreprise inerte : pas de recharge de pool tant que la company
+  // n'est pas validée (PENDING/REJECTED). Garde côté serveur, avant Stripe.
+  const company = await prisma.company.findUnique({
+    where: { id: companyId },
+    select: { status: true },
+  });
+  if (!company || company.status !== 'APPROVED') {
+    throw new Error('COMPANY_INACTIVE');
+  }
+
   const session = await stripe.checkout.sessions.create({
     mode: 'payment',
     line_items: [

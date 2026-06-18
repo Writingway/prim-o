@@ -2,6 +2,7 @@ import type { Request, Response, NextFunction } from 'express';
 import { AppError } from '../middleware/error.middleware';
 import { createAttributionSchema } from '../schemas/attribution.schemas';
 import { createAttribution, listAttributionsByCompany } from '../services/attribution.service';
+import { requireManagerOrOwner } from '../middleware/authz';
 
 export async function createAttributionController(
   req: Request,
@@ -9,20 +10,13 @@ export async function createAttributionController(
   next: NextFunction,
 ): Promise<void> {
   try {
-    if (req.user?.role !== 'MANAGER') {
-      next(new AppError(403, 'Accès réservé aux managers.'));
-      return;
-    }
-
-    const companyId = req.user.companyId;
-    if (!companyId) {
-      next(new AppError(403, 'Aucune entreprise associée à ce compte.'));
-      return;
-    }
+    const companyId = requireManagerOrOwner(req, next);
+    if (!companyId) return;
 
     const input = createAttributionSchema.parse(req.body);
 
-    const attribution = await createAttribution(req.user.id, companyId, input);
+    // req.user garanti non-null par requireManagerOrOwner ci-dessus.
+    const attribution = await createAttribution(req.user!.id, companyId, input);
     res.status(201).json({ attribution });
   } catch (err) {
     if (err instanceof Error) {
@@ -30,6 +24,7 @@ export async function createAttributionController(
         EMPLOYEE_NOT_FOUND:      [404, 'Employé introuvable.'],
         EMPLOYEE_NOT_IN_COMPANY: [403, "Cet employé n'appartient pas à votre entreprise."],
         COMPANY_NOT_FOUND:       [404, 'Entreprise introuvable.'],
+        COMPANY_INACTIVE:        [403, 'Entreprise non validée.'],
         INSUFFICIENT_POOL:       [409, 'Solde de tokens insuffisant dans le pool entreprise.'],
       };
       const mapped = map[err.message];
@@ -46,16 +41,8 @@ export async function listAttributionsController(
   next: NextFunction,
 ): Promise<void> {
   try {
-    if (req.user?.role !== 'MANAGER') {
-      next(new AppError(403, 'Accès réservé aux managers.'));
-      return;
-    }
-
-    const companyId = req.user.companyId;
-    if (!companyId) {
-      next(new AppError(403, 'Aucune entreprise associée à ce compte.'));
-      return;
-    }
+    const companyId = requireManagerOrOwner(req, next);
+    if (!companyId) return;
 
     const attributions = await listAttributionsByCompany(companyId);
     res.status(200).json({ attributions });

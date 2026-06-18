@@ -34,20 +34,20 @@ async function main() {
   })
 
   // ── Entreprises (pool initial à 0, crédité ensuite par l'admin) ──
-  const acme = await prisma.company.create({ data: { name: 'Acme' } })
-  const testco = await prisma.company.create({ data: { name: 'TestCo' } })
+  const acme = await prisma.company.create({ data: { name: 'Acme', status: 'APPROVED' } })
+  const testco = await prisma.company.create({ data: { name: 'TestCo', status: 'APPROVED' } })
 
   // ── Recharge du pool par l'admin (D2 : ledger d'achats) ───
   // Le pool est alimenté UNIQUEMENT via CompanyTokenPurchase + increment.
   await prisma.$transaction([
     prisma.companyTokenPurchase.create({
-      data: { amount: 500, note: 'Crédit initial', companyId: acme.id, createdById: admin.id },
+      data: { amount: 100, note: 'Crédit initial', companyId: acme.id, createdById: admin.id },
     }),
-    prisma.company.update({ where: { id: acme.id }, data: { tokenBalance: { increment: 500 } } }),
+    prisma.company.update({ where: { id: acme.id }, data: { tokenBalance: { increment: 100 } } }),
     prisma.companyTokenPurchase.create({
-      data: { amount: 200, note: 'Crédit initial', companyId: testco.id, createdById: admin.id },
+      data: { amount: 100, note: 'Crédit initial', companyId: testco.id, createdById: admin.id },
     }),
-    prisma.company.update({ where: { id: testco.id }, data: { tokenBalance: { increment: 200 } } }),
+    prisma.company.update({ where: { id: testco.id }, data: { tokenBalance: { increment: 100 } } }),
   ])
 
   // ── Managers (pas de solde : le solde vit sur Company) ────
@@ -55,7 +55,7 @@ async function main() {
     data: {
       email: 'boss@acme.fr',
       passwordHash: await hash('password123'),
-      role: 'MANAGER',
+      role: 'OWNER',
       firstName: 'Boss',
       lastName: 'Acme',
       status: 'APPROVED',
@@ -68,9 +68,36 @@ async function main() {
     data: {
       email: 'test@testco.fr',
       passwordHash: await hash('password123'),
-      role: 'MANAGER',
+      role: 'OWNER',
       firstName: 'Test',
       lastName: 'Co',
+      status: 'APPROVED',
+      isEmailVerified: true,
+      companyId: testco.id,
+    },
+  })
+
+  // Manager
+  const managerAcme = await prisma.user.create({
+    data: {
+      email: 'manager@acme.fr',
+      passwordHash: await hash('password123'),
+      role: 'MANAGER',
+      firstName: 'Luc',
+      lastName: 'Acme',
+      status: 'APPROVED',
+      isEmailVerified: true,
+      companyId: acme.id,
+    },
+  })
+
+  const managerTestCo = await prisma.user.create({
+    data: {
+      email: 'manager@testco.fr',
+      passwordHash: await hash('password123'),
+      role: 'MANAGER',
+      firstName: 'Kilian',
+      lastName: 'TestCo',
       status: 'APPROVED',
       isEmailVerified: true,
       companyId: testco.id,

@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import {
-  registerManagerController,
+  registerCompanyController,
   registerUserController,
   refreshController,
   loginController,
@@ -11,8 +11,8 @@ import { refreshLimiter, loginLimiter } from '../lib/rateLimit';
 
 const router = Router();
 
-router.post('/manager/register', registerManagerController);
-router.post('/employee/register', registerUserController);
+router.post('/register-company', registerCompanyController);
+router.post('/register-user', registerUserController);
 router.post('/refresh', refreshLimiter, refreshController);
 router.post('/login', loginLimiter, loginController);
 router.post('/logout', logoutController);

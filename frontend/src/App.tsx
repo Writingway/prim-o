@@ -119,9 +119,10 @@ function App() {
   }
 
   // ── Connecté : dashboard si demandé (manager/employé), sinon accueil ──
-  if (loggedView === 'dashboard' && session.role === 'manager') {
+  if (loggedView === 'dashboard' && (session.role === 'manager' || session.role === 'owner')) {
     return (
       <ManagerDashboard
+        role={session.role}
         onLogout={handleLogout}
         onBack={() => setLoggedView('landing')}
       />
