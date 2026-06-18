@@ -57,9 +57,9 @@ export async function requireAdmin(req: Request, res: Response, next: NextFuncti
   try {
     const user = await prisma.user.findFirst({
       where: { id: req.user.id, deletedAt: null },
-      select: { role: true, status: true },
+      select: { role: true },
     });
-    if (!user || user.role !== 'ADMIN' || user.status !== 'APPROVED') {
+    if (!user || user.role !== 'ADMIN') {
       next(new AppError(403, 'Accès réservé aux administrateurs.'));
       return;
     }

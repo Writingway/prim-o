@@ -1,28 +1,29 @@
 import { z } from 'zod';
 import { safeText } from '../lib/validation';
 
-export const registerCompanySchema = z.object({
-  companyName: safeText(2),
+// Account-first : l'inscription ne crée qu'un utilisateur (ni entreprise ni code).
+export const registerSchema = z.object({
   firstName: safeText(2),
   lastName: safeText(2),
   email: z.email(),
   password: z.string().min(8),
 });
+export type RegisterInput = z.infer<typeof registerSchema>;
 
-export type RegisterCompanyInput = z.infer<typeof registerCompanySchema>;
+// Création d'entreprise par un utilisateur flottant authentifié.
+export const createCompanySchema = z.object({
+  companyName: safeText(2),
+});
+export type CreateCompanyInput = z.infer<typeof createCompanySchema>;
+
+// Rejoindre une entreprise via code d'invitation (utilisateur flottant authentifié).
+export const joinCompanySchema = z.object({
+  code: z.string().min(6),
+});
+export type JoinCompanyInput = z.infer<typeof joinCompanySchema>;
 
 export const loginSchema = z.object({
   email: z.email(),
   password: z.string().min(1),
 });
 export type LoginInput = z.infer<typeof loginSchema>;
-
-export const registerUserSchema = z.object({
-  firstName: safeText(2),
-  lastName: safeText(2),
-  email: z.email(),
-  password: z.string().min(8),
-  code: z.string().min(6), // Le code d'invitation est optionnel côté backend : on vérifie sa présence dans le service.
-});
-
-export type RegisterUserInput = z.infer<typeof registerUserSchema>;

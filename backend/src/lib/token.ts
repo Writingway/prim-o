@@ -6,7 +6,7 @@ const ACCESS_TTL = '15m'; // Access token time to live
 export const REFRESH_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 jours en ms
 
 // 1. Access token (JWT signé)
-export function signAccessToken(userId: string, role: string, companyId?: string): string {
+export function signAccessToken(userId: string, role: string | null, companyId?: string): string {
   const payload: any = { role };
   if (companyId) {
     payload.companyId = companyId;
@@ -25,12 +25,12 @@ export function hashRefreshToken(raw: string): string {
   return crypto.createHash('sha256').update(raw).digest('hex');
 }
 
-export interface AccessPayload { sub: string; role: string; companyId?: string; }
+export interface AccessPayload { sub: string; role: string | null; companyId?: string; }
 
 export function verifyAccessToken(token: string): AccessPayload {
   const decoded = jwt.verify(token, config.JWT_SECRET); // throw si signature KO ou expiré
-  if (typeof decoded === 'string' || !decoded.sub || !decoded.role) {
+  if (typeof decoded === 'string' || !decoded.sub) {
     throw new Error('INVALID_TOKEN');
   }
-  return { sub: decoded.sub, role: decoded.role as string, companyId: (decoded as any).companyId };
+  return { sub: decoded.sub, role: (decoded.role ?? null) as string | null, companyId: (decoded as any).companyId };
 }

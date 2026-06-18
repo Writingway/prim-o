@@ -14,7 +14,6 @@ export async function listEmployeesByEmployer(companyId: string) {
       lastName: true,
       email: true,
       balance: true,
-      status: true,
       isEmailVerified: true,
       createdAt: true,
     },
