@@ -8,8 +8,12 @@ import {
   createAttribution,
   approveEmployee as apiApproveEmployee,
   createCheckout,
+  listManagers,
+  getMyBalance,
+  allocateTokens,
   logout as apiLogout,
 } from '../services/api';
+import type { CompanyManager } from '../services/api';
 import type { Employee, Company, AttributionHistory, Role } from '../types/types';
 import './ManagerDashboard.css';
 import Layout from '../components/layout/Layout';
@@ -47,6 +51,14 @@ export default function ManagerDashboard({ role, onLogout, onBack }: ManagerDash
   const [recharging, setRecharging] = useState(false);
   const [paymentNotice, setPaymentNotice] = useState<'success' | 'cancel' | null>(null);
 
+  // Solde perso (manager) + allocation patron → manager.
+  const [myBalance, setMyBalance] = useState<number | null>(null);
+  const [managers, setManagers] = useState<CompanyManager[]>([]);
+  const [allocOpenId, setAllocOpenId] = useState<string | null>(null);
+  const [allocAmount, setAllocAmount] = useState('');
+  const [allocError, setAllocError] = useState('');
+  const [allocSubmitting, setAllocSubmitting] = useState(false);
+
   // Formulaire d'attribution inline : un seul ouvert à la fois.
   const [attribOpenId, setAttribOpenId] = useState<string | null>(null);
   const [attribAmount, setAttribAmount] = useState('');
@@ -76,6 +88,15 @@ export default function ManagerDashboard({ role, onLogout, onBack }: ManagerDash
       setEmployees(empRes.data.employees);
       if (compRes.ok && compRes.data) setCompany(compRes.data.company);
       if (attrRes.ok && attrRes.data) setAttributions(attrRes.data.attributions);
+
+      // Manager : son solde perso. Patron : la liste des managers à alimenter.
+      if (role === 'manager') {
+        const balRes = await getMyBalance();
+        if (balRes.ok && balRes.data) setMyBalance(balRes.data.balance);
+      } else if (role === 'owner') {
+        const mgrRes = await listManagers();
+        if (mgrRes.ok && mgrRes.data) setManagers(mgrRes.data.managers);
+      }
     } catch {
       setError('Impossible de joindre le serveur. Le backend est-il lancé ?');
     } finally {
@@ -161,6 +182,38 @@ export default function ManagerDashboard({ role, onLogout, onBack }: ManagerDash
     }
   };
 
+  const openAlloc = (id: string) => {
+    setAllocOpenId(id);
+    setAllocAmount('');
+    setAllocError('');
+  };
+
+  const submitAlloc = async (managerId: string) => {
+    setAllocError('');
+    const amount = Number(allocAmount);
+    if (!Number.isInteger(amount) || amount <= 0) {
+      setAllocError('Le montant doit être un entier positif.');
+      return;
+    }
+    setAllocSubmitting(true);
+    try {
+      const res = await allocateTokens(managerId, amount);
+      if (res.ok) {
+        setAllocOpenId(null);
+        await load(); // rafraîchit pool + soldes managers
+      } else if (res.status === 401) {
+        setAllocError('Session expirée, reconnecte-toi.');
+      } else {
+        const msg = res.data && 'error' in res.data ? res.data.error : "Échec de l'allocation.";
+        setAllocError(msg);
+      }
+    } catch {
+      setAllocError('Impossible de joindre le serveur.');
+    } finally {
+      setAllocSubmitting(false);
+    }
+  };
+
   // Retour de Stripe : lit ?payment=success|cancel, affiche un message,
   // nettoie l'URL, et recharge le solde (le webhook crédite en ~1-2 s).
   useEffect(() => {
@@ -206,7 +259,8 @@ export default function ManagerDashboard({ role, onLogout, onBack }: ManagerDash
         closeAttrib();
         await load(); // recharge la liste → le solde de l'employé est à jour
       } else if (res.status === 409) {
-        setAttribError('Solde insuffisant dans le pool entreprise.');
+        const msg = res.data && 'error' in res.data ? res.data.error : 'Solde de tokens insuffisant.';
+        setAttribError(msg);
       } else if (res.status === 400) {
         setAttribError('Montant et raison obligatoires.');
       } else if (res.status === 401) {
@@ -260,7 +314,10 @@ export default function ManagerDashboard({ role, onLogout, onBack }: ManagerDash
       <div className="dash-container">
 
         <div className="dash-stats">
-          <div className="dash-stat dash-stat-pool">🏦 <strong>{company?.tokenBalance ?? '—'}</strong>&nbsp;tokens disponibles</div>
+          <div className="dash-stat dash-stat-pool">🏦 <strong>{company?.tokenBalance ?? '—'}</strong>&nbsp;pool entreprise</div>
+          {role === 'manager' && (
+            <div className="dash-stat">🪙 <strong>{myBalance ?? '—'}</strong>&nbsp;mes tokens</div>
+          )}
           <div className="dash-stat">👥 <strong>{employees?.length ?? 0}</strong>&nbsp;employés</div>
           <div className="dash-stat">🪙 <strong>{totalDistributed}</strong>&nbsp;tokens distribués</div>
           {role === 'owner' && (
@@ -295,6 +352,57 @@ export default function ManagerDashboard({ role, onLogout, onBack }: ManagerDash
             </button>
             {rechargeError && <p className="dash-msg dash-error">{rechargeError}</p>}
           </form>
+        )}
+
+        {role === 'owner' && managers.length > 0 && (
+          <section className="history">
+            <h2 className="history-title">Allouer des tokens aux managers</h2>
+            <ul className="emp-list">
+              {managers.map((m) => (
+                <li className="emp-item" key={m.id}>
+                  <div className="emp-row">
+                    <div className="emp-avatar">
+                      {`${m.firstName?.[0] ?? ''}${m.lastName?.[0] ?? ''}`.toUpperCase()}
+                    </div>
+                    <div className="emp-main">
+                      <div className="emp-name">{m.firstName} {m.lastName}</div>
+                      <div className="emp-sub">{m.email}</div>
+                    </div>
+                    <div className="emp-balance">
+                      <div className="emp-balance-num">{m.balance}</div>
+                      <div className="emp-balance-label">tokens</div>
+                    </div>
+                    <button
+                      type="button"
+                      className="emp-attrib-btn"
+                      onClick={() => (allocOpenId === m.id ? setAllocOpenId(null) : openAlloc(m.id))}
+                    >
+                      {allocOpenId === m.id ? 'Annuler' : 'Allouer'}
+                    </button>
+                  </div>
+                  {allocOpenId === m.id && (
+                    <form
+                      className="emp-attrib-form"
+                      onSubmit={(ev) => { ev.preventDefault(); submitAlloc(m.id); }}
+                    >
+                      <input
+                        type="number"
+                        min="1"
+                        step="1"
+                        placeholder="Montant"
+                        value={allocAmount}
+                        onChange={(ev) => setAllocAmount(ev.target.value)}
+                      />
+                      <button type="submit" className="emp-attrib-submit" disabled={allocSubmitting}>
+                        {allocSubmitting ? '…' : 'Allouer'}
+                      </button>
+                      {allocError && <p className="emp-attrib-error">{allocError}</p>}
+                    </form>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </section>
         )}
 
         {inviteCode && (

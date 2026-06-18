@@ -8,3 +8,11 @@ export const createAttributionSchema = z.object({
 });
 
 export type CreateAttributionInput = z.infer<typeof createAttributionSchema>;
+
+// Allocation patron → manager.
+export const allocateSchema = z.object({
+  managerId: z.uuid(),
+  amount:    z.number().int().positive(),
+});
+
+export type AllocateInput = z.infer<typeof allocateSchema>;
