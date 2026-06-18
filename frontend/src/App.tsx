@@ -130,6 +130,7 @@ function App() {
   return (
     <LandingPage
       isLoggedIn={true}
+      role={session.role}
       onLogin={() => {}}
       onRegister={() => {}}
       onDashboard={() => setLoggedView('dashboard')}

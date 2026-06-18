@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
-import { listOffers } from '../services/api';
-import type { Offer } from '../types/types';
+import { listOffers, redeemOffer } from '../services/api';
+import type { Offer, Role } from '../types/types';
 import './LandingPage.css';
 import Layout from '../components/layout/Layout';
+import { useConfirm } from '../components/ui/ConfirmDialog';
 
 type LandingPageProps = {
   isLoggedIn: boolean;
+  role?: Role;
   onLogin: () => void;
   onRegister: () => void;
   onDashboard: () => void;
@@ -21,16 +23,27 @@ const categoryMeta: Record<Offer['category'], { emoji: string; label: string }> 
   OTHER: { emoji: '🎁', label: 'Autre' },
 };
 
+type Revealed = { code: string; offerName: string; amount: number };
+
 // Page d'accueil / hub : header adaptatif + vitrine d'offres partenaires.
 export default function LandingPage({
   isLoggedIn,
+  role,
   onLogin,
   onRegister,
   onDashboard,
   onLogout,
 }: LandingPageProps) {
+  const { confirm, confirmDialog } = useConfirm();
   const [offers, setOffers] = useState<Offer[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Échange (employé) : offre en cours, code révélé, message d'erreur.
+  const [redeemingId, setRedeemingId] = useState<string | null>(null);
+  const [revealed, setRevealed] = useState<Revealed | null>(null);
+  const [redeemError, setRedeemError] = useState('');
+
+  const isEmployee = isLoggedIn && role === 'employee';
 
   useEffect(() => {
     let alive = true;
@@ -46,6 +59,34 @@ export default function LandingPage({
       alive = false;
     };
   }, []);
+
+  const handleRedeem = async (offer: Offer) => {
+    setRedeemError('');
+    const ok = await confirm({
+      title: `Échanger ${offer.cost} tokens ?`,
+      message: `Obtenir un code « ${offer.partnerName} » en échange de ${offer.cost} tokens ?`,
+      confirmLabel: 'Échanger',
+    });
+    if (!ok) return;
+
+    setRedeemingId(offer.id);
+    try {
+      const res = await redeemOffer(offer.id);
+      if (res.ok && res.data) {
+        setRevealed(res.data);
+      } else if (res.status === 401) {
+        setRedeemError('Session expirée, reconnecte-toi.');
+      } else if (res.data && typeof res.data === 'object' && 'error' in res.data) {
+        setRedeemError(String((res.data as { error: string }).error));
+      } else {
+        setRedeemError("Impossible d'échanger pour le moment.");
+      }
+    } catch {
+      setRedeemError('Impossible de joindre le serveur.');
+    } finally {
+      setRedeemingId(null);
+    }
+  };
 
   return (
     <Layout
@@ -82,6 +123,8 @@ export default function LandingPage({
       <section className="landing-offers">
         <h2 className="landing-offers-title">Nos offres partenaires</h2>
 
+        {redeemError && <p className="landing-redeem-error">{redeemError}</p>}
+
         {loading ? (
           <p className="landing-muted">Chargement des offres…</p>
         ) : offers.length === 0 ? (
@@ -97,6 +140,16 @@ export default function LandingPage({
                   <h3 className="offer-name">{o.partnerName}</h3>
                   <p className="offer-category">{meta.label}</p>
                   <p className="offer-cost">{o.cost} 🪙 tokens</p>
+                  {isEmployee && (
+                    <button
+                      className="app-btn app-btn-primary offer-redeem-btn"
+                      type="button"
+                      disabled={redeemingId === o.id}
+                      onClick={() => handleRedeem(o)}
+                    >
+                      {redeemingId === o.id ? '…' : `Échanger (${o.cost})`}
+                    </button>
+                  )}
                 </article>
               );
             })}
@@ -104,6 +157,31 @@ export default function LandingPage({
         )}
       </section>
     </div>
+
+    {/* Révélation du code obtenu */}
+    {revealed && (
+      <div className="landing-modal-overlay" onClick={() => setRevealed(null)}>
+        <div className="landing-modal" onClick={(e) => e.stopPropagation()}>
+          <h3 className="landing-modal-title">🎉 Code « {revealed.offerName} »</h3>
+          <p className="landing-modal-sub">{revealed.amount} tokens débités. Voici ton code :</p>
+          <div className="landing-modal-code">{revealed.code}</div>
+          <div className="landing-modal-actions">
+            <button
+              className="app-btn app-btn-ghost"
+              type="button"
+              onClick={() => navigator.clipboard.writeText(revealed.code)}
+            >
+              Copier
+            </button>
+            <button className="app-btn app-btn-primary" type="button" onClick={() => setRevealed(null)}>
+              Fermer
+            </button>
+          </div>
+          <p className="landing-modal-note">Tu le retrouveras dans « Mes codes » sur ton tableau de bord.</p>
+        </div>
+      </div>
+    )}
+    {confirmDialog}
   </Layout>
   );
 }
