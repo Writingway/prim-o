@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { safeText } from '../lib/validation';
 
-export const registerManagerSchema = z.object({
+export const registerCompanySchema = z.object({
   companyName: safeText(2),
   firstName: safeText(2),
   lastName: safeText(2),
@@ -9,7 +9,7 @@ export const registerManagerSchema = z.object({
   password: z.string().min(8),
 });
 
-export type RegisterManagerInput = z.infer<typeof registerManagerSchema>;
+export type RegisterCompanyInput = z.infer<typeof registerCompanySchema>;
 
 export const loginSchema = z.object({
   email: z.email(),

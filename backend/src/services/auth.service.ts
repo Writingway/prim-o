@@ -1,12 +1,20 @@
 import bcrypt from "bcrypt";
 import {prisma} from "../lib/db";
-import { signAccessToken, generateRefreshToken, REFRESH_TTL_MS, hashRefreshToken } from '../lib/token';
-import type { LoginInput } from '../schemas/auth.schemas';
-import type { RegisterManagerInput, RegisterUserInput } from "../schemas/auth.schemas";
+import {
+  signAccessToken, 
+  generateRefreshToken, 
+  REFRESH_TTL_MS, 
+  hashRefreshToken 
+} from '../lib/token';
+import type { 
+  LoginInput, 
+  RegisterCompanyInput,
+  RegisterUserInput 
+} from '../schemas/auth.schemas';
 import { Role } from "@prisma/client";
 
 
-export async function registerManager(input: RegisterManagerInput) {
+export async function registerCompany(input: RegisterCompanyInput) {
   const { companyName, firstName, lastName, email, password } = input;
 
   const existingManager = await prisma.user.findFirst({ where: { email, deletedAt: null } });
@@ -24,9 +32,8 @@ export async function registerManager(input: RegisterManagerInput) {
         passwordHash,
         firstName,
         lastName,
-        role: Role.MANAGER,
-        status: 'APPROVED',
-        isEmailVerified: true,
+        role: Role.OWNER,
+        isEmailVerified: true, // Dette Technique TODO: should be false and send email verification
         companyId: company.id
       }
     });
@@ -45,16 +52,16 @@ export async function registerUser(input: RegisterUserInput) {
     const existing = await tx.user.findFirst({ where: { email, deletedAt: null } });
     if (existing) throw new Error('EMAIL_TAKEN');
 
-    const rows = await tx.$queryRaw<{ companyId: string }[]>`
+    const rows = await tx.$queryRaw<{ companyId: string, role: Role }[]>`
       UPDATE "CompanyInviteCode"
       SET "usedCount" = "usedCount" + 1
       WHERE "code" = ${code} AND "revokedAt" IS NULL
         AND "expiresAt" > now() AND "usedCount" < "maxUses"
-      RETURNING "companyId"`;
+      RETURNING "companyId", "role"`;
     if (!rows[0]) throw new Error('INVALID_CODE');
 
     const user = await tx.user.create({ data: { firstName, lastName, email,
-      passwordHash, role: Role.EMPLOYEE, status: 'PENDING',
+      passwordHash, role: rows[0].role, status: 'PENDING',
       isEmailVerified: false, companyId: rows[0].companyId } });
 
     const { hash } = generateRefreshToken();
@@ -64,48 +71,6 @@ export async function registerUser(input: RegisterUserInput) {
     return { id: user.id, firstName, lastName, email, status: user.status };
   });
 }
-
-// export async function refreshTokens(rawToken: string) {
-//   const tokenHash = hashRefreshToken(rawToken);
-//   const stored = await prisma.refreshToken.findUnique({ where: { tokenHash } });
-
-//   if (!stored) throw new Error('INVALID_REFRESH');
-
-//   // DÉTECTION DE VOL : token révoqué = quelqu'un réutilise un vieux token
-//   if (stored.isRevoked) {
-//     await prisma.refreshToken.updateMany({
-//       where: { userId: stored.userId, isRevoked: false },
-//       data: { isRevoked: true },
-//     });
-//     throw new Error('INVALID_REFRESH');
-//   }
-
-//   if (stored.expiresAt < new Date()) throw new Error('INVALID_REFRESH');
-
-//   // ROTATION atomique
-//   const { raw, hash } = generateRefreshToken();
-//   const newToken = await prisma.$transaction(async (tx) => {
-//     const created = await tx.refreshToken.create({
-//       data: {
-//         tokenHash: hash,
-//         expiresAt: new Date(Date.now() + REFRESH_TTL_MS),
-//         userId: stored.userId,
-//       },
-//     });
-//     await tx.refreshToken.update({
-//       where: { id: stored.id },
-//       data: { isRevoked: true, replacedById: created.id },
-//     });
-//     return created;
-//   });
-
-//   const userId = stored.userId;
-//   const user = await prisma.user.findUnique({ where: { id: userId } });
-//   if (!user || user.deletedAt !== null || user.status !== 'APPROVED') throw new Error('INVALID_REFRESH');
-//   const accessToken = signAccessToken(userId, user.role, user.companyId ?? undefined);
-
-//   return { accessToken, refreshToken: raw };
-// }
 
 export async function refreshTokens(rawToken: string) {
   const tokenHash = hashRefreshToken(rawToken);

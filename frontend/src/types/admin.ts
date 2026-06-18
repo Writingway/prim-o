@@ -54,3 +54,15 @@ export type AdminRedemption = {
   offer: { partnerName: string };
   promoCode: { code: string };
 };
+
+// Ligne du registre global des paiements Stripe (GET /api/admin/purchases).
+// Source : CompanyTokenPurchase filtré sur stripeSessionId != null.
+export type AdminPurchase = {
+  id: string;
+  amount: number;
+  note: string | null;
+  stripeSessionId: string | null;
+  createdAt: string;
+  company: { name: string };
+  createdBy: { firstName: string; lastName: string };
+};

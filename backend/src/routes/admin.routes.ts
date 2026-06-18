@@ -14,8 +14,10 @@ import {
   getStatsController,
   listCompaniesController,
   createCompanyController,
+  setCompanyStatusController,
   listAttributionsController,
-  listRedemptionsController
+  listRedemptionsController,
+  listPurchasesController
 } from '../controllers/admin.controller';
 
 const router = Router();
@@ -34,6 +36,7 @@ router.delete('/promo-codes/:id', deletePromoCodeController);
 // Soft-delete a company and everything tied to it.
 router.delete('/companies/:id', softDeleteCompanyController);
 router.post('/companies/:id/restore', restoreCompanyController);
+router.patch('/companies/:id/status', setCompanyStatusController);
 
 router.get('/users', listUsersController);
 router.patch('/users/:id', updateUserController);
@@ -45,5 +48,6 @@ router.get('/companies', listCompaniesController);
 router.post('/companies', createCompanyController);
 router.get('/attributions', listAttributionsController);
 router.get('/redemptions', listRedemptionsController);
+router.get('/purchases', listPurchasesController);
 
 export default router;

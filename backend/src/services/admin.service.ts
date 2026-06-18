@@ -28,7 +28,7 @@ export async function listCompanies(q: PaginationQuery) {
       skip: (q.page - 1) * q.limit,   // how many rows to jump over
       take: q.limit,                  // how many to return
       select: {
-        id: true, name: true, tokenBalance: true, createdAt: true,
+        id: true, name: true, tokenBalance: true, status: true, createdAt: true,
         _count: { select: { users: true } },
       },
     }),
@@ -65,8 +65,22 @@ export async function listAttributions(q: PaginationQuery) {
 // Create a new company. Only the name is required; tokenBalance defaults to 0.  
 export async function createCompany(data: CreateCompanyInput) {
   return prisma.company.create({
-    data: { name: data.name },
-    select: { id: true, name: true, tokenBalance: true, createdAt: true },
+    data: { name: data.name, status: 'APPROVED' },   // créée par l'admin = active d'emblée
+    select: { id: true, name: true, tokenBalance: true, status: true, createdAt: true },
+  });
+}
+
+// Validation d'entreprise (file d'attente admin) : PENDING -> APPROVED/REJECTED.
+export async function setCompanyStatus(companyId: string, status: 'APPROVED' | 'REJECTED') {
+  const company = await prisma.company.findFirst({
+    where: { id: companyId, deletedAt: null },
+    select: { id: true },
+  });
+  if (!company) throw new Error('COMPANY_NOT_FOUND');
+  return prisma.company.update({
+    where: { id: companyId },
+    data: { status },
+    select: { id: true, name: true, status: true },
   });
 }
 
@@ -274,6 +288,32 @@ export async function listRedemptions(q: PaginationQuery) {
       },
     }),
     prisma.redemption.count({ where }),
+  ]);
+  return { items, total, page: q.page, hasMore: q.page * q.limit < total };
+}
+
+// Global ledger: every Stripe top-up recorded in DB (admin view).
+// Filtré sur stripeSessionId != null → uniquement les vrais paiements Stripe
+// (exclut d'éventuels crédits manuels sans session).
+export async function listPurchases(q: PaginationQuery) {
+  const where: Prisma.CompanyTokenPurchaseWhereInput = { stripeSessionId: { not: null } };
+  const [items, total] = await Promise.all([
+    prisma.companyTokenPurchase.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      skip: (q.page - 1) * q.limit,
+      take: q.limit,
+      select: {
+        id: true,
+        amount: true,
+        note: true,
+        stripeSessionId: true,
+        createdAt: true,
+        company:   { select: { name: true } },
+        createdBy: { select: { firstName: true, lastName: true } },
+      },
+    }),
+    prisma.companyTokenPurchase.count({ where }),
   ]);
   return { items, total, page: q.page, hasMore: q.page * q.limit < total };
 }

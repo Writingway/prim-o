@@ -4,12 +4,12 @@ import { post } from "./client";
 // Corps d'erreur de validation (400) : le backend renvoie details[].message.
 type ValidationErrorBody = { details?: Array<{ message: string }> };
 
-export function registerManager(payload: { companyName: string; firstName: string; lastName: string; email: string; password: string }) {
-  return post<ValidationErrorBody>('/auth/manager/register', payload);
+export function registerCompany(payload: { companyName: string; firstName: string; lastName: string; email: string; password: string }) {
+  return post<ValidationErrorBody>('/auth/register-company', payload);
 }
 
 export function registerEmployee(payload: { firstName: string; lastName: string; email: string; password: string; code: string }) {
-  return post<ValidationErrorBody>('/auth/employee/register', payload);
+  return post<ValidationErrorBody>('/auth/register-user', payload);
 }
 
 // Login unifié : le backend identifie le rôle via les identifiants, pas via l'URL.

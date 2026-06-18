@@ -1,11 +1,11 @@
 import type { Request, Response, NextFunction } from 'express';
-import { registerManagerSchema, registerUserSchema } from '../schemas/auth.schemas';
+import { registerCompanySchema, registerUserSchema } from '../schemas/auth.schemas';
 import { AppError } from '../middleware/error.middleware';
 import { loginSchema } from '../schemas/auth.schemas';
 import { config } from '../config';
 import { REFRESH_TTL_MS } from '../lib/token';
 import {
-  registerManager,
+  registerCompany,
   registerUser,
   refreshTokens,
   login,
@@ -20,15 +20,15 @@ const refreshCookieOptions = {
   path: '/api/auth',
 };
 
-export async function registerManagerController(
+export async function registerCompanyController(
   req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> {
   try {
-    const input = registerManagerSchema.parse(req.body);
-    const manager = await registerManager(input);
-    res.status(201).json({ manager });
+    const input = registerCompanySchema.parse(req.body);
+    const company = await registerCompany(input);
+    res.status(201).json({ company });
   } catch (err) {
     if (err instanceof Error && err.message === 'EMAIL_TAKEN') {
       next(new AppError(409, 'Email déjà utilisé.'));

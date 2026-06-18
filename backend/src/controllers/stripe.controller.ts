@@ -9,8 +9,8 @@ export async function createCheckoutController(
   next: NextFunction,
 ): Promise<void> {
   try {
-    if (req.user?.role !== 'MANAGER') {
-      next(new AppError(403, 'Accès réservé aux managers.'));
+    if (req.user?.role !== 'OWNER') {
+      next(new AppError(403, "Seul le patron peut recharger le pool de l'entreprise."));
       return;
     }
 
@@ -25,6 +25,10 @@ export async function createCheckoutController(
     const url = await createCheckoutSession(req.user.id, companyId, input.amount);
     res.status(200).json({ url });
   } catch (err) {
+    if (err instanceof Error && err.message === 'COMPANY_INACTIVE') {
+      next(new AppError(403, 'Entreprise non validée.'));
+      return;
+    }
     next(err);
   }
 }

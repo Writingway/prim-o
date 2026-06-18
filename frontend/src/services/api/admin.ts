@@ -7,6 +7,7 @@ import {
   AdminCompany,
   AdminAttribution,
   AdminRedemption,
+  AdminPurchase
 } from "../../types/types";
 import { authRequest } from "./client";
 
@@ -62,3 +63,6 @@ export const listAdminAttributions = (page = 1, limit = 20) =>
 
 export const listAdminRedemptions = (page = 1, limit = 20) =>
   authRequest<Paginated<AdminRedemption>>('GET', `/admin/redemptions?page=${page}&limit=${limit}`);
+
+export const listAdminPurchases = (page = 1, limit = 20) =>
+  authRequest<Paginated<AdminPurchase>>('GET', `/admin/purchases?page=${page}&limit=${limit}`);

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { ChangeEvent, SyntheticEvent } from 'react';
-import { registerManager, registerEmployee } from '../../services/api';
+import { registerCompany, registerEmployee } from '../../services/api';
 import type { Role } from '../../types/types';
 
 // Corps d'erreur de validation renvoyé par le backend (ZodError -> details[]).
@@ -36,6 +36,7 @@ export default function RegisterForm({ role, onSuccess }: RegisterFormProps) {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [consent, setConsent] = useState(false);
 
   // Met à jour le champ dont l'attribut `name` correspond à la clé du state.
   const handleFieldChange = (event: ChangeEvent<HTMLInputElement>) =>
@@ -43,13 +44,17 @@ export default function RegisterForm({ role, onSuccess }: RegisterFormProps) {
 
   const handleSubmit = async (event: SyntheticEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (!consent) {
+      setError('Vous devez accepter la politique de confidentialité et les CGU.');
+      return;
+    }
     setError('');
     setLoading(true);
 
     try {
       const res =
-        role === 'manager'
-          ? await registerManager({
+        role === 'owner'
+          ? await registerCompany({
               companyName: form.companyName,
               firstName: form.firstName,
               lastName: form.lastName,
@@ -87,7 +92,7 @@ export default function RegisterForm({ role, onSuccess }: RegisterFormProps) {
 
   return (
     <form className="auth-form" onSubmit={handleSubmit}>
-      {role === 'manager' && (
+      {role === 'owner' && (
         <input
           name="companyName"
           placeholder="Nom de l'entreprise"
@@ -134,9 +139,22 @@ export default function RegisterForm({ role, onSuccess }: RegisterFormProps) {
         />
       )}
 
+      <label className="auth-consent">
+        <input
+          type="checkbox"
+          checked={consent}
+          onChange={(e) => setConsent(e.target.checked)}
+        />
+        <span>
+          J'ai lu et j'accepte les{' '}
+          <a href="#cgu" target="_blank" rel="noopener noreferrer">CGU</a> et la{' '}
+          <a href="#privacy" target="_blank" rel="noopener noreferrer">politique de confidentialité</a>.
+        </span>
+      </label>
+
       {error && <p className="auth-error">{error}</p>}
 
-      <button type="submit" disabled={loading}>
+      <button type="submit" disabled={loading || !consent}>
         {loading ? 'Chargement…' : 'Créer mon compte'}
       </button>
     </form>

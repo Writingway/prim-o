@@ -1,4 +1,6 @@
 import { prisma } from "../lib/db";
+import { anonymizeUser } from './privacy.service';
+
 
 // Liste les employés rattachés à un employeur (hors employés supprimés).
 // Ne renvoie jamais passwordHash ni invitationToken.
@@ -33,16 +35,9 @@ export async function softDeleteEmployee(companyId: string, employeeId: string) 
     throw new Error('EMPLOYEE_NOT_IN_COMPANY');
   }
 
-  await prisma.$transaction([
-    prisma.user.update({
-      where: { id: employeeId },
-      data: { deletedAt: new Date() },
-    }),
-    prisma.refreshToken.updateMany({
-      where: { userId: employeeId, isRevoked: false },
-      data: { isRevoked: true },
-    }),
-  ]);
+  await prisma.$transaction(async (tx) => {
+    await anonymizeUser(tx, employeeId);
+  });
 }
 
 // Solde seul de l'employé. employeeId vient du JWT.

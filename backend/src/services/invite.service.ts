@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import { Prisma } from '@prisma/client';
+import { Prisma, Role } from '@prisma/client';
 import { prisma } from '../lib/db';
 
 // Alphabet sans caractères ambigus (0/O, 1/I/L) pour une saisie humaine fiable.
@@ -26,20 +26,26 @@ function generateCode(): string {
 // companyId et createdById viennent du token (controller), jamais du client.
 export async function generateInviteCode(params: {
   companyId: string;
+  role: Role;
   createdById: string;
   maxUses: number;
   expiresInHours: number;
 }) {
-  const { companyId, createdById, maxUses, expiresInHours } = params;
+  const { companyId, role, createdById, maxUses, expiresInHours } = params;
   const expiresAt = new Date(Date.now() + expiresInHours * 60 * 60 * 1000);
+
+  const company = await prisma.company.findUnique({ where: { id: companyId }, select: { status: true } });
+  if (!company || company.status !== 'APPROVED') {
+    throw new Error('COMPANY_INACTIVE');
+  }
 
   // Retry sur collision du @unique "code" (extrêmement rare avec 59 bits).
   for (let attempt = 0; attempt < MAX_COLLISION_RETRIES; attempt++) {
-    const code = generateCode();
+    const code = generateCode();    
     try {
       return await prisma.companyInviteCode.create({
-        data: { code, companyId, createdById, maxUses, expiresAt },
-        select: { code: true, maxUses: true, expiresAt: true, createdAt: true },
+        data: { code, companyId, role, createdById, maxUses, expiresAt },
+        select: { code: true, maxUses: true, expiresAt: true, createdAt: true},
       });
     } catch (err) {
       if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
