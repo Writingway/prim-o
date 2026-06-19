@@ -1,17 +1,10 @@
-import { useEffect, useState } from 'react';
-import {
-  getMotifs,
-  distribute,
-  CATEGORY_LABELS,
-  type MotifDTO,
-  type MotifCategory,
-  type DistributeResult,
-} from '../../services/api';
+import { CATEGORY_LABELS } from '@/services/api';
+import { useDistributeForm } from '@/hooks/useDistributeForm';
 
 // §3.3 — Formulaire de distribution manager → employé.
 // Employé + montant + sélecteur de motif (4 catégories) + note libre optionnelle
 // → POST /attributions → confirmation gamifiée avec le compliment renvoyé.
-// Validation = miroir Zod (montant entier > 0, motifId requis). Backend = autorité.
+// Logique extraite dans useDistributeForm ; ce composant = rendu pur.
 
 type EmployeeLite = { id: string; firstName: string; lastName: string };
 
@@ -21,72 +14,15 @@ type Props = {
 };
 
 export default function DistributeForm({ employees, onDone }: Props) {
-  const [cats, setCats] = useState<Array<{ category: MotifCategory; motifs: MotifDTO[] }>>([]);
-  const [loadingMotifs, setLoadingMotifs] = useState(true);
-
-  const [employeeId, setEmployeeId] = useState('');
-  const [amount, setAmount] = useState('');
-  const [motifId, setMotifId] = useState('');
-  const [reason, setReason] = useState('');
-
-  const [error, setError] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  const [done, setDone] = useState<DistributeResult | null>(null);
-
-  useEffect(() => {
-    let alive = true;
-    (async () => {
-      const res = await getMotifs();
-      if (!alive) return;
-      if (res.ok && res.data) setCats(res.data.categories);
-      else setError('Impossible de charger les motifs.');
-      setLoadingMotifs(false);
-    })();
-    return () => {
-      alive = false;
-    };
-  }, []);
-
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    // Miroir Zod : montant entier > 0.
-    const amt = Number(amount);
-    if (!Number.isInteger(amt) || amt <= 0) {
-      setError('Le montant doit être un entier positif.');
-      return;
-    }
-    if (!employeeId) {
-      setError('Choisis un employé.');
-      return;
-    }
-    if (!motifId) {
-      setError('Choisis un motif.');
-      return;
-    }
-
-    setSubmitting(true);
-    const res = await distribute({
-      employeeId,
-      amount: amt,
-      motifId,
-      reason: reason.trim() || undefined,
-    });
-    setSubmitting(false);
-
-    if (res.ok && res.data) {
-      setDone(res.data);
-      onDone();
-    } else if (res.status === 409) {
-      setError('Enveloppe insuffisante pour ce montant.');
-    } else if (res.status === 400) {
-      setError('Employé, montant et motif obligatoires.');
-    } else if (res.status === 401) {
-      setError('Session expirée, reconnecte-toi.');
-    } else {
-      setError("Échec de la distribution.");
-    }
-  };
+  const {
+    cats, loadingMotifs,
+    employeeId, setEmployeeId,
+    amount, setAmount,
+    motifId, setMotifId,
+    reason, setReason,
+    error, submitting, done,
+    submit, reset,
+  } = useDistributeForm(onDone);
 
   // ─── Confirmation gamifiée ───────────────────────────────────────
   if (done) {
@@ -108,13 +44,7 @@ export default function DistributeForm({ employees, onDone }: Props) {
         )}
         <button
           type="button"
-          onClick={() => {
-            setDone(null);
-            setEmployeeId('');
-            setAmount('');
-            setMotifId('');
-            setReason('');
-          }}
+          onClick={reset}
           className="mt-2 rounded-full bg-white px-5 py-2 text-sm font-bold text-primo-teal-dark"
         >
           Nouvelle distribution

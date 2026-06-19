@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { ChangeEvent, SyntheticEvent } from 'react';
 import { login, resendVerification, forgotPassword } from '../../services/api';
+import { FORM, INPUT, SUBMIT, ERROR, SUCCESS, HELP, LINK } from './authClasses';
 
 type LoginFormProps = {
   onLoginSuccess: (accessToken: string) => void;
@@ -82,11 +83,12 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
   // Mode « mot de passe oublié » : on ne demande que l'email.
   if (forgotMode) {
     return (
-      <form className="auth-form" onSubmit={handleForgot}>
-        <p className="auth-help">
+      <form className={FORM} onSubmit={handleForgot}>
+        <p className={HELP}>
           Saisis ton email : on t'envoie un lien pour choisir un nouveau mot de passe.
         </p>
         <input
+          className={INPUT}
           name="email"
           type="email"
           placeholder="Email"
@@ -94,14 +96,14 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
           onChange={handleFieldChange}
         />
 
-        {forgotMsg && <p className="auth-success">{forgotMsg}</p>}
+        {forgotMsg && <p className={SUCCESS}>{forgotMsg}</p>}
 
-        <button type="submit" disabled={loading}>
+        <button className={SUBMIT} type="submit" disabled={loading}>
           {loading ? 'Envoi…' : 'Envoyer le lien'}
         </button>
         <button
           type="button"
-          className="auth-link"
+          className={LINK}
           onClick={() => { setForgotMode(false); setForgotMsg(''); }}
         >
            Retour à la connexion
@@ -111,8 +113,9 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
   }
 
   return (
-    <form className="auth-form" onSubmit={handleSubmit}>
+    <form className={FORM} onSubmit={handleSubmit}>
       <input
+        className={INPUT}
         name="email"
         type="email"
         placeholder="Email"
@@ -120,6 +123,7 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
         onChange={handleFieldChange}
       />
       <input
+        className={INPUT}
         name="password"
         type="password"
         placeholder="Mot de passe"
@@ -127,23 +131,23 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
         onChange={handleFieldChange}
       />
 
-      {error && <p className="auth-error">{error}</p>}
+      {error && <p className={ERROR}>{error}</p>}
 
       {needsVerification && (
-        <div className="auth-resend">
-          <button type="button" onClick={handleResend}>
+        <div className="flex flex-col gap-2">
+          <button className={LINK} type="button" onClick={handleResend}>
             Renvoyer l'email de vérification
           </button>
-          {resendMsg && <p className="auth-success">{resendMsg}</p>}
+          {resendMsg && <p className={SUCCESS}>{resendMsg}</p>}
         </div>
       )}
 
-      <button type="submit" disabled={loading}>
+      <button className={SUBMIT} type="submit" disabled={loading}>
         {loading ? 'Chargement…' : 'Se connecter'}
       </button>
       <button
         type="button"
-        className="auth-link"
+        className={LINK}
         onClick={() => { setForgotMode(true); setError(''); }}
       >
         Mot de passe oublié ?

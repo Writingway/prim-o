@@ -1,117 +1,48 @@
-import { useEffect, useState } from 'react';
-import {
-  getEmployeeBalance,
-  getEmployeeReceived,
-  getEmployeeSpent,
-  logout as apiLogout,
-} from '../services/api';
-import type { ReceivedToken, SpentToken } from '../types/types';
-import './EmployeeDashboard.css';
-import Layout from '../components/layout/Layout';
-import PrivacySection from '../components/privacy/PrivacySection';
-import EditProfile from '../components/privacy/EditProfile';
+import Layout from '@/components/layout/Layout';
+import BottomNav from '@/components/layout/BottomNav';
+import PrivacySection from '@/components/privacy/PrivacySection';
+import EditProfile from '@/components/privacy/EditProfile';
+import { useEmployeeDashboard } from '@/hooks/useEmployeeDashboard';
+import { formatDate } from '@/lib/format';
 
+const SECTION = 'bg-primo-bg border border-primo-border rounded-xl px-[18px] py-4 mb-3.5';
+const SECTION_TITLE = 'm-0 mb-3 text-[15px] font-bold text-[#1f2937]';
+const NOTE = 'text-[13px] text-primo-gray text-center m-0';
+const MUTED = 'text-sm font-medium text-primo-gray-light';
+const TX_LIST = 'list-none m-0 p-0 flex flex-col gap-2';
+const TX_ROW =
+  'flex items-center justify-between gap-3 px-3 py-2.5 border border-[#ececf1] rounded-[10px] bg-[#fafafb]';
+const TX_MAIN = 'min-w-0';
+const TX_REASON =
+  'text-sm font-semibold text-[#1f2937] overflow-hidden text-ellipsis whitespace-nowrap';
+const TX_SUB = 'text-xs text-primo-gray mt-0.5';
+const TX_AMOUNT = 'text-base font-bold flex-shrink-0';
+const MORE_BTN =
+  'mt-2.5 w-full border border-[#d1d5db] bg-primo-bg text-primo-teal px-3.5 py-[9px] rounded-lg text-sm font-semibold cursor-pointer hover:bg-primo-teal-soft';
 
 type EmployeeDashboardProps = {
   onLogout: () => void;
   onBack: () => void;
 };
 
-const PAGE_SIZE = 10;
-
-const formatDate = (iso: string) =>
-  new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-
 export default function EmployeeDashboard({ onLogout, onBack }: EmployeeDashboardProps) {
-  const [balance, setBalance] = useState<number | null>(null);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(true);
-
-  // Historiques : items accumulés + page courante + s'il reste des pages.
-  const [received, setReceived] = useState<ReceivedToken[]>([]);
-  const [receivedPage, setReceivedPage] = useState(1);
-  const [receivedHasMore, setReceivedHasMore] = useState(false);
-
-  const [spent, setSpent] = useState<SpentToken[]>([]);
-  const [spentPage, setSpentPage] = useState(1);
-  const [spentHasMore, setSpentHasMore] = useState(false);
-
-  // Chargement initial : solde + 1re page de chaque historique.
-  const loadInitial = async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const [balRes, recRes, spRes] = await Promise.all([
-        getEmployeeBalance(),
-        getEmployeeReceived(1, PAGE_SIZE),
-        getEmployeeSpent(1, PAGE_SIZE),
-      ]);
-
-      if (balRes.status === 401) {
-        setError('Session expirée, reconnecte-toi.');
-        return;
-      }
-      if (!balRes.ok || !balRes.data) {
-        setError('Impossible de charger ton espace.');
-        return;
-      }
-
-      setBalance(balRes.data.balance);
-      if (recRes.ok && recRes.data) {
-        setReceived(recRes.data.items);
-        setReceivedPage(1);
-        setReceivedHasMore(recRes.data.hasMore);
-      }
-      if (spRes.ok && spRes.data) {
-        setSpent(spRes.data.items);
-        setSpentPage(1);
-        setSpentHasMore(spRes.data.hasMore);
-      }
-    } catch {
-      setError('Impossible de joindre le serveur. Le backend est-il lancé ?');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadInitial();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // « Voir plus » : charge la page suivante et l'ajoute à la liste existante.
-  const loadMoreReceived = async () => {
-    const next = receivedPage + 1;
-    const res = await getEmployeeReceived(next, PAGE_SIZE);
-    if (res.ok && res.data) {
-      setReceived((prev) => [...prev, ...res.data!.items]);
-      setReceivedPage(next);
-      setReceivedHasMore(res.data.hasMore);
-    }
-  };
-
-  const loadMoreSpent = async () => {
-    const next = spentPage + 1;
-    const res = await getEmployeeSpent(next, PAGE_SIZE);
-    if (res.ok && res.data) {
-      setSpent((prev) => [...prev, ...res.data!.items]);
-      setSpentPage(next);
-      setSpentHasMore(res.data.hasMore);
-    }
-  };
-
-  const handleLogout = async () => {
-    try {
-      await apiLogout();
-    } catch {
-      // On déconnecte côté front même si l'appel réseau échoue.
-    }
-    onLogout();
-  };
+  const { balance, error, loading, reload, received, spent, handleLogout } =
+    useEmployeeDashboard(onLogout);
 
   return (
     <Layout
       title="Mon espace"
+      chrome="app"
+      bottomNav={
+        <BottomNav
+          items={[
+            { key: 'solde', label: 'Solde', icon: '🪙', targetId: 'nav-solde' },
+            { key: 'recus', label: 'Reçus', icon: '🎁', targetId: 'nav-recus' },
+            { key: 'depenses', label: 'Dépenses', icon: '🛒', targetId: 'nav-depenses' },
+            { key: 'profil', label: 'Profil', icon: '👤', targetId: 'nav-profil' },
+          ]}
+        />
+      }
       headerActions={
         <>
           <button className="app-btn app-btn-ghost" type="button" onClick={onBack}>
@@ -131,13 +62,13 @@ export default function EmployeeDashboard({ onLogout, onBack }: EmployeeDashboar
         {!loading && error && (
           <div className="emp-dash-note emp-dash-error">
             {error}{' '}
-            <button type="button" className="emp-dash-retry" onClick={loadInitial}>Réessayer</button>
+            <button type="button" className="emp-dash-retry" onClick={reload}>Réessayer</button>
           </div>
         )}
 
         {!loading && !error && balance !== null && (
           <>
-            <div className="emp-dash-cards">
+            <div id="nav-solde" className="emp-dash-cards scroll-mt-20">
               <div className="emp-dash-card">
                 <div className="emp-dash-card-icon">🪙</div>
                 <div className="emp-dash-card-label">Mon solde</div>
@@ -145,14 +76,14 @@ export default function EmployeeDashboard({ onLogout, onBack }: EmployeeDashboar
               </div>
             </div>
 
-            <section className="emp-dash-section">
+            <section id="nav-recus" className="emp-dash-section scroll-mt-20">
               <h2 className="emp-dash-section-title">Tokens reçus</h2>
-              {received.length === 0 ? (
+              {received.items.length === 0 ? (
                 <p className="emp-dash-muted">Aucun token reçu pour l'instant.</p>
               ) : (
                 <>
                   <ul className="emp-tx-list">
-                    {received.map((t) => (
+                    {received.items.map((t) => (
                       <li className="emp-tx-row received" key={t.id}>
                         <div className="emp-tx-main">
                           <div className="emp-tx-reason">{t.reason}</div>
@@ -162,8 +93,8 @@ export default function EmployeeDashboard({ onLogout, onBack }: EmployeeDashboar
                       </li>
                     ))}
                   </ul>
-                  {receivedHasMore && (
-                    <button className="emp-dash-more" type="button" onClick={loadMoreReceived}>
+                  {received.hasMore && (
+                    <button className="emp-dash-more" type="button" onClick={received.loadMore}>
                       Voir plus
                     </button>
                   )}
@@ -171,14 +102,14 @@ export default function EmployeeDashboard({ onLogout, onBack }: EmployeeDashboar
               )}
             </section>
 
-            <section className="emp-dash-section">
+            <section id="nav-depenses" className="emp-dash-section scroll-mt-20">
               <h2 className="emp-dash-section-title">Mes dépenses</h2>
-              {spent.length === 0 ? (
+              {spent.items.length === 0 ? (
                 <p className="emp-dash-muted">Aucune dépense pour l'instant.</p>
               ) : (
                 <>
                   <ul className="emp-tx-list">
-                    {spent.map((t) => (
+                    {spent.items.map((t) => (
                       <li className="emp-tx-row spent" key={t.id}>
                         <div className="emp-tx-main">
                           <div className="emp-tx-reason">{t.offerName}</div>
@@ -188,8 +119,8 @@ export default function EmployeeDashboard({ onLogout, onBack }: EmployeeDashboar
                       </li>
                     ))}
                   </ul>
-                  {spentHasMore && (
-                    <button className="emp-dash-more" type="button" onClick={loadMoreSpent}>
+                  {spent.hasMore && (
+                    <button className="emp-dash-more" type="button" onClick={spent.loadMore}>
                       Voir plus
                     </button>
                   )}
@@ -198,7 +129,8 @@ export default function EmployeeDashboard({ onLogout, onBack }: EmployeeDashboar
             </section>
           </>
         )}
-        {!loading && <EditProfile />}        
+        {!loading && <EditProfile />}
+        <div id="nav-profil" className="scroll-mt-20" />
         {!loading && <PrivacySection onAccountDeleted={onLogout} />}
       </div>
     </div>

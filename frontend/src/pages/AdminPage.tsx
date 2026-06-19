@@ -1,282 +1,34 @@
-import { useEffect, useState, useRef, Fragment } from 'react';
-import { 
-  listOffers,
-  createOffer,
-  updateOffer,
-  deactivateOffer,
-  getAdminStats,
-  addPromoCodes,
-  listPromoCodes,
-  deletePromoCode
-} from '../services/api';
-import type { AdminPromoCode } from '../services/api';
-import type { Offer, OfferCategory, AdminStats } from '../types/types';
+import { useState, Fragment } from 'react';
+import type { Offer, OfferCategory } from '@/types/types';
 import './AdminPage.css';
-import Layout from '../components/layout/Layout';
-import { useConfirm } from '../components/ui/ConfirmDialog';
+import Layout from '@/components/layout/Layout';
+import { useConfirm } from '@/components/ui/ConfirmDialog';
 import AdminUsers from './AdminUsers';
 import AdminCompanies from './AdminCompanies';
 import AdminLedgers from './AdminLedgers';
+import { useFlash } from '@/hooks/useFlash';
+import { useAdminOffers } from '@/hooks/useAdminOffers';
+import { useOfferForm } from '@/hooks/useOfferForm';
+import { usePromoCodes } from '@/hooks/usePromoCodes';
 
 type AdminPageProps = { onLogout: () => void; onBack: () => void };
 
 const CATEGORIES: OfferCategory[] = ['FOOD', 'SHOPPING', 'CULTURE', 'TRAVEL', 'WELLNESS', 'OTHER'];
 
-// Form vide pour une nouvelle offre.
-const emptyForm = { partnerName: '', cost: '', discountPercent: '', category: 'FOOD' as OfferCategory };
-
 export default function AdminPage({ onLogout, onBack }: AdminPageProps) {
   const { confirm, confirmDialog } = useConfirm();
+  const { notice, flash } = useFlash();
   const [tab, setTab] = useState<'offers' | 'users' | 'companies' | 'ledgers'>('offers');
-  const [offers, setOffers] = useState<Offer[] | null>(null);
-  const [stats, setStats] = useState<AdminStats | null>(null);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(true);
 
-  // Form : panneau de création/édition. editingId === null → création.
-  const [showForm, setShowForm] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState(emptyForm);
-  const [formError, setFormError] = useState('');
-  const [saving, setSaving] = useState(false);
-
-  // Message de confirmation transitoire (remplace les alert()).
-  const [notice, setNotice] = useState('');
-
-  // Panneau « Gérer les codes » : ouvert pour une offre à la fois.
-  const [codesOpenId, setCodesOpenId] = useState<string | null>(null);
-  const [codesText, setCodesText] = useState('');
-  const [codesError, setCodesError] = useState('');
-  const [codesSubmitting, setCodesSubmitting] = useState(false);
-  const csvInputRef = useRef<HTMLInputElement>(null);
-  // Liste des codes de l'offre ouverte (lecture).
-  const [codesList, setCodesList] = useState<AdminPromoCode[] | null>(null);
-  const [codesListLoading, setCodesListLoading] = useState(false);
-
-  const load = async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const [offersRes, statsRes] = await Promise.all([listOffers(), getAdminStats()]);
-      if (offersRes.ok && offersRes.data) {
-        setOffers(offersRes.data.offers);
-      } else if (offersRes.status === 401) {
-        setError('Session expirée, reconnecte-toi.');
-      } else {
-        setError('Impossible de charger les offres.');
-      }
-      if (statsRes.ok && statsRes.data) setStats(statsRes.data);
-    } catch {
-      setError('Impossible de joindre le serveur. Le backend est-il lancé ?');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-
-  useEffect(() => {
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const flash = (msg: string) => {
-    setNotice(msg);
-    setTimeout(() => setNotice(''), 3000);
-  };
-
-  const openCreate = () => {
-    setEditingId(null);
-    setForm(emptyForm);
-    setFormError('');
-    setShowForm(true);
-  };
-
-  const openEdit = (offer: Offer) => {
-    setEditingId(offer.id);
-    setForm({
-      partnerName: offer.partnerName,
-      cost: String(offer.cost),
-      discountPercent: String(offer.discountPercent),
-      category: offer.category,
-    });
-    setFormError('');
-    setShowForm(true);
-  };
-
-  const closeForm = () => {
-    setShowForm(false);
-    setEditingId(null);
-    setFormError('');
-  };
-
-  const handleSubmit = async (e: React.ChangeEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setFormError('');
-
-    const cost = Number(form.cost);
-    const discountPercent = Number(form.discountPercent);
-    if (!form.partnerName.trim()) return setFormError('Le nom du partenaire est requis.');
-    if (isNaN(cost) || cost < 0) return setFormError('Coût invalide.');
-    if (isNaN(discountPercent) || discountPercent < 0 || discountPercent > 100)
-      return setFormError('Réduction invalide (0-100).');
-
-    setSaving(true);
-    try {
-      const payload = {
-        partnerName: form.partnerName.trim(),
-        cost,
-        discountPercent,
-        category: form.category,
-      };
-      const res = editingId
-        ? await updateOffer(editingId, payload)
-        : await createOffer(payload);
-
-      if (res.ok) {
-        flash(editingId ? 'Offre mise à jour.' : 'Offre créée.');
-        closeForm();
-        load();
-      } else if (res.status === 401) {
-        setFormError('Session expirée, reconnecte-toi.');
-      } else {
-        setFormError("Erreur lors de l'enregistrement de l'offre.");
-      }
-    } catch {
-      setFormError('Impossible de joindre le serveur.');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleToggle = async (offer: Offer) => {
-    const ok = await confirm({
-      title: offer.isActive ? 'Désactiver cette offre ?' : 'Réactiver cette offre ?',
-      message: offer.isActive
-        ? `Désactiver « ${offer.partnerName} » ? Elle ne sera plus visible.`
-        : `Réactiver « ${offer.partnerName} » ?`,
-      confirmLabel: offer.isActive ? 'Désactiver' : 'Réactiver',
-      danger: offer.isActive,
-    });
-    if (!ok) return;
-    try {
-      // Désactivation = soft delete dédié ; réactivation = update isActive.
-      const res = offer.isActive
-        ? await deactivateOffer(offer.id)
-        : await updateOffer(offer.id, { isActive: true });
-      if (res.ok) {
-        flash(offer.isActive ? 'Offre désactivée.' : 'Offre réactivée.');
-        load();
-      } else if (res.status === 401) {
-        setError('Session expirée, reconnecte-toi.');
-        onLogout();
-      } else {
-        setError("Erreur lors de la mise à jour de l'offre.");
-      }
-    } catch {
-      setError('Impossible de joindre le serveur.');
-    }
-  };
-
-  const toggleCodes = async (offerId: string) => {
-    const opening = codesOpenId !== offerId;
-    setCodesOpenId(opening ? offerId : null);
-    setCodesText('');
-    setCodesError('');
-    setCodesList(null);
-    if (opening) {
-      setCodesListLoading(true);
-      try {
-        const res = await listPromoCodes(offerId);
-        if (res.ok && res.data) setCodesList(res.data.codes);
-      } finally {
-        setCodesListLoading(false);
-      }
-    }
-  };
-
-  const handleDeleteCode = async (codeId: string) => {
-    setCodesError('');
-    const ok = await confirm({
-      title: 'Supprimer ce code ?',
-      message: 'Ce code disponible sera définitivement supprimé.',
-      confirmLabel: 'Supprimer',
-      danger: true,
-    });
-    if (!ok) return;
-    const res = await deletePromoCode(codeId);
-    if (res.ok) {
-      flash('Code supprimé.');
-      load(); // rafraîchit les compteurs de stock
-    } else if (res.status === 409) {
-      setCodesError('Ce code a déjà été utilisé, impossible de le supprimer.');
-    } else {
-      setCodesError('Impossible de supprimer ce code.');
-    }
-    // Dans tous les cas, on resynchronise la liste affichée.
-    if (codesOpenId) {
-      const r = await listPromoCodes(codesOpenId);
-      if (r.ok && r.data) setCodesList(r.data.codes);
-    }
-  };
-
-  // Lit un fichier CSV côté navigateur et remplit le textarea avec les codes
-  // (un par ligne). On gère le séparateur ligne ET virgule, et on ignore une
-  // éventuelle ligne d'en-tête « code ».
-  const handleCsvFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setCodesError('');
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      const raw = String(reader.result ?? '');
-      const codes = raw
-        .split(/[\r\n,;]+/)        // lignes, virgules ou points-virgules
-        .map((c) => c.trim())
-        .filter((c) => c.length > 0 && c.toLowerCase() !== 'code'); // saute l'en-tête éventuel
-      if (codes.length === 0) {
-        setCodesError('Aucun code trouvé dans le fichier.');
-      } else {
-        setCodesText(codes.join('\n')); // l'admin vérifie avant d'ajouter
-      }
-    };
-    reader.onerror = () => setCodesError('Impossible de lire le fichier.');
-    reader.readAsText(file);
-    e.target.value = ''; // permet de re-sélectionner le même fichier
-  };
-
-  const handleAddCodes = async (offer: Offer) => {
-    setCodesError('');
-    // Découpe sur retour à la ligne, virgule ou point-virgule (même logique que le CSV).
-    const codes = codesText
-      .split(/[\r\n,;]+/)
-      .map((c) => c.trim())
-      .filter((c) => c.length > 0);
-    if (codes.length === 0) {
-      setCodesError('Colle au moins un code (un par ligne).');
-      return;
-    }
-    setCodesSubmitting(true);
-    try {
-      const res = await addPromoCodes(offer.id, codes);
-      if (res.ok && res.data) {
-        flash(`✅ ${res.data.added} code(s) ajouté(s), ${res.data.skipped} ignoré(s).`);
-        setCodesText('');
-        setCodesOpenId(null);
-        load(); // rafraîchit le badge de stock
-      } else if (res.status === 401) {
-        setError('Session expirée, reconnecte-toi.');
-        onLogout();
-      } else if (res.status === 404) {
-        setCodesError('Offre introuvable.');
-      } else {
-        setCodesError("Impossible d'ajouter les codes.");
-      }
-    } catch {
-      setCodesError('Impossible de joindre le serveur.');
-    } finally {
-      setCodesSubmitting(false);
-    }
-  };
+  const offers = useAdminOffers({ confirm, flash, onAuthExpired: onLogout });
+  const offerForm = useOfferForm({ reload: offers.reload, flash });
+  const codes = usePromoCodes({
+    confirm,
+    flash,
+    reload: offers.reload,
+    setError: offers.setError,
+    onAuthExpired: onLogout,
+  });
 
   return (
     <Layout
@@ -292,18 +44,18 @@ export default function AdminPage({ onLogout, onBack }: AdminPageProps) {
     >
     <div className="admin-wrapper">
       <div className="admin-container">
-        {stats && (
+        {offers.stats && (
           <div className="admin-stats">
             <div className="admin-stat-card">
-              <span className="admin-stat-value">{stats.companies}</span>
+              <span className="admin-stat-value">{offers.stats.companies}</span>
               <span className="admin-stat-label">Entreprises</span>
             </div>
             <div className="admin-stat-card">
-              <span className="admin-stat-value">{stats.users}</span>
+              <span className="admin-stat-value">{offers.stats.users}</span>
               <span className="admin-stat-label">Utilisateurs</span>
             </div>
             <div className="admin-stat-card">
-              <span className="admin-stat-value">{stats.managers}</span>
+              <span className="admin-stat-value">{offers.stats.managers}</span>
               <span className="admin-stat-label">Managers</span>
             </div>
           </div>
@@ -346,20 +98,20 @@ export default function AdminPage({ onLogout, onBack }: AdminPageProps) {
           <>
         <div className="admin-offers-bar">
           <h2 className="admin-section-title">Offres</h2>
-          {!showForm && (
-            <button className="admin-btn-primary" type="button" onClick={openCreate}>+ Nouvelle offre</button>
+          {!offerForm.showForm && (
+            <button className="admin-btn-primary" type="button" onClick={offerForm.openCreate}>+ Nouvelle offre</button>
           )}
         </div>
-        {showForm && (
-          <form className="admin-form" onSubmit={handleSubmit}>
-            <h2 className="admin-form-title">{editingId ? "Modifier l'offre" : 'Nouvelle offre'}</h2>
+        {offerForm.showForm && (
+          <form className="admin-form" onSubmit={offerForm.submit}>
+            <h2 className="admin-form-title">{offerForm.editingId ? "Modifier l'offre" : 'Nouvelle offre'}</h2>
             <div className="admin-form-grid">
               <label>
                 Partenaire
                 <input
                   type="text"
-                  value={form.partnerName}
-                  onChange={(e) => setForm({ ...form, partnerName: e.target.value })}
+                  value={offerForm.form.partnerName}
+                  onChange={(e) => offerForm.setForm({ ...offerForm.form, partnerName: e.target.value })}
                   placeholder="Ex. Cinéma Pathé"
                 />
               </label>
@@ -368,8 +120,8 @@ export default function AdminPage({ onLogout, onBack }: AdminPageProps) {
                 <input
                   type="number"
                   min={0}
-                  value={form.cost}
-                  onChange={(e) => setForm({ ...form, cost: e.target.value })}
+                  value={offerForm.form.cost}
+                  onChange={(e) => offerForm.setForm({ ...offerForm.form, cost: e.target.value })}
                 />
               </label>
               <label>
@@ -378,15 +130,15 @@ export default function AdminPage({ onLogout, onBack }: AdminPageProps) {
                   type="number"
                   min={0}
                   max={100}
-                  value={form.discountPercent}
-                  onChange={(e) => setForm({ ...form, discountPercent: e.target.value })}
+                  value={offerForm.form.discountPercent}
+                  onChange={(e) => offerForm.setForm({ ...offerForm.form, discountPercent: e.target.value })}
                 />
               </label>
               <label>
                 Catégorie
                 <select
-                  value={form.category}
-                  onChange={(e) => setForm({ ...form, category: e.target.value as OfferCategory })}
+                  value={offerForm.form.category}
+                  onChange={(e) => offerForm.setForm({ ...offerForm.form, category: e.target.value as OfferCategory })}
                 >
                   {CATEGORIES.map((c) => (
                     <option key={c} value={c}>{c}</option>
@@ -394,21 +146,21 @@ export default function AdminPage({ onLogout, onBack }: AdminPageProps) {
                 </select>
               </label>
             </div>
-            {formError && <p className="admin-form-error">{formError}</p>}
+            {offerForm.formError && <p className="admin-form-error">{offerForm.formError}</p>}
             <div className="admin-form-actions">
-              <button type="submit" className="admin-btn-primary" disabled={saving}>
-                {saving ? 'Enregistrement…' : editingId ? 'Mettre à jour' : 'Créer'}
+              <button type="submit" className="admin-btn-primary" disabled={offerForm.saving}>
+                {offerForm.saving ? 'Enregistrement…' : offerForm.editingId ? 'Mettre à jour' : 'Créer'}
               </button>
-              <button type="button" className="admin-btn-ghost" onClick={closeForm}>Annuler</button>
+              <button type="button" className="admin-btn-ghost" onClick={offerForm.closeForm}>Annuler</button>
             </div>
           </form>
         )}
 
-        {loading && <p className="admin-msg">Chargement…</p>}
-        {error && <p className="admin-msg admin-error">{error}</p>}
+        {offers.loading && <p className="admin-msg">Chargement…</p>}
+        {offers.error && <p className="admin-msg admin-error">{offers.error}</p>}
 
-        {!loading && offers && (
-          offers.length === 0 ? (
+        {!offers.loading && offers.offers && (
+          offers.offers.length === 0 ? (
             <p className="admin-msg">Aucune offre pour le moment.</p>
           ) : (
             <div className="admin-table-scroll">
@@ -425,7 +177,7 @@ export default function AdminPage({ onLogout, onBack }: AdminPageProps) {
                 </tr>
               </thead>
               <tbody>
-                {offers.map((offer) => (
+                {offers.offers.map((offer: Offer) => (
                   <Fragment key={offer.id}>
                   <tr className={offer.isActive ? '' : 'admin-row-inactive'}>
                     <td data-label="Partenaire">{offer.partnerName}</td>
@@ -441,57 +193,57 @@ export default function AdminPage({ onLogout, onBack }: AdminPageProps) {
                       🎟️ {offer.availableCodes ?? 0} dispo · {offer.usedCodes ?? 0} utilisés
                     </td>
                     <td className="admin-actions" data-label="Actions">
-                      <button className="admin-btn-link" onClick={() => openEdit(offer)}>Modifier</button>
-                      <button className="admin-btn-link" onClick={() => handleToggle(offer)}>
+                      <button className="admin-btn-link" onClick={() => offerForm.openEdit(offer)}>Modifier</button>
+                      <button className="admin-btn-link" onClick={() => offers.toggleActive(offer)}>
                         {offer.isActive ? 'Désactiver' : 'Réactiver'}
                       </button>
-                      <button className="admin-btn-link" onClick={() => toggleCodes(offer.id)}>
-                        {codesOpenId === offer.id ? 'Fermer' : 'Gérer les codes'}
+                      <button className="admin-btn-link" onClick={() => codes.toggle(offer.id)}>
+                        {codes.openId === offer.id ? 'Fermer' : 'Gérer les codes'}
                       </button>
                     </td>
                   </tr>
-                  {codesOpenId === offer.id && (
+                  {codes.openId === offer.id && (
                     <tr className="admin-codes-row">
                       <td colSpan={7}>
                         <div className="admin-codes-panel">
                           <textarea
                             rows={5}
-                            value={codesText}
-                            onChange={(e) => setCodesText(e.target.value)}
+                            value={codes.text}
+                            onChange={(e) => codes.setText(e.target.value)}
                             placeholder={'AMZN-XXXX-1111\nAMZN-XXXX-2222\n...'}
                           />
-                          {codesError && <p className="admin-error">{codesError}</p>}
+                          {codes.error && <p className="admin-error">{codes.error}</p>}
                           <input
-                            ref={csvInputRef}
+                            ref={codes.csvInputRef}
                             type="file"
                             accept=".csv,text/csv,text/plain"
                             style={{ display: 'none' }}
-                            onChange={handleCsvFile}
+                            onChange={codes.handleCsvFile}
                           />
                           <div className="admin-codes-actions">
                             <button
                               type="button"
                               className="admin-btn-ghost"
-                              onClick={() => csvInputRef.current?.click()}
+                              onClick={() => codes.csvInputRef.current?.click()}
                             >
                               📄 Importer un CSV
                             </button>
                             <button
                               type="button"
                               className="admin-btn-primary"
-                              disabled={codesSubmitting}
-                              onClick={() => handleAddCodes(offer)}
+                              disabled={codes.submitting}
+                              onClick={() => codes.addCodes(offer)}
                             >
-                              {codesSubmitting ? '…' : 'Ajouter les codes'}
+                              {codes.submitting ? '…' : 'Ajouter les codes'}
                             </button>
                           </div>
 
                           <div className="admin-codes-list">
-                            {codesListLoading ? (
+                            {codes.listLoading ? (
                               <p className="admin-msg">Chargement des codes…</p>
-                            ) : codesList && codesList.length > 0 ? (
+                            ) : codes.list && codes.list.length > 0 ? (
                               <ul>
-                                {codesList.map((c) => (
+                                {codes.list.map((c) => (
                                   <li key={c.id}>
                                     <code>{c.code}</code>{' '}
                                     {c.isUsed ? (
@@ -505,7 +257,7 @@ export default function AdminPage({ onLogout, onBack }: AdminPageProps) {
                                           type="button"
                                           className="admin-btn-link"
                                           title="Supprimer ce code"
-                                          onClick={() => handleDeleteCode(c.id)}
+                                          onClick={() => codes.deleteCode(c.id)}
                                         >
                                           🗑️
                                         </button>

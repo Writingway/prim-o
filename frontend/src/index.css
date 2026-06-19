@@ -20,6 +20,20 @@
   --color-primo-success: #059669;
 
   --font-sans: 'Poppins', system-ui, 'Segoe UI', Roboto, sans-serif;
+
+  /* Animations partagées (ex. ConfirmDialog) → utilitaires animate-confirm-*. */
+  --animate-confirm-fade: confirm-fade 0.12s ease;
+  --animate-confirm-pop: confirm-pop 0.14s ease;
+}
+
+@keyframes confirm-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes confirm-pop {
+  from { opacity: 0; transform: translateY(6px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 :root {

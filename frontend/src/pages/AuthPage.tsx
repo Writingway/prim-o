@@ -3,7 +3,7 @@ import AuthTabs from '../components/auth/AuthTabs';
 import LoginForm from '../components/auth/LoginForm';
 import RegisterForm from '../components/auth/RegisterForm';
 import type { Mode } from '../types/types';
-import './AuthPage.css';
+import { WRAPPER, CARD, BACK, LOGO, SUCCESS, ERROR } from '../components/auth/authClasses';
 
 type AuthPageProps = {
   onLoginSuccess: (accessToken: string) => void;
@@ -24,17 +24,17 @@ export default function AuthPage({ onLoginSuccess, initialMode = 'login', onBack
   };
 
   return (
-    <div className="auth-wrapper">
-      <div className="auth-card">
-        {onBack && <button type="button" className="auth-back" onClick={onBack}> Retour</button>}
-        <h1 className="auth-logo">Prim'O</h1>
+    <div className={WRAPPER}>
+      <div className={CARD}>
+        {onBack && <button type="button" className={BACK} onClick={onBack}> Retour</button>}
+        <h1 className={LOGO}>Prim'O</h1>
 
         <AuthTabs mode={mode} onChange={setMode} />
 
         {notice && (
-          <p className={notice.type === 'success' ? 'auth-success' : 'auth-error'}>{notice.text}</p>
+          <p className={notice.type === 'success' ? SUCCESS : ERROR}>{notice.text}</p>
         )}
-        {successMessage && <p className="auth-success">{successMessage}</p>}
+        {successMessage && <p className={SUCCESS}>{successMessage}</p>}
 
         {mode === 'login'
           ? <LoginForm onLoginSuccess={onLoginSuccess} />

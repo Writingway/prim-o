@@ -1,6 +1,14 @@
 import { useEffect, useState } from 'react';
 import { getMyProfile, updateMyProfile, forgotPassword } from '../../services/api';
-import './privacy.css';
+
+const BTN =
+  'rounded-lg border border-transparent px-4 py-[9px] text-sm font-semibold transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed';
+const BTN_PRIMARY = `${BTN} bg-primo-teal text-white hover:bg-primo-teal-dark`;
+const BTN_SECONDARY = `${BTN} border-[#d1d5db] bg-white text-[#4b5563] hover:bg-[#f9fafb]`;
+const FIELD = 'flex flex-col gap-[5px]';
+const LABEL = 'text-xs font-semibold text-primo-gray';
+const INPUT =
+  'w-full rounded-lg border border-[#d1d5db] px-3 py-[9px] text-sm text-[#1f2937] transition focus:border-primo-teal focus:shadow-[0_0_0_3px_rgba(0,161,154,0.15)] focus:outline-none';
 
 type Profile = {
   email: string;
@@ -102,69 +110,71 @@ export default function EditProfile() {
 
       {!editing ? (
         <>
-          <div className="priv-profile">
-            <div className="priv-profile-identity">
-              <div className="priv-profile-name">
+          <div className="flex items-center justify-between gap-3 rounded-[10px] border border-[#ececf1] bg-[#fafafb] px-3.5 py-3">
+            <div className="min-w-0">
+              <div className="text-sm font-semibold text-[#1f2937]">
                 {profile.firstName} {profile.lastName}
               </div>
-              <div className="priv-profile-email">
+              <div className="mt-0.5 break-all text-xs text-primo-gray">
                 {profile.email}
                 {!profile.isEmailVerified && (
-                  <span className="priv-badge-unverified">email non vérifié</span>
+                  <span className="ml-1.5 inline-block whitespace-nowrap rounded-full bg-[#fef3c7] px-[7px] py-px text-[11px] font-semibold text-[#b45309]">
+                    email non vérifié
+                  </span>
                 )}
               </div>
             </div>
-            <button className="priv-btn priv-btn-secondary" type="button" onClick={startEdit}>
+            <button className={BTN_SECONDARY} type="button" onClick={startEdit}>
               Modifier
             </button>
           </div>
-          {success && <p className="priv-msg-success">{success}</p>}
+          {success && <p className="mt-2.5 text-[13px] text-primo-success">{success}</p>}
 
-          <div className="priv-password-reset">
-            <button className="priv-btn priv-btn-secondary" type="button" onClick={handlePasswordReset}>
+          <div className="mt-3">
+            <button className={BTN_SECONDARY} type="button" onClick={handlePasswordReset}>
               Modifier mon mot de passe
             </button>
-            {pwdMsg && <p className="priv-msg-success">{pwdMsg}</p>}
+            {pwdMsg && <p className="mt-2.5 text-[13px] text-primo-success">{pwdMsg}</p>}
           </div>
         </>
       ) : (
-        <div className="priv-form">
-          <div className="priv-field">
-            <label htmlFor="edit-firstName">Prénom</label>
+        <div className="flex flex-col gap-3">
+          <div className={FIELD}>
+            <label className={LABEL} htmlFor="edit-firstName">Prénom</label>
             <input
               id="edit-firstName"
-              className="priv-input"
+              className={INPUT}
               type="text"
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
             />
           </div>
-          <div className="priv-field">
-            <label htmlFor="edit-lastName">Nom</label>
+          <div className={FIELD}>
+            <label className={LABEL} htmlFor="edit-lastName">Nom</label>
             <input
               id="edit-lastName"
-              className="priv-input"
+              className={INPUT}
               type="text"
               value={lastName}
               onChange={(e) => setLastName(e.target.value)}
             />
           </div>
-          <div className="priv-field">
-            <label htmlFor="edit-email">Email</label>
+          <div className={FIELD}>
+            <label className={LABEL} htmlFor="edit-email">Email</label>
             <input
               id="edit-email"
-              className="priv-input"
+              className={INPUT}
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
           </div>
-          <div className="priv-actions">
-            <button className="priv-btn priv-btn-primary" type="button" onClick={handleSave} disabled={saving}>
+          <div className="flex flex-wrap gap-2.5">
+            <button className={BTN_PRIMARY} type="button" onClick={handleSave} disabled={saving}>
               {saving ? 'Enregistrement…' : 'Enregistrer'}
             </button>
             <button
-              className="priv-btn priv-btn-secondary"
+              className={BTN_SECONDARY}
               type="button"
               onClick={() => setEditing(false)}
               disabled={saving}
@@ -172,7 +182,7 @@ export default function EditProfile() {
               Annuler
             </button>
           </div>
-          {error && <p className="priv-msg-error">{error}</p>}
+          {error && <p className="mt-1 text-[13px] text-primo-error">{error}</p>}
         </div>
       )}
     </section>

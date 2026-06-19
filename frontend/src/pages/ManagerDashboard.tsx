@@ -1,28 +1,24 @@
 import { useEffect, useState } from 'react';
 import {
-  listEmployees,
-  getCompany,
-  listAttributions,
   deleteEmployee,
   generateInviteCode,
-  createAttribution,
   approveEmployee as apiApproveEmployee,
   createCheckout,
-  listManagers,
-  getMyBalance,
-  allocateTokens,
   logout as apiLogout,
-} from '../services/api';
-import type { CompanyManager } from '../services/api';
-import type { Employee, Company, AttributionHistory, Role } from '../types/types';
+} from '@/services/api';
+import type { Employee, Role } from '@/types/types';
 import './ManagerDashboard.css';
-import Layout from '../components/layout/Layout';
-import ManagerBalances from '../components/manager/ManagerBalances';
-import DistributeForm from '../components/manager/DistributeForm';
-import BottomNav from '../components/layout/BottomNav';
-import PrivacySection from '../components/privacy/PrivacySection';
-import EditProfile from '../components/privacy/EditProfile';
-import { useConfirm } from '../components/ui/ConfirmDialog';
+import Layout from '@/components/layout/Layout';
+import ManagerBalances from '@/components/manager/ManagerBalances';
+import DistributeForm from '@/components/manager/DistributeForm';
+import BottomNav from '@/components/layout/BottomNav';
+import PrivacySection from '@/components/privacy/PrivacySection';
+import EditProfile from '@/components/privacy/EditProfile';
+import { useConfirm } from '@/components/ui/ConfirmDialog';
+import { useManagerData } from '@/hooks/useManagerData';
+import { useAllocation } from '@/hooks/useAllocation';
+import { useAttribution } from '@/hooks/useAttribution';
+import { formatDate } from '@/lib/format';
 
 type ManagerDashboardProps = {
   role: Role;
@@ -33,17 +29,16 @@ type ManagerDashboardProps = {
 const initials = (e: Employee) =>
   `${e.firstName[0] ?? ''}${e.lastName[0] ?? ''}`.toUpperCase();
 
-const formatDate = (iso: string) =>
-  new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-
 // Dashboard employeur : liste des employés de son entreprise (lecture seule).
 export default function ManagerDashboard({ role, onLogout, onBack }: ManagerDashboardProps) {
   const { confirm, confirmDialog } = useConfirm();
-  const [employees, setEmployees] = useState<Employee[] | null>(null);
-  const [company, setCompany] = useState<Company | null>(null);
-  const [attributions, setAttributions] = useState<AttributionHistory[]>([]);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(true);
+  const {
+    employees, company, attributions, myBalance, managers,
+    error, setError, loading, reload,
+  } = useManagerData(role);
+  const alloc = useAllocation(reload);
+  const attrib = useAttribution(reload);
+
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [inviteCode, setInviteCode] = useState<string | null>(null);
   const [inviteError, setInviteError] = useState('');
@@ -53,59 +48,6 @@ export default function ManagerDashboard({ role, onLogout, onBack }: ManagerDash
   const [rechargeError, setRechargeError] = useState('');
   const [recharging, setRecharging] = useState(false);
   const [paymentNotice, setPaymentNotice] = useState<'success' | 'cancel' | null>(null);
-
-  // Solde perso (manager) + allocation patron → manager.
-  const [myBalance, setMyBalance] = useState<number | null>(null);
-  const [managers, setManagers] = useState<CompanyManager[]>([]);
-  const [allocOpenId, setAllocOpenId] = useState<string | null>(null);
-  const [allocAmount, setAllocAmount] = useState('');
-  const [allocError, setAllocError] = useState('');
-  const [allocSubmitting, setAllocSubmitting] = useState(false);
-
-  // Formulaire d'attribution inline : un seul ouvert à la fois.
-  const [attribOpenId, setAttribOpenId] = useState<string | null>(null);
-  const [attribAmount, setAttribAmount] = useState('');
-  const [attribReason, setAttribReason] = useState('');
-  const [attribError, setAttribError] = useState('');
-  const [attribSubmitting, setAttribSubmitting] = useState(false);
-
-  const load = async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const [empRes, compRes, attrRes] = await Promise.all([
-        listEmployees(),
-        getCompany(),
-        listAttributions(),
-      ]);
-
-      if (empRes.status === 401) {
-        setError('Session expirée, reconnecte-toi.');
-        return;
-      }
-      if (!empRes.ok || !empRes.data) {
-        setError('Impossible de charger les employés.');
-        return;
-      }
-
-      setEmployees(empRes.data.employees);
-      if (compRes.ok && compRes.data) setCompany(compRes.data.company);
-      if (attrRes.ok && attrRes.data) setAttributions(attrRes.data.attributions);
-
-      // Manager : son solde perso. Patron : la liste des managers à alimenter.
-      if (role === 'manager') {
-        const balRes = await getMyBalance();
-        if (balRes.ok && balRes.data) setMyBalance(balRes.data.balance);
-      } else if (role === 'owner') {
-        const mgrRes = await listManagers();
-        if (mgrRes.ok && mgrRes.data) setManagers(mgrRes.data.managers);
-      }
-    } catch {
-      setError('Impossible de joindre le serveur. Le backend est-il lancé ?');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleDelete = async (e: Employee) => {
     const ok = await confirm({
@@ -119,7 +61,7 @@ export default function ManagerDashboard({ role, onLogout, onBack }: ManagerDash
     try {
       const res = await deleteEmployee(e.id);
       if (res.ok) {
-        await load(); // recharge liste + solde + historique
+        await reload(); // recharge liste + solde + historique
       } else {
         setError("Impossible de supprimer cet employé.");
       }
@@ -129,11 +71,6 @@ export default function ManagerDashboard({ role, onLogout, onBack }: ManagerDash
       setDeletingId(null);
     }
   };
-
-  useEffect(() => {
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const handleLogout = async () => {
     try {
@@ -185,38 +122,6 @@ export default function ManagerDashboard({ role, onLogout, onBack }: ManagerDash
     }
   };
 
-  const openAlloc = (id: string) => {
-    setAllocOpenId(id);
-    setAllocAmount('');
-    setAllocError('');
-  };
-
-  const submitAlloc = async (managerId: string) => {
-    setAllocError('');
-    const amount = Number(allocAmount);
-    if (!Number.isInteger(amount) || amount <= 0) {
-      setAllocError('Le montant doit être un entier positif.');
-      return;
-    }
-    setAllocSubmitting(true);
-    try {
-      const res = await allocateTokens(managerId, amount);
-      if (res.ok) {
-        setAllocOpenId(null);
-        await load(); // rafraîchit pool + soldes managers
-      } else if (res.status === 401) {
-        setAllocError('Session expirée, reconnecte-toi.');
-      } else {
-        const msg = res.data && 'error' in res.data ? res.data.error : "Échec de l'allocation.";
-        setAllocError(msg);
-      }
-    } catch {
-      setAllocError('Impossible de joindre le serveur.');
-    } finally {
-      setAllocSubmitting(false);
-    }
-  };
-
   // Retour de Stripe : lit ?payment=success|cancel, affiche un message,
   // nettoie l'URL, et recharge le solde (le webhook crédite en ~1-2 s).
   useEffect(() => {
@@ -225,69 +130,21 @@ export default function ManagerDashboard({ role, onLogout, onBack }: ManagerDash
       setPaymentNotice(payment);
       window.history.replaceState({}, '', window.location.pathname);
       if (payment === 'success') {
-        setTimeout(() => { load(); }, 1500);
+        setTimeout(() => { reload(); }, 1500);
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const openAttrib = (id: string) => {
-    setAttribOpenId(id);
-    setAttribAmount('');
-    setAttribReason('');
-    setAttribError('');
-  };
-
-  const closeAttrib = () => {
-    setAttribOpenId(null);
-    setAttribError('');
-  };
-
-  const submitAttrib = async (employeeId: string) => {
-    setAttribError('');
-    const amount = Number(attribAmount);
-    if (!Number.isInteger(amount) || amount <= 0) {
-      setAttribError('Le montant doit être un entier positif.');
-      return;
-    }
-    if (!attribReason.trim()) {
-      setAttribError('La raison est obligatoire.');
-      return;
-    }
-
-    setAttribSubmitting(true);
-    try {
-      const res = await createAttribution({ employeeId, amount, reason: attribReason.trim() });
-      if (res.ok) {
-        closeAttrib();
-        await load(); // recharge la liste → le solde de l'employé est à jour
-      } else if (res.status === 409) {
-        const msg = res.data && 'error' in res.data ? res.data.error : 'Solde de tokens insuffisant.';
-        setAttribError(msg);
-      } else if (res.status === 400) {
-        setAttribError('Montant et raison obligatoires.');
-      } else if (res.status === 401) {
-        setAttribError('Session expirée, reconnecte-toi.');
-      } else {
-        const msg = res.data && 'error' in res.data ? res.data.error : "Échec de l'attribution.";
-        setAttribError(msg);
-      }
-    } catch {
-      setAttribError('Impossible de joindre le serveur.');
-    } finally {
-      setAttribSubmitting(false);
-    }
-  };
-
   const totalDistributed = (employees ?? []).reduce((sum, e) => sum + e.balance, 0);
 
-  //Approved button for manager when employee is pending
+  // Approve button pour manager quand l'employé est en attente.
   const approveEmployee = async (employeeId: string) => {
     try {
       // Passe par api.ts : profite du wrapper 401 → refresh → retry.
       const res = await apiApproveEmployee(employeeId);
       if (res.ok) {
-        await load();
+        await reload();
       } else if (res.status === 401) {
         setError('Session expirée, reconnecte-toi.');
       } else {
@@ -297,7 +154,6 @@ export default function ManagerDashboard({ role, onLogout, onBack }: ManagerDash
       setError('Impossible de joindre le serveur.');
     }
   };
-
 
   return (
     <Layout
@@ -336,7 +192,7 @@ export default function ManagerDashboard({ role, onLogout, onBack }: ManagerDash
               <ManagerBalances />
             </div>
             <div id="nav-distribuer" className="scroll-mt-20">
-              <DistributeForm employees={employees ?? []} onDone={load} />
+              <DistributeForm employees={employees ?? []} onDone={reload} />
             </div>
           </div>
         )}
@@ -403,28 +259,28 @@ export default function ManagerDashboard({ role, onLogout, onBack }: ManagerDash
                     <button
                       type="button"
                       className="emp-attrib-btn"
-                      onClick={() => (allocOpenId === m.id ? setAllocOpenId(null) : openAlloc(m.id))}
+                      onClick={() => alloc.toggle(m.id)}
                     >
-                      {allocOpenId === m.id ? 'Annuler' : 'Allouer'}
+                      {alloc.openId === m.id ? 'Annuler' : 'Allouer'}
                     </button>
                   </div>
-                  {allocOpenId === m.id && (
+                  {alloc.openId === m.id && (
                     <form
                       className="emp-attrib-form"
-                      onSubmit={(ev) => { ev.preventDefault(); submitAlloc(m.id); }}
+                      onSubmit={(ev) => { ev.preventDefault(); alloc.submit(m.id); }}
                     >
                       <input
                         type="number"
                         min="1"
                         step="1"
                         placeholder="Montant"
-                        value={allocAmount}
-                        onChange={(ev) => setAllocAmount(ev.target.value)}
+                        value={alloc.amount}
+                        onChange={(ev) => alloc.setAmount(ev.target.value)}
                       />
-                      <button type="submit" className="emp-attrib-submit" disabled={allocSubmitting}>
-                        {allocSubmitting ? '…' : 'Allouer'}
+                      <button type="submit" className="emp-attrib-submit" disabled={alloc.submitting}>
+                        {alloc.submitting ? '…' : 'Allouer'}
                       </button>
-                      {allocError && <p className="emp-attrib-error">{allocError}</p>}
+                      {alloc.error && <p className="emp-attrib-error">{alloc.error}</p>}
                     </form>
                   )}
                 </li>
@@ -452,7 +308,7 @@ export default function ManagerDashboard({ role, onLogout, onBack }: ManagerDash
         {!loading && error && (
           <div className="dash-msg dash-error">
             {error}{' '}
-            <button type="button" className="dash-retry" onClick={load}>Réessayer</button>
+            <button type="button" className="dash-retry" onClick={reload}>Réessayer</button>
           </div>
         )}
 
@@ -474,7 +330,7 @@ export default function ManagerDashboard({ role, onLogout, onBack }: ManagerDash
                       {e.isEmailVerified ? (
                         <span className="emp-badge verified">✓ vérifié</span>
                       ) : (
-                          <button
+                        <button
                           type="button"
                           className="emp-attrib-btn"
                           onClick={() => approveEmployee(e.id)}>
@@ -491,9 +347,9 @@ export default function ManagerDashboard({ role, onLogout, onBack }: ManagerDash
                   <button
                     type="button"
                     className="emp-attrib-btn"
-                    onClick={() => (attribOpenId === e.id ? closeAttrib() : openAttrib(e.id))}
+                    onClick={() => attrib.toggle(e.id)}
                   >
-                    {attribOpenId === e.id ? 'Annuler' : 'Attribuer'}
+                    {attrib.openId === e.id ? 'Annuler' : 'Attribuer'}
                   </button>
                   <button
                     type="button"
@@ -506,12 +362,12 @@ export default function ManagerDashboard({ role, onLogout, onBack }: ManagerDash
                   </button>
                 </div>
 
-                {attribOpenId === e.id && (
+                {attrib.openId === e.id && (
                   <form
                     className="emp-attrib-form"
                     onSubmit={(ev) => {
                       ev.preventDefault();
-                      submitAttrib(e.id);
+                      attrib.submit(e.id);
                     }}
                   >
                     <input
@@ -519,19 +375,19 @@ export default function ManagerDashboard({ role, onLogout, onBack }: ManagerDash
                       min="1"
                       step="1"
                       placeholder="Montant"
-                      value={attribAmount}
-                      onChange={(ev) => setAttribAmount(ev.target.value)}
+                      value={attrib.amount}
+                      onChange={(ev) => attrib.setAmount(ev.target.value)}
                     />
                     <input
                       type="text"
                       placeholder="Raison (obligatoire)"
-                      value={attribReason}
-                      onChange={(ev) => setAttribReason(ev.target.value)}
+                      value={attrib.reason}
+                      onChange={(ev) => attrib.setReason(ev.target.value)}
                     />
-                    <button type="submit" className="emp-attrib-submit" disabled={attribSubmitting}>
-                      {attribSubmitting ? '…' : 'Valider'}
+                    <button type="submit" className="emp-attrib-submit" disabled={attrib.submitting}>
+                      {attrib.submitting ? '…' : 'Valider'}
                     </button>
-                    {attribError && <p className="emp-attrib-error">{attribError}</p>}
+                    {attrib.error && <p className="emp-attrib-error">{attrib.error}</p>}
                   </form>
                 )}
               </li>

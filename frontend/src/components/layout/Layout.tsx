@@ -23,18 +23,18 @@ export default function Layout({
 }: LayoutProps) {
   if (chrome === 'app') {
     return (
-      <div className="app-layout">
+      <div className="flex min-h-[100dvh] flex-col">
         <Header title={title}>{headerActions}</Header>
         {/* pb pour ne pas masquer le bas du contenu sous la barre d'onglets. */}
-        <main className="app-main pb-24">{children}</main>
+        <main className="w-full flex-1 pb-24">{children}</main>
         {bottomNav}
       </div>
     );
   }
   return (
-    <div className="app-layout">
+    <div className="flex min-h-[100dvh] flex-col">
       <Header title={title}>{headerActions}</Header>
-      <main className="app-main">{children}</main>
+      <main className="w-full flex-1">{children}</main>
       <Footer />
     </div>
   );
