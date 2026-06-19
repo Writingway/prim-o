@@ -25,13 +25,6 @@ enum Role {
   EMPLOYEE
 }
 
-// Règle 3 : file d'approbation manager
-enum UserStatus {
-  PENDING   // employé inscrit, en attente de validation manager
-  APPROVED  // MANAGER/ADMIN sont APPROVED dès la création
-  REJECTED
-}
-
 enum CompanyStatus {
   PENDING   // Company créée, en attente de validation ADMIN
   APPROVED  // Company validée par ADMIN, peut créer des users
@@ -74,14 +67,13 @@ model User {
   id              String     @id @default(uuid()) @db.Uuid
   email           String                          // unicité : index partiel en SQL (soft-delete)
   passwordHash    String
-  role            Role
+  role            Role?                           // null = utilisateur flottant (inscrit, pas encore dans une entreprise)
   firstName       String?                         // null pour ADMIN
   lastName        String?
   balance         Int        @default(0)          // PORTEFEUILLE EMPLOYÉ uniquement. Reste 0 pour MANAGER/ADMIN. CHECK >= 0 en SQL.
   isEmailVerified Boolean    @default(false)
+  companyId       String?    @db.Uuid             // null = ADMIN OU utilisateur flottant pas encore rattaché
   lastLoginAt     DateTime?                       // RGPD : dernière connexion ; sert au job d'anonymisation des comptes inactifs (3 ans). Null = jamais connecté → repli sur createdAt.
-  status          UserStatus @default(PENDING)
-  companyId       String?    @db.Uuid             // null UNIQUEMENT pour ADMIN
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
   deletedAt       DateTime?

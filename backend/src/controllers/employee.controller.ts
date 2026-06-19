@@ -25,10 +25,10 @@ export async function listEmployeesController(
   next: NextFunction
 ): Promise<void> {
   try {
-    const companyId = requireManagerOrOwner(req, next);
-    if (!companyId) return;
+    const ctx = requireManagerOrOwner(req, next);
+    if (!ctx) return;
 
-    const employees = await listEmployeesByEmployer(companyId);
+    const employees = await listEmployeesByEmployer(ctx.companyId);
     res.status(200).json({ employees });
   } catch (err) {
     next(err);
@@ -42,8 +42,8 @@ export async function deleteEmployeeController(
   next: NextFunction
 ): Promise<void> {
   try {
-    const companyId = requireManagerOrOwner(req, next);
-    if (!companyId) return;
+    const ctx = requireManagerOrOwner(req, next);
+    if (!ctx) return;
 
     const id = req.params.id;
     if (typeof id !== 'string') {
@@ -51,7 +51,7 @@ export async function deleteEmployeeController(
       return;
     }
 
-    await softDeleteEmployee(companyId, id);
+    await softDeleteEmployee(ctx.companyId, id);
     res.status(204).end();
   } catch (err) {
     if (err instanceof Error) {
@@ -135,56 +135,5 @@ export async function getEmployeeSpentController(
   }
 }
 
-// (Bonus) PATCH /api/employees/:id/approve — approuver un employé (manager connecté)
-export async function approveEmployeeController(
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> {
-  try {
-    const companyId = requireManagerOrOwner(req, next);
-    if (!companyId) return;
-
-    const id = req.params.id;
-    if (typeof id !== 'string') {
-      next(new AppError(400, 'Identifiant employé manquant.'));
-      return;
-    }
-
-    await approveEmployee(companyId, id);
-    res.status(200).json({ message: 'Employé approuvé.' });
-  } catch (err) {
-    if (err instanceof Error) {
-      if (err.message === 'EMPLOYEE_NOT_FOUND') {
-        next(new AppError(404, 'Employé introuvable.'));
-        return;
-      }
-      if (err.message === 'EMPLOYEE_NOT_IN_COMPANY') {
-        next(new AppError(403, "Cet employé n'appartient pas à votre entreprise."));
-        return;
-      }
-    }
-    next(err);
-  }
-}
-
-async function approveEmployee(companyId: string, employeeId: string) {
-  const employee = await prisma.user.findUnique({
-    where: { id: employeeId },
-    select: { id: true, role: true, companyId: true, deletedAt: true, status: true },
-  });
-
-  if (!employee || employee.deletedAt !== null || employee.role !== 'EMPLOYEE') {
-    throw new Error('EMPLOYEE_NOT_FOUND');
-  }
-
-  // Cloison multi-tenant : on n'approuve que les employés de SA propre entreprise.
-  if (employee.companyId !== companyId) {
-    throw new Error('EMPLOYEE_NOT_IN_COMPANY');
-  }
-
-  await prisma.user.update({
-    where: { id: employeeId },
-    data: { status: 'APPROVED' },
-  });
-}
+// (Endpoint d'approbation manager supprimé — spec §4 : le code d'invitation
+//  vaut autorisation, l'employé est actif direct. Plus d'étape d'approbation.)

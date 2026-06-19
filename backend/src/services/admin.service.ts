@@ -181,7 +181,7 @@ export async function restoreCompany(companyId: string) {
 // Single source of truth for what an admin may see about a user.
 // passwordHash is NOT here — never leak it.
 const ADMIN_SAFE_SELECT = {
-  id: true, email: true, role: true, status: true,
+  id: true, email: true, role: true,
   firstName: true, lastName: true, balance: true,
   isEmailVerified: true, companyId: true, createdAt: true,
 } as const;
@@ -189,7 +189,6 @@ const ADMIN_SAFE_SELECT = {
 export async function listUsers(q: ListUsersQuery) {
   const where: Prisma.UserWhereInput = { deletedAt: null };
   if (q.role)      where.role = q.role;
-  if (q.status)    where.status = q.status;
   if (q.companyId) where.companyId = q.companyId;
   if (q.search)    where.email = { contains: q.search, mode: 'insensitive' };
 
@@ -208,35 +207,34 @@ export async function updateUser(id: string, data: UpdateUserInput) {
   return prisma.$transaction(async (tx) => {
     const user = await tx.user.findFirst({
       where: { id, deletedAt: null },
-      select: { id: true, role: true, status: true, companyId: true },
+      select: { id: true, role: true, companyId: true },
     });
     if (!user) throw new Error('USER_NOT_FOUND');
 
-    const nextRole   = data.role   ?? user.role;
-    const nextStatus = data.status ?? user.status;
+    const nextRole = data.role;
 
-    // Invariant from schema.prisma:75 — only ADMIN may have null companyId.
-    if (nextRole !== 'ADMIN' && user.companyId === null) {
+    // Cet endpoint ne peut affecter que MANAGER/EMPLOYEE (jamais ADMIN, anti-escalade) :
+    // un rôle non-ADMIN exige toujours une entreprise.
+    if (user.companyId === null) {
       throw new Error('ROLE_REQUIRES_COMPANY');
     }
 
-    // Last-admin guard: refuse to strip the final working admin.
-    const losesAdmin = user.role === 'ADMIN'
-      && (nextRole !== 'ADMIN' || nextStatus !== 'APPROVED');
+    // Last-admin guard : rétrograder le dernier admin actif est interdit.
+    const losesAdmin = user.role === 'ADMIN';
     if (losesAdmin) {
       const admins = await tx.user.count({
-        where: { role: 'ADMIN', status: 'APPROVED', deletedAt: null },
+        where: { role: 'ADMIN', deletedAt: null },
       });
       if (admins <= 1) throw new Error('LAST_ADMIN');
     }
 
     const updated = await tx.user.update({
-      where: { id }, data: { role: nextRole, status: nextStatus },
+      where: { id }, data: { role: nextRole },
       select: ADMIN_SAFE_SELECT,
     });
 
-    // Demotion or rejection -> kill sessions so the stale-role token dies.
-    if (nextRole !== user.role || nextStatus === 'REJECTED') {
+    // Changement de rôle -> on coupe les sessions (le token au rôle périmé meurt).
+    if (nextRole !== user.role) {
       await tx.refreshToken.updateMany({
         where: { userId: id, isRevoked: false }, data: { isRevoked: true },
       });
@@ -249,13 +247,13 @@ export async function softDeleteUser(id: string) {
   return prisma.$transaction(async (tx) => {
     const user = await tx.user.findFirst({
       where: { id, deletedAt: null },
-      select: { id: true, role: true, status: true },
+      select: { id: true, role: true },
     });
     if (!user) throw new Error('USER_NOT_FOUND');
 
-    if (user.role === 'ADMIN' && user.status === 'APPROVED') {
+    if (user.role === 'ADMIN') {
       const admins = await tx.user.count({
-        where: { role: 'ADMIN', status: 'APPROVED', deletedAt: null },
+        where: { role: 'ADMIN', deletedAt: null },
       });
       if (admins <= 1) throw new Error('LAST_ADMIN');
     }

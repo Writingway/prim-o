@@ -5,8 +5,7 @@ import {
   deleteEmployeeController,
   getEmployeeBalanceController,
   getEmployeeReceivedController,
-  getEmployeeSpentController,
-  approveEmployeeController
+  getEmployeeSpentController
 } from '../controllers/employee.controller';
 import { redeemOfferController } from '../controllers/redemption.controller';
 
@@ -16,9 +15,6 @@ const router = Router();
 router.get('/list', requireAuth, listEmployeesController);
 // DELETE /api/employees/:id — soft delete (manager connecté)
 router.delete('/:id', requireAuth, deleteEmployeeController);
-// PATCH /api/employees/:id/approve — approuver un employé (manager connecté)
-router.patch('/:id/approve', requireAuth, approveEmployeeController);
-
 // Espace employé : solde + historiques paginés.
 router.get('/me', requireAuth, getEmployeeBalanceController);
 router.get('/me/received', requireAuth, getEmployeeReceivedController);

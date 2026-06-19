@@ -1,21 +1,29 @@
 import type { Request, Response, NextFunction } from 'express';
-import { registerCompanySchema, registerUserSchema, resendVerificationSchema, forgotPasswordSchema, resetPasswordSchema } from '../schemas/auth.schemas';
-import { AppError } from '../middleware/error.middleware';
-import { loginSchema } from '../schemas/auth.schemas';
+import {
+  registerSchema,
+  createCompanySchema,
+  joinCompanySchema,
+  loginSchema,
+  resendVerificationSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
+} from '../schemas/auth.schemas';
+import { AppError, DomainError, ErrorCode } from '../middleware/error.middleware';
 import { config } from '../config';
 import { REFRESH_TTL_MS } from '../lib/token';
 import {
-  registerCompany,
-  registerUser,
+  register,
+  createCompany,
+  joinCompany,
   refreshTokens,
   login,
   logout,
+  getMe,
   verifyEmail,
   resendVerification,
   requestPasswordReset,
-  resetPassword
+  resetPassword,
 } from '../services/auth.service';
-
 
 const refreshCookieOptions = {
   httpOnly: true,
@@ -25,47 +33,26 @@ const refreshCookieOptions = {
   path: '/api/auth',
 };
 
-export async function registerCompanyController(
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> {
-  try {
-    const input = registerCompanySchema.parse(req.body);
-    const company = await registerCompany(input);
-    res.status(201).json({ company });
-  } catch (err) {
-    if (err instanceof Error && err.message === 'EMAIL_TAKEN') {
-      next(new AppError(409, 'Email déjà utilisé.'));
-      return;
-    }
-    next(err);
-  }
+// Express 5 propage les rejets async vers errorHandler : pas de try/catch
+// ni de remap par chaîne ici — le mapping code -> HTTP est centralisé.
+
+export async function registerController(req: Request, res: Response): Promise<void> {
+  const input = registerSchema.parse(req.body);
+  await register(input);
+  // Pas d'auto-login : on confirme la création, l'utilisateur active via l'email.
+  res.status(201).json({ message: 'Compte créé. Vérifie ton email pour activer ton compte.' });
 }
 
-export async function registerUserController(
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> {
-  try {
-    const input = registerUserSchema.parse(req.body);
-    const employee = await registerUser(input);
-    res.status(201).json({ employee });
-  } catch (err) {
+export async function createCompanyController(req: Request, res: Response): Promise<void> {
+  const input = createCompanySchema.parse(req.body);
+  const { company, accessToken } = await createCompany(req.user!.id, input);
+  res.status(201).json({ company, accessToken });
+}
 
-    if (err instanceof Error && err.message === 'INVALID_CODE') {
-      next(new AppError(410, 'Code entreprise invalide ou expiré.'));
-      return;
-    }
-
-    if (err instanceof Error && err.message === 'EMAIL_TAKEN') {
-      next(new AppError(409, 'Email déjà utilisé.'));
-      return;
-    }
-
-    next(err);
-  }
+export async function joinCompanyController(req: Request, res: Response): Promise<void> {
+  const input = joinCompanySchema.parse(req.body);
+  const { accessToken } = await joinCompany(req.user!.id, input);
+  res.status(200).json({ accessToken });
 }
 
 export async function refreshController(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -77,114 +64,67 @@ export async function refreshController(req: Request, res: Response, next: NextF
     res.cookie('refreshToken', refreshToken, { ...refreshCookieOptions });
     res.status(200).json({ accessToken });
   } catch (err) {
-    if (err instanceof Error && err.message === 'INVALID_REFRESH') {
+    // Effet de bord propre à la session invalide : on purge le cookie pourri.
+    if (err instanceof DomainError && err.code === ErrorCode.INVALID_REFRESH) {
       res.clearCookie('refreshToken', { path: '/api/auth' });
-      next(new AppError(401, 'Session invalide, reconnecte-toi.'));
-      return;
     }
     next(err);
   }
 }
 
-export async function loginController(
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> {
-  try {
-    const input = loginSchema.parse(req.body);
-    const { accessToken, refreshToken } = await login(input);
-    res.cookie('refreshToken', refreshToken, { ...refreshCookieOptions });
-    res.status(200).json({ accessToken });
-
-
-  } catch (err) {
-    if (err instanceof Error && err.message === 'INVALID_CREDENTIALS') {
-      next(new AppError(401, 'Email ou mot de passe invalide.'));
-      return;
-    }
-
-    if (err instanceof Error && err.message === 'USER_NOT_APPROVED') {
-      next(new AppError(403, 'Utilisateur en attente de validation.'));
-      return;
-    }
-    
-    if (err instanceof Error && err.message === 'EMAIL_NOT_VERIFIED') {
-      next(new AppError(403, 'Email non vérifié. Vérifie ta boîte mail.', 'EMAIL_NOT_VERIFIED'));
-      return;
-    }
-
-    next(err);
-  }
+export async function loginController(req: Request, res: Response): Promise<void> {
+  const input = loginSchema.parse(req.body);
+  const { accessToken, refreshToken } = await login(input);
+  res.cookie('refreshToken', refreshToken, { ...refreshCookieOptions });
+  res.status(200).json({ accessToken });
 }
 
-export async function logoutController(req: Request, res: Response, next: NextFunction): Promise<void> {
-  try {
-    const rawToken = req.cookies?.refreshToken;
-    if (rawToken) await logout(rawToken);
-    res.clearCookie('refreshToken', { path: '/api/auth' });
-    res.status(204).end();
-  } catch (err) {
-    next(err);
-  }
+// Source de vérité d'identité pour le front (role, companyId, company.status).
+export async function meController(req: Request, res: Response): Promise<void> {
+  const user = await getMe(req.user!.id);
+  res.json({ user });
 }
 
-// GET /api/auth/verify-email?token=... — cliqué depuis l'email.
-// Consomme le token côté serveur puis REDIRIGE vers le front avec un flag.
-export async function verifyEmailController(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function logoutController(req: Request, res: Response): Promise<void> {
+  const rawToken = req.cookies?.refreshToken;
+  if (rawToken) await logout(rawToken);
+  res.clearCookie('refreshToken', { path: '/api/auth' });
+  res.status(204).end();
+}
+
+// ─────────────────────── Vérification email + reset mot de passe ───────────────
+
+// Lien cliqué depuis l'email (GET). Consomme le token côté serveur puis
+// redirige vers le front. Try/catch local : on redirige même en cas d'échec
+// (jamais de JSON d'erreur sur une navigation navigateur).
+export async function verifyEmailController(req: Request, res: Response): Promise<void> {
+  const token = typeof req.query.token === 'string' ? req.query.token : '';
   try {
-    const token = req.query.token;
-    if (typeof token !== 'string' || token.length === 0) {
-      res.redirect(`${config.CLIENT_URL}/?verified=0&reason=missing`);
-      return;
-    }
     await verifyEmail(token);
-    res.redirect(`${config.CLIENT_URL}/?verified=1`);
-  } catch (err) {
-    if (err instanceof Error && err.message === 'INVALID_VERIFICATION') {
-      res.redirect(`${config.CLIENT_URL}/?verified=0&reason=invalid`);
-      return;
-    }
-    next(err);
+    res.redirect(`${config.CLIENT_URL}/auth?verified=1`);
+  } catch {
+    res.redirect(`${config.CLIENT_URL}/auth?verified=0`);
   }
 }
 
-// POST /api/auth/resend-verification — renvoie le lien de vérification.
-// Réponse TOUJOURS générique (anti-énumération) : on ne dit jamais si
-// le compte existe ou est déjà vérifié.
-export async function resendVerificationController(req: Request, res: Response, next: NextFunction): Promise<void> {
-  try {
-    const { email } = resendVerificationSchema.parse(req.body);
-    await resendVerification(email);
-    res.status(200).json({ message: "Si un compte non vérifié correspond à cet email, un lien vient d'être envoyé." });
-  } catch (err) {
-    next(err);
-  }
+// Renvoi du lien de vérification. Réponse toujours générique (anti-énumération) :
+// le service est silencieux si l'email est inconnu ou déjà vérifié.
+export async function resendVerificationController(req: Request, res: Response): Promise<void> {
+  const { email } = resendVerificationSchema.parse(req.body);
+  await resendVerification(email);
+  res.status(200).json({ message: "Si un compte existe et n'est pas vérifié, un email vient d'être renvoyé." });
 }
 
-// POST /api/auth/forgot-password — déclenche l'envoi du lien de reset.
-// Réponse TOUJOURS générique (anti-énumération).
-export async function forgotPasswordController(req: Request, res: Response, next: NextFunction): Promise<void> {
-  try {
-    const { email } = forgotPasswordSchema.parse(req.body);
-    await requestPasswordReset(email);
-    res.status(200).json({ message: "Si un compte correspond à cet email, un lien de réinitialisation vient d'être envoyé." });
-  } catch (err) {
-    next(err);
-  }
+// Mot de passe oublié : déclenche l'envoi du lien. Réponse générique également.
+export async function forgotPasswordController(req: Request, res: Response): Promise<void> {
+  const { email } = forgotPasswordSchema.parse(req.body);
+  await requestPasswordReset(email);
+  res.status(200).json({ message: "Si un compte correspond à cet email, un lien de réinitialisation a été envoyé." });
 }
 
-// POST /api/auth/reset-password — consomme le token et change le mot de passe.
-export async function resetPasswordController(req: Request, res: Response, next: NextFunction): Promise<void> {
-  try {
-    const { token, password } = resetPasswordSchema.parse(req.body);
-    await resetPassword(token, password);
-    res.status(200).json({ message: 'Mot de passe réinitialisé. Tu peux te connecter.' });
-  } catch (err) {
-    if (err instanceof Error && err.message === 'INVALID_RESET') {
-      next(new AppError(400, 'Lien de réinitialisation invalide ou expiré.', 'INVALID_RESET'));
-      return;
-    }
-    next(err);
-  }
+// Consomme le token de reset et fixe le nouveau mot de passe (révoque les sessions).
+export async function resetPasswordController(req: Request, res: Response): Promise<void> {
+  const { token, password } = resetPasswordSchema.parse(req.body);
+  await resetPassword(token, password);
+  res.status(200).json({ message: 'Mot de passe réinitialisé. Tu peux te connecter.' });
 }

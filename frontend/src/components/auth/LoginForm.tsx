@@ -1,10 +1,9 @@
 import { useState } from 'react';
 import type { ChangeEvent, SyntheticEvent } from 'react';
-import { login, resendVerification, forgotPassword, roleFromToken } from '../../services/api';
-import type { Role } from '../../types/types';
+import { login, resendVerification, forgotPassword } from '../../services/api';
 
 type LoginFormProps = {
-  onLoginSuccess: (accessToken: string, role: Role) => void;
+  onLoginSuccess: (accessToken: string) => void;
 };
 
 // Formulaire de connexion. À la réussite, remonte le token + rôle au parent
@@ -35,13 +34,12 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
 
       if (res.ok) {
         const accessToken = res.data?.accessToken;
-        const role = accessToken ? roleFromToken(accessToken) : null;
-        if (!accessToken || !role) {
-          setError('Token illisible, impossible de déterminer le rôle.');
+        if (!accessToken) {
+          setError('Réponse invalide du serveur.');
           setLoading(false);
           return;
         }
-        onLoginSuccess(accessToken, role);
+        onLoginSuccess(accessToken);
         return;
       } else if (res.status === 401) {
         setError('Email ou mot de passe incorrect.');

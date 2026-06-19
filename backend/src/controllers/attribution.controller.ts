@@ -16,13 +16,12 @@ export async function createAttributionController(
   next: NextFunction,
 ): Promise<void> {
   try {
-    const companyId = requireManagerOrOwner(req, next);
-    if (!companyId) return;
+    const ctx = requireManagerOrOwner(req, next);
+    if (!ctx) return;
 
     const input = createAttributionSchema.parse(req.body);
 
-    // req.user garanti non-null par requireManagerOrOwner ci-dessus.
-    const attribution = await createAttribution(req.user!.id, req.user!.role, companyId, input);
+    const attribution = await createAttribution(ctx.userId, ctx.role, ctx.companyId, input);
     res.status(201).json({ attribution });
   } catch (err) {
     if (err instanceof Error) {
@@ -101,9 +100,9 @@ export async function listManagersController(
   next: NextFunction,
 ): Promise<void> {
   try {
-    const companyId = requireManagerOrOwner(req, next);
-    if (!companyId) return;
-    const managers = await listCompanyManagers(companyId);
+    const ctx = requireManagerOrOwner(req, next);
+    if (!ctx) return;
+    const managers = await listCompanyManagers(ctx.companyId);
     res.status(200).json({ managers });
   } catch (err) {
     next(err);
@@ -117,10 +116,10 @@ export async function listAttributionsController(
   next: NextFunction,
 ): Promise<void> {
   try {
-    const companyId = requireManagerOrOwner(req, next);
-    if (!companyId) return;
+    const ctx = requireManagerOrOwner(req, next);
+    if (!ctx) return;
 
-    const attributions = await listAttributionsByCompany(companyId);
+    const attributions = await listAttributionsByCompany(ctx.companyId);
     res.status(200).json({ attributions });
   } catch (err) {
     next(err);

@@ -1,15 +1,18 @@
-import { Role } from "../../types/types";
-import { post } from "./client";
+import { authRequest, post } from "./client";
 
 // Corps d'erreur de validation (400) : le backend renvoie details[].message.
 type ValidationErrorBody = { details?: Array<{ message: string }> };
 
-export function registerCompany(payload: { companyName: string; firstName: string; lastName: string; email: string; password: string }) {
-  return post<ValidationErrorBody>('/auth/register-company', payload);
+// Créer son entreprise (flottant authentifié → OWNER, Company PENDING, token frais).
+export function createCompany(payload: { companyName: string }) {
+  return authRequest<{ company: { id: string; name: string; status: string }; accessToken: string } & ValidationErrorBody>(
+    'POST', '/auth/create-company', payload,
+  );
 }
 
-export function registerEmployee(payload: { firstName: string; lastName: string; email: string; password: string; code: string }) {
-  return post<ValidationErrorBody>('/auth/register-user', payload);
+// Rejoindre une entreprise via code (membre actif direct, token frais).
+export function joinCompany(payload: { code: string }) {
+  return authRequest<{ accessToken: string } & ValidationErrorBody>('POST', '/auth/join-company', payload);
 }
 
 // Login unifié : le backend identifie le rôle via les identifiants, pas via l'URL.
@@ -37,15 +40,9 @@ export function resetPassword(token: string, password: string) {
 export function logout() {
   return post('/auth/logout');
 }
-
-// Source de vérité du rôle = le payload du JWT (et non le sélecteur du formulaire).
-// Le backend émet le rôle en MAJUSCULES (enum Prisma) → on repasse en minuscules.
-export function roleFromToken(accessToken: string): Role | null {
-  try {
-    const b64 = accessToken.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
-    const payload = JSON.parse(atob(b64));
-    return String(payload.role).toLowerCase() as Role;
-  } catch {
-    return null;
-  }
+  
+// Account-first : inscription = utilisateur flottant, auto-login (cookie + accessToken).
+export function register(payload: { firstName: string; lastName: string; email: string; password: string }) {
+  return post<{ message?: string } & ValidationErrorBody>('/auth/register', payload);
 }
+
