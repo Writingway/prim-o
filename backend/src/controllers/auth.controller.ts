@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from 'express';
-import { registerCompanySchema, registerUserSchema } from '../schemas/auth.schemas';
+import { registerCompanySchema, registerUserSchema, resendVerificationSchema, forgotPasswordSchema, resetPasswordSchema } from '../schemas/auth.schemas';
 import { AppError } from '../middleware/error.middleware';
 import { loginSchema } from '../schemas/auth.schemas';
 import { config } from '../config';
@@ -9,8 +9,13 @@ import {
   registerUser,
   refreshTokens,
   login,
-  logout
+  logout,
+  verifyEmail,
+  resendVerification,
+  requestPasswordReset,
+  resetPassword
 } from '../services/auth.service';
+
 
 const refreshCookieOptions = {
   httpOnly: true,
@@ -105,7 +110,7 @@ export async function loginController(
     }
     
     if (err instanceof Error && err.message === 'EMAIL_NOT_VERIFIED') {
-      next(new AppError(403, 'Email non vérifié. Vérifie ta boîte mail.'));
+      next(new AppError(403, 'Email non vérifié. Vérifie ta boîte mail.', 'EMAIL_NOT_VERIFIED'));
       return;
     }
 
@@ -120,6 +125,66 @@ export async function logoutController(req: Request, res: Response, next: NextFu
     res.clearCookie('refreshToken', { path: '/api/auth' });
     res.status(204).end();
   } catch (err) {
+    next(err);
+  }
+}
+
+// GET /api/auth/verify-email?token=... — cliqué depuis l'email.
+// Consomme le token côté serveur puis REDIRIGE vers le front avec un flag.
+export async function verifyEmailController(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const token = req.query.token;
+    if (typeof token !== 'string' || token.length === 0) {
+      res.redirect(`${config.CLIENT_URL}/?verified=0&reason=missing`);
+      return;
+    }
+    await verifyEmail(token);
+    res.redirect(`${config.CLIENT_URL}/?verified=1`);
+  } catch (err) {
+    if (err instanceof Error && err.message === 'INVALID_VERIFICATION') {
+      res.redirect(`${config.CLIENT_URL}/?verified=0&reason=invalid`);
+      return;
+    }
+    next(err);
+  }
+}
+
+// POST /api/auth/resend-verification — renvoie le lien de vérification.
+// Réponse TOUJOURS générique (anti-énumération) : on ne dit jamais si
+// le compte existe ou est déjà vérifié.
+export async function resendVerificationController(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const { email } = resendVerificationSchema.parse(req.body);
+    await resendVerification(email);
+    res.status(200).json({ message: "Si un compte non vérifié correspond à cet email, un lien vient d'être envoyé." });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// POST /api/auth/forgot-password — déclenche l'envoi du lien de reset.
+// Réponse TOUJOURS générique (anti-énumération).
+export async function forgotPasswordController(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const { email } = forgotPasswordSchema.parse(req.body);
+    await requestPasswordReset(email);
+    res.status(200).json({ message: "Si un compte correspond à cet email, un lien de réinitialisation vient d'être envoyé." });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// POST /api/auth/reset-password — consomme le token et change le mot de passe.
+export async function resetPasswordController(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const { token, password } = resetPasswordSchema.parse(req.body);
+    await resetPassword(token, password);
+    res.status(200).json({ message: 'Mot de passe réinitialisé. Tu peux te connecter.' });
+  } catch (err) {
+    if (err instanceof Error && err.message === 'INVALID_RESET') {
+      next(new AppError(400, 'Lien de réinitialisation invalide ou expiré.', 'INVALID_RESET'));
+      return;
+    }
     next(err);
   }
 }

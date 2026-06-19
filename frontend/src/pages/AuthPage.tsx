@@ -10,13 +10,15 @@ type AuthPageProps = {
   onLoginSuccess: (accessToken: string, role: Role) => void;
   initialMode?: Mode;
   onBack?: () => void;
+  notice?: { type: 'success' | 'error'; text: string };
 };
+
 
 // Page d'authentification unique (option A) :
 // - un rôle : manager / employee
 // - un mode : login / register
 // Le formulaire affiché dépend de ces deux réglages.
-export default function AuthPage({ onLoginSuccess, initialMode = 'login', onBack }: AuthPageProps) {
+export default function AuthPage({ onLoginSuccess, initialMode = 'login', onBack, notice }: AuthPageProps) {
   const [role, setRole] = useState<Role>('owner');
   const [mode, setMode] = useState<Mode>(initialMode);
   const [successMessage, setSuccessMessage] = useState('');
@@ -32,7 +34,7 @@ export default function AuthPage({ onLoginSuccess, initialMode = 'login', onBack
   };
 
   const handleRegisterSuccess = () => {
-    setSuccessMessage('Compte créé ✅ Vous pouvez maintenant vous connecter.');
+    setSuccessMessage('Compte créé ✅ Vérifie ton email pour activer ton compte.');
     setMode('login');
   };
 
@@ -48,6 +50,10 @@ export default function AuthPage({ onLoginSuccess, initialMode = 'login', onBack
 
         <AuthTabs mode={mode} onChange={changeMode}/>
         {mode === 'register' && <RoleSelector role={role} onChange={changeRole} />}
+
+        {notice && (
+          <p className={notice.type === 'success' ? 'auth-success' : 'auth-error'}>{notice.text}</p>
+        )}
 
         {successMessage && <p className="auth-success">{successMessage}</p>}
 

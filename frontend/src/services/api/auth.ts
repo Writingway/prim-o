@@ -15,7 +15,22 @@ export function registerEmployee(payload: { firstName: string; lastName: string;
 // Login unifié : le backend identifie le rôle via les identifiants, pas via l'URL.
 // Succès → { accessToken } ; le rôle se lit dans le JWT. Erreur 403 → { error }.
 export function login(payload: { email: string; password: string }) {
-  return post<{ accessToken: string; error?: string }>('/auth/login', payload);
+  return post<{ accessToken: string; error?: string; code?: string }>('/auth/login', payload);
+}
+
+// Renvoi de l'email de vérification (réponse toujours générique côté back).
+export function resendVerification(email: string) {
+  return post<{ message?: string }>('/auth/resend-verification', { email });
+}
+
+// Mot de passe oublié : déclenche l'envoi du lien de reset (réponse générique).
+export function forgotPassword(email: string) {
+  return post<{ message?: string }>('/auth/forgot-password', { email });
+}
+
+// Reset : consomme le token reçu par mail et fixe le nouveau mot de passe.
+export function resetPassword(token: string, password: string) {
+  return post<{ message?: string; error?: string; code?: string }>('/auth/reset-password', { token, password });
 }
 
 // Déconnexion : révoque le refresh côté serveur et supprime le cookie.

@@ -185,6 +185,6 @@ async function approveEmployee(companyId: string, employeeId: string) {
 
   await prisma.user.update({
     where: { id: employeeId },
-    data: { status: 'APPROVED', isEmailVerified: true },
+    data: { status: 'APPROVED' },
   });
 }

@@ -18,6 +18,7 @@ import adminRouter from './routes/admin.routes';
 import privacyRouter from './routes/privacy.routes';
 import { requireAuth, requireAdmin } from './middleware/auth.middleware';
 import { startTokenCleanup } from './jobs/tokenCleanup';
+import { startInactiveAccountCleanup } from './jobs/inactiveAccountCleanup';
 
 //stripe
 import stripeRouter from './routes/stripe.routes';
@@ -39,7 +40,7 @@ app.use(cors({origin: config.CLIENT_URL, credentials: true}));
 // 3. Rate limiting
 app.use(rateLimit({
   windowMs: 60 * 1000,
-  max: 30,
+  max: 300,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Trop de requêtes, réessaie dans 1 minute.' },
@@ -82,3 +83,6 @@ app.listen(config.PORT, () => {
 
 // Démarre le job de nettoyage des tokens révoqués (tous les 24 heures).
 startTokenCleanup();
+
+// Démarre le job d'anonymisation RGPD des comptes inactifs (toutes les 24h).
+startInactiveAccountCleanup();

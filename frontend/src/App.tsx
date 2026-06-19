@@ -5,6 +5,7 @@ import ManagerDashboard from './pages/ManagerDashboard';
 import EmployeeDashboard from './pages/EmployeeDashboard';
 import AdminPage from './pages/AdminPage';
 import LegalPage, { type LegalPageKey } from './pages/LegalPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 import type { AuthSession, Role, Mode } from './types/types';
 import { refresh, roleFromToken, logout as apiLogout, setAccessToken, registerSessionExpired } from './services/api';
 
@@ -14,16 +15,44 @@ function legalFromHash(): LegalPageKey | null {
   return h === 'privacy' || h === 'mentions' || h === 'cgu' ? h : null;
 }
 
+// Retour de vérification email (redirigé par le backend).
+function verifiedFromQuery(): { type: 'success' | 'error'; text: string } | null {
+  const v = new URLSearchParams(window.location.search).get('verified');
+  if (v === '1') return { type: 'success', text: 'Email vérifié ✅ Tu peux maintenant te connecter.' };
+  if (v === '0') return { type: 'error', text: 'Lien de vérification invalide ou expiré.' };
+  return null;
+}
+
+// Lien de réinitialisation de mot de passe reçu par mail (…/?reset-token=…).
+function resetTokenFromQuery(): string | null {
+  return new URLSearchParams(window.location.search).get('reset-token');
+}
+
 function App() {
   // Session connectée gardée en mémoire, ou null si déconnecté.
   const [session, setSession] = useState<AuthSession | null>(null);
   const [legalPage, setLegalPage] = useState<LegalPageKey | null>(legalFromHash);
+  const [verifyNotice] = useState(verifiedFromQuery);
+  const [resetToken, setResetToken] = useState(resetTokenFromQuery);
 
   useEffect(() => {
     const onHash = () => setLegalPage(legalFromHash());
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
+
+  useEffect(() => {
+    if (!verifyNotice) return;
+    // nettoie l'URL pour ne pas re-déclencher au F5
+    const url = new URL(window.location.href);
+    url.searchParams.delete('verified');
+    url.searchParams.delete('reason');
+    window.history.replaceState({}, '', url.pathname + url.search + url.hash);
+    // l'utilisateur n'est pas connecté → on ouvre la page de connexion
+    setAuthMode('login');
+    setPublicView('auth');
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
 
   const [booting, setBooting] = useState(true); // true tant que le refresh n'a pas répondu
   // Visiteur non connecté : page d'accueil (hub) ou page d'auth.
@@ -82,6 +111,23 @@ function App() {
   };
 
     // Pages légales : affichées par-dessus tout (connecté ou non) via le hash.
+  // Reset mot de passe : affiché par-dessus tout (l'utilisateur n'est pas connecté).
+  if (resetToken) {
+    return (
+      <ResetPasswordPage
+        token={resetToken}
+        onDone={() => {
+          const url = new URL(window.location.href);
+          url.searchParams.delete('reset-token');
+          window.history.replaceState({}, '', url.pathname + url.search + url.hash);
+          setResetToken(null);
+          setAuthMode('login');
+          setPublicView('auth');
+        }}
+      />
+    );
+  }
+
   if (legalPage) {
     return <LegalPage page={legalPage} onBack={() => { window.location.hash = ''; }} />;
   }
@@ -98,6 +144,7 @@ function App() {
           initialMode={authMode}
           onLoginSuccess={handleLoginSuccess}
           onBack={() => setPublicView('landing')}
+          notice={verifyNotice ?? undefined}
         />
       );
     }

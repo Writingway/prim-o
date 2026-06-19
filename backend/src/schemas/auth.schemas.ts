@@ -26,3 +26,19 @@ export const registerUserSchema = z.object({
 });
 
 export type RegisterUserInput = z.infer<typeof registerUserSchema>;
+
+export const resendVerificationSchema = z.object({
+  email: z.email(),
+});
+export type ResendVerificationInput = z.infer<typeof resendVerificationSchema>;
+
+export const forgotPasswordSchema = z.object({
+  email: z.email(),
+});
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
+
+export const resetPasswordSchema = z.object({
+  token: z.string().min(1),
+  password: z.string().min(8),
+});
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
