@@ -18,6 +18,7 @@ import adminRouter from './routes/admin.routes';
 import privacyRouter from './routes/privacy.routes';
 import { requireAuth, requireAdmin } from './middleware/auth.middleware';
 import { startTokenCleanup } from './jobs/tokenCleanup';
+import { startInactiveAccountCleanup } from './jobs/inactiveAccountCleanup';
 
 //stripe
 import stripeRouter from './routes/stripe.routes';
@@ -86,3 +87,6 @@ app.listen(config.PORT, () => {
 
 // Démarre le job de nettoyage des tokens révoqués (tous les 24 heures).
 startTokenCleanup();
+
+// Démarre le job d'anonymisation RGPD des comptes inactifs (toutes les 24h).
+startInactiveAccountCleanup();

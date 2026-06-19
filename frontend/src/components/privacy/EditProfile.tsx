@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getMyProfile, updateMyProfile } from '../../services/api';
+import { getMyProfile, updateMyProfile, forgotPassword } from '../../services/api';
 import './privacy.css';
 
 type Profile = {
@@ -22,6 +22,7 @@ export default function EditProfile() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [pwdMsg, setPwdMsg] = useState('');
 
   const load = async () => {
     setLoading(true);
@@ -84,6 +85,15 @@ export default function EditProfile() {
     }
   };
 
+  // Changement de mot de passe : on passe par le même flux que « oublié »
+  // (lien par mail). On ne modifie jamais le mot de passe en direct ici.
+  const handlePasswordReset = async () => {
+    if (!profile) return;
+    setPwdMsg('');
+    await forgotPassword(profile.email);
+    setPwdMsg("Un email de réinitialisation t'a été envoyé. Vérifie ta boîte mail.");
+  };
+
   if (loading || !profile) return null;
 
   return (
@@ -109,6 +119,13 @@ export default function EditProfile() {
             </button>
           </div>
           {success && <p className="priv-msg-success">{success}</p>}
+
+          <div className="priv-password-reset">
+            <button className="priv-btn priv-btn-secondary" type="button" onClick={handlePasswordReset}>
+              Modifier mon mot de passe
+            </button>
+            {pwdMsg && <p className="priv-msg-success">{pwdMsg}</p>}
+          </div>
         </>
       ) : (
         <div className="priv-form">

@@ -25,3 +25,17 @@ export const generateLimiter = rateLimit({
   message: { error: 'Trop de codes générés, réessaie dans 1 minute.' },
 });
 
+// Renvoi d'email de vérification : empêche de flooder une boîte mail.
+export const resendVerificationLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, max: 5,
+  standardHeaders: true, legacyHeaders: false,
+  message: { error: 'Trop de demandes, réessaie dans 15 minutes.' },
+});
+
+// Mot de passe oublié / reset : flood d'emails + brute-force de tokens.
+export const passwordResetLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, max: 5,
+  standardHeaders: true, legacyHeaders: false,
+  message: { error: 'Trop de demandes, réessaie dans 15 minutes.' },
+});
+

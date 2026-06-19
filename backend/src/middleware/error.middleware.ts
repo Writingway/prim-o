@@ -86,7 +86,8 @@ export class DomainError extends Error {
 export class AppError extends Error {
   constructor(
     public statusCode: number,
-    message: string
+    message: string,
+    public code?: string
   ) {
     super(message);
     this.name = 'AppError';
@@ -124,7 +125,7 @@ export function errorHandler(
 
   // 3. Erreur HTTP ad-hoc
   if (err instanceof AppError) {
-    res.status(err.statusCode).json({ error: err.message });
+    res.status(err.statusCode).json({ error: err.message, ...(err.code ? { code: err.code } : {}) });
     return;
   }
 
