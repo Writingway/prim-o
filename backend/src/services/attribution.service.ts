@@ -55,6 +55,7 @@ export async function createAttribution(
       });
 
       return tx.attribution.create({
+        // reason = colonne legacy (encore NOT NULL) ; motifId = motif officiel (addendum v1.1).
         data: { amount, reason: reason ?? '', motifId, companyId, managerId: attributorId, employeeId },
         select: { id: true, amount: true, reason: true, createdAt: true },
       });
