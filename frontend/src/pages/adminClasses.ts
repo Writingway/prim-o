@@ -1,0 +1,54 @@
+export const ADMIN_WRAPPER = 'min-h-screen bg-[#f4f5f7] px-4 py-6 sm:px-5';
+export const ADMIN_CONTAINER = 'mx-auto flex w-full max-w-[900px] flex-col';
+export const ADMIN_NOTICE = 'mb-4 rounded-lg border border-primo-teal bg-primo-teal-soft px-3.5 py-2.5 text-sm text-primo-teal-dark';
+export const ADMIN_MSG = 'py-7 text-center text-primo-gray';
+export const ADMIN_ERROR = 'text-primo-error';
+export const ADMIN_TABS = 'mb-4 flex flex-wrap gap-2';
+export const ADMIN_TAB =
+  'rounded-full border border-primo-border bg-primo-bg px-4 py-2 text-sm font-semibold text-primo-gray transition';
+export const ADMIN_TAB_ACTIVE = 'border-primo-teal bg-primo-teal-soft text-primo-teal-dark';
+export const ADMIN_SUBTABS = 'mb-4 flex flex-wrap gap-2';
+export const ADMIN_STATS = 'mb-4 grid grid-cols-1 gap-3 sm:grid-cols-3';
+export const ADMIN_STAT_CARD = 'rounded-xl border border-primo-border bg-primo-bg px-4 py-3';
+export const ADMIN_STAT_VALUE = 'block text-2xl font-bold text-[#1f2937]';
+export const ADMIN_STAT_LABEL = 'text-xs font-medium text-primo-gray';
+export const ADMIN_SECTION_TITLE = 'mb-3 text-[15px] font-bold text-[#1f2937]';
+export const ADMIN_OFFERS_BAR = 'mb-3 flex flex-wrap items-center justify-between gap-2';
+export const ADMIN_FORM = 'mb-4 rounded-xl border border-primo-border bg-primo-bg p-4';
+export const ADMIN_FORM_TITLE = 'mb-3 text-[17px] font-semibold text-primo-ink';
+export const ADMIN_FORM_GRID = 'grid grid-cols-1 gap-3 sm:grid-cols-2';
+export const ADMIN_FIELD = 'flex flex-col gap-1.5 text-sm font-medium text-primo-gray';
+export const ADMIN_INPUT =
+  'w-full rounded-lg border border-[#d1d5db] bg-primo-bg px-3 py-[9px] text-sm text-[#1f2937] outline-none transition focus:border-primo-teal focus:shadow-[0_0_0_3px_rgba(0,161,154,0.15)]';
+export const ADMIN_TEXTAREA =
+  'w-full resize-y rounded-lg border border-[#d1d5db] bg-primo-bg px-3 py-2 text-sm text-[#1f2937] outline-none transition focus:border-primo-teal focus:shadow-[0_0_0_3px_rgba(0,161,154,0.15)]';
+export const ADMIN_SELECT = ADMIN_INPUT;
+export const ADMIN_FORM_ERROR = 'mt-3 text-sm text-primo-error';
+export const ADMIN_FORM_ACTIONS = 'mt-4 flex flex-wrap gap-2';
+export const ADMIN_TABLE_SCROLL = 'overflow-x-auto rounded-xl border border-primo-border bg-primo-bg';
+export const ADMIN_TABLE = 'min-w-full border-collapse';
+export const ADMIN_TH = 'border-b border-primo-border bg-primo-teal-soft px-3.5 py-3 text-left text-sm font-semibold text-primo-teal-dark';
+export const ADMIN_TD = 'border-b border-primo-border px-3.5 py-3 text-sm text-[#1f2937]';
+export const ADMIN_ROW_INACTIVE = 'bg-[#fafafb] text-primo-gray';
+export const ADMIN_ACTIONS = 'flex flex-wrap gap-2';
+export const ADMIN_CODES_ROW = 'bg-[#f9fafb]';
+export const ADMIN_CODES_PANEL = 'flex flex-col gap-2 p-2';
+export const ADMIN_CODES_ACTIONS = 'flex flex-wrap gap-2';
+export const ADMIN_CODES_LIST = 'mt-2 max-h-[220px] overflow-y-auto';
+export const ADMIN_CODES_LIST_UL = 'm-0 flex list-none flex-col gap-1.5 p-0';
+export const ADMIN_CODES_ITEM = 'flex flex-wrap items-center gap-2 text-sm';
+export const ADMIN_CODE = 'rounded-md bg-[#f3f4f6] px-2 py-0.5 font-mono text-xs';
+export const ADMIN_INLINE_FORM = 'mb-4 flex flex-wrap gap-2 rounded-xl border border-primo-border bg-primo-bg p-3';
+export const ADMIN_FILTERS = 'mb-4 grid grid-cols-1 gap-2 sm:grid-cols-3';
+export const ADMIN_PAGE_INFO = 'text-sm font-medium text-primo-gray';
+export const ADMIN_PAGINATION = 'mt-4 flex flex-wrap items-center justify-between gap-2';
+
+export const ADMIN_BTN_BASE =
+  'inline-flex items-center justify-center rounded-lg px-3.5 py-[9px] text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60';
+export const ADMIN_BTN_PRIMARY = `${ADMIN_BTN_BASE} bg-primo-teal text-white hover:bg-primo-teal-dark`;
+export const ADMIN_BTN_GHOST = `${ADMIN_BTN_BASE} border border-primo-border bg-primo-bg text-primo-gray hover:bg-[#f9fafb]`;
+export const ADMIN_BTN_LINK = 'inline-flex items-center justify-center rounded-md px-2 py-1 text-sm font-medium text-primo-teal transition hover:bg-primo-teal-soft';
+export const ADMIN_BTN_DANGER = 'inline-flex items-center justify-center rounded-md px-2 py-1 text-sm font-medium text-primo-error transition hover:bg-[#fef2f2]';
+export const ADMIN_BADGE = 'inline-flex rounded-full px-2 py-0.5 text-xs font-semibold';
+export const ADMIN_BADGE_ACTIVE = `${ADMIN_BADGE} bg-primo-teal-soft text-primo-teal-dark`;
+export const ADMIN_BADGE_INACTIVE = `${ADMIN_BADGE} bg-[#fffbeb] text-[#b45309]`;

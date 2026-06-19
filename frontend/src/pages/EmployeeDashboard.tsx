@@ -4,14 +4,22 @@ import PrivacySection from '@/components/privacy/PrivacySection';
 import EditProfile from '@/components/privacy/EditProfile';
 import { useEmployeeDashboard } from '@/hooks/useEmployeeDashboard';
 import { formatDate } from '@/lib/format';
+import { HEADER_BTN_GHOST } from '@/components/layout/headerButtons';
 
-const SECTION = 'bg-primo-bg border border-primo-border rounded-xl px-[18px] py-4 mb-3.5';
-const SECTION_TITLE = 'm-0 mb-3 text-[15px] font-bold text-[#1f2937]';
-const NOTE = 'text-[13px] text-primo-gray text-center m-0';
+const WRAPPER = 'min-h-screen bg-[#f4f5f7] px-4 py-6 sm:px-5';
+const CONTAINER = 'mx-auto flex w-full max-w-[640px] flex-col';
+const SECTION = 'mb-3.5 rounded-xl border border-primo-border bg-primo-bg px-[18px] py-4';
+const SECTION_TITLE = 'mb-3 text-[15px] font-bold text-[#1f2937]';
+const NOTE = 'm-0 text-center text-[13px] text-primo-gray';
+const ERROR_NOTE = 'm-0 text-center text-[13px] text-primo-error';
 const MUTED = 'text-sm font-medium text-primo-gray-light';
-const TX_LIST = 'list-none m-0 p-0 flex flex-col gap-2';
+const CARD = 'rounded-xl border border-primo-border bg-primo-bg px-4 py-4';
+const CARD_ICON = 'mb-1.5 text-[22px]';
+const CARD_LABEL = 'mb-1 text-[13px] text-primo-gray';
+const CARD_VALUE = 'text-[22px] font-bold text-[#1f2937]';
+const TX_LIST = 'm-0 flex list-none flex-col gap-2 p-0';
 const TX_ROW =
-  'flex items-center justify-between gap-3 px-3 py-2.5 border border-[#ececf1] rounded-[10px] bg-[#fafafb]';
+  'flex items-center justify-between gap-3 rounded-[10px] border border-[#ececf1] bg-[#fafafb] px-3 py-2.5';
 const TX_MAIN = 'min-w-0';
 const TX_REASON =
   'text-sm font-semibold text-[#1f2937] overflow-hidden text-ellipsis whitespace-nowrap';
@@ -19,6 +27,11 @@ const TX_SUB = 'text-xs text-primo-gray mt-0.5';
 const TX_AMOUNT = 'text-base font-bold flex-shrink-0';
 const MORE_BTN =
   'mt-2.5 w-full border border-[#d1d5db] bg-primo-bg text-primo-teal px-3.5 py-[9px] rounded-lg text-sm font-semibold cursor-pointer hover:bg-primo-teal-soft';
+const ERROR_RETRY = 'ml-1 cursor-pointer border-0 bg-transparent p-0 font-semibold text-primo-teal hover:text-primo-teal-dark';
+const POSITIVE = 'text-primo-success';
+const NEGATIVE = 'text-primo-error';
+const RECEIVED = 'border-l-[3px] border-l-primo-success';
+const SPENT = 'border-l-[3px] border-l-primo-error';
 
 type EmployeeDashboardProps = {
   onLogout: () => void;
@@ -45,56 +58,56 @@ export default function EmployeeDashboard({ onLogout, onBack }: EmployeeDashboar
       }
       headerActions={
         <>
-          <button className="app-btn app-btn-ghost" type="button" onClick={onBack}>
+          <button className={HEADER_BTN_GHOST} type="button" onClick={onBack}>
             Accueil
           </button>
-          <button className="app-btn app-btn-ghost" type="button" onClick={handleLogout}>
+          <button className={HEADER_BTN_GHOST} type="button" onClick={handleLogout}>
             Se déconnecter
           </button>
         </>
       }
     >
-    <div className="emp-dash-wrapper">
-      <div className="emp-dash-container">
+    <div className={WRAPPER}>
+      <div className={CONTAINER}>
 
-        {loading && <p className="emp-dash-note">Chargement…</p>}
+        {loading && <p className={NOTE}>Chargement…</p>}
 
         {!loading && error && (
-          <div className="emp-dash-note emp-dash-error">
+          <div className={ERROR_NOTE}>
             {error}{' '}
-            <button type="button" className="emp-dash-retry" onClick={reload}>Réessayer</button>
+            <button type="button" className={ERROR_RETRY} onClick={reload}>Réessayer</button>
           </div>
         )}
 
         {!loading && !error && balance !== null && (
           <>
-            <div id="nav-solde" className="emp-dash-cards scroll-mt-20">
-              <div className="emp-dash-card">
-                <div className="emp-dash-card-icon">🪙</div>
-                <div className="emp-dash-card-label">Mon solde</div>
-                <div className="emp-dash-card-value">{balance} tokens</div>
+            <div id="nav-solde" className="mb-4 grid grid-cols-1 gap-3 scroll-mt-20">
+              <div className={CARD}>
+                <div className={CARD_ICON}>🪙</div>
+                <div className={CARD_LABEL}>Mon solde</div>
+                <div className={CARD_VALUE}>{balance} tokens</div>
               </div>
             </div>
 
-            <section id="nav-recus" className="emp-dash-section scroll-mt-20">
-              <h2 className="emp-dash-section-title">Tokens reçus</h2>
+            <section id="nav-recus" className={`${SECTION} scroll-mt-20`}>
+              <h2 className={SECTION_TITLE}>Tokens reçus</h2>
               {received.items.length === 0 ? (
-                <p className="emp-dash-muted">Aucun token reçu pour l'instant.</p>
+                <p className={MUTED}>Aucun token reçu pour l'instant.</p>
               ) : (
                 <>
-                  <ul className="emp-tx-list">
+                  <ul className={TX_LIST}>
                     {received.items.map((t) => (
-                      <li className="emp-tx-row received" key={t.id}>
-                        <div className="emp-tx-main">
-                          <div className="emp-tx-reason">{t.reason}</div>
-                          <div className="emp-tx-sub">de {t.managerName} · {formatDate(t.createdAt)}</div>
+                      <li className={`${TX_ROW} ${RECEIVED}`} key={t.id}>
+                        <div className={TX_MAIN}>
+                          <div className={TX_REASON}>{t.reason}</div>
+                          <div className={TX_SUB}>de {t.managerName} · {formatDate(t.createdAt)}</div>
                         </div>
-                        <div className="emp-tx-amount positive">+{t.amount}</div>
+                        <div className={`${TX_AMOUNT} ${POSITIVE}`}>+{t.amount}</div>
                       </li>
                     ))}
                   </ul>
                   {received.hasMore && (
-                    <button className="emp-dash-more" type="button" onClick={received.loadMore}>
+                    <button className={MORE_BTN} type="button" onClick={received.loadMore}>
                       Voir plus
                     </button>
                   )}
@@ -102,25 +115,25 @@ export default function EmployeeDashboard({ onLogout, onBack }: EmployeeDashboar
               )}
             </section>
 
-            <section id="nav-depenses" className="emp-dash-section scroll-mt-20">
-              <h2 className="emp-dash-section-title">Mes dépenses</h2>
+            <section id="nav-depenses" className={`${SECTION} scroll-mt-20`}>
+              <h2 className={SECTION_TITLE}>Mes dépenses</h2>
               {spent.items.length === 0 ? (
-                <p className="emp-dash-muted">Aucune dépense pour l'instant.</p>
+                <p className={MUTED}>Aucune dépense pour l'instant.</p>
               ) : (
                 <>
-                  <ul className="emp-tx-list">
+                  <ul className={TX_LIST}>
                     {spent.items.map((t) => (
-                      <li className="emp-tx-row spent" key={t.id}>
-                        <div className="emp-tx-main">
-                          <div className="emp-tx-reason">{t.offerName}</div>
-                          <div className="emp-tx-sub">code {t.promoCode} · {formatDate(t.createdAt)}</div>
+                      <li className={`${TX_ROW} ${SPENT}`} key={t.id}>
+                        <div className={TX_MAIN}>
+                          <div className={TX_REASON}>{t.offerName}</div>
+                          <div className={TX_SUB}>code {t.promoCode} · {formatDate(t.createdAt)}</div>
                         </div>
-                        <div className="emp-tx-amount negative">−{t.amount}</div>
+                        <div className={`${TX_AMOUNT} ${NEGATIVE}`}>−{t.amount}</div>
                       </li>
                     ))}
                   </ul>
                   {spent.hasMore && (
-                    <button className="emp-dash-more" type="button" onClick={spent.loadMore}>
+                    <button className={MORE_BTN} type="button" onClick={spent.loadMore}>
                       Voir plus
                     </button>
                   )}

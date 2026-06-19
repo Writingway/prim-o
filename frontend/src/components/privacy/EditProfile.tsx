@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { getMyProfile, updateMyProfile, forgotPassword } from '../../services/api';
 
+const SECTION = 'mb-3.5 rounded-xl border border-primo-border bg-primo-bg px-[18px] py-4';
+const SECTION_TITLE = 'mb-3 text-[15px] font-bold text-[#1f2937]';
 const BTN =
   'rounded-lg border border-transparent px-4 py-[9px] text-sm font-semibold transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed';
 const BTN_PRIMARY = `${BTN} bg-primo-teal text-white hover:bg-primo-teal-dark`;
@@ -105,8 +107,8 @@ export default function EditProfile() {
   if (loading || !profile) return null;
 
   return (
-    <section className="emp-dash-section">
-      <h2 className="emp-dash-section-title">Mon profil</h2>
+    <section className={SECTION}>
+      <h2 className={SECTION_TITLE}>Mon profil</h2>
 
       {!editing ? (
         <>

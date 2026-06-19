@@ -2,6 +2,24 @@ import { useCallback, useEffect, useState } from 'react';
 import { listAdminUsers, updateAdminUser, deleteAdminUser } from '../services/api';
 import type { AdminUser, AdminRole, AdminStatus } from '../types/types';
 import { useConfirm } from '../components/ui/ConfirmDialog';
+import {
+  ADMIN_ACTIONS,
+  ADMIN_BADGE_INACTIVE,
+  ADMIN_BTN_DANGER,
+  ADMIN_BTN_GHOST,
+  ADMIN_BTN_LINK,
+  ADMIN_ERROR,
+  ADMIN_FILTERS,
+  ADMIN_INPUT,
+  ADMIN_MSG,
+  ADMIN_PAGE_INFO,
+  ADMIN_PAGINATION,
+  ADMIN_SELECT,
+  ADMIN_TABLE,
+  ADMIN_TABLE_SCROLL,
+  ADMIN_TD,
+  ADMIN_TH,
+} from './adminClasses';
 
 const ROLES: (AdminRole | '')[] = ['', 'ADMIN', 'MANAGER', 'EMPLOYEE'];
 const STATUSES: (AdminStatus | '')[] = ['', 'PENDING', 'APPROVED', 'REJECTED'];
@@ -125,45 +143,45 @@ export default function AdminUsers({ onFlash }: AdminUsersProps) {
   };
 
   return (
-    <div className="admin-users">
-      <div className="admin-filters">
+    <div>
+      <div className={ADMIN_FILTERS}>
         <input
-          className="admin-filter-search"
+          className={ADMIN_INPUT}
           type="search"
           placeholder="Rechercher par email…"
           value={filters.search}
           onChange={(e) => setFilter({ search: e.target.value })}
         />
-        <select value={filters.role} onChange={(e) => setFilter({ role: e.target.value as AdminRole | '' })}>
+        <select className={ADMIN_SELECT} value={filters.role} onChange={(e) => setFilter({ role: e.target.value as AdminRole | '' })}>
           {ROLES.map((r) => (
             <option key={r || 'all'} value={r}>{r || 'Tous les rôles'}</option>
           ))}
         </select>
-        <select value={filters.status} onChange={(e) => setFilter({ status: e.target.value as AdminStatus | '' })}>
+        <select className={ADMIN_SELECT} value={filters.status} onChange={(e) => setFilter({ status: e.target.value as AdminStatus | '' })}>
           {STATUSES.map((s) => (
             <option key={s || 'all'} value={s}>{s || 'Tous les statuts'}</option>
           ))}
         </select>
       </div>
 
-      {loading && <p className="admin-msg">Chargement…</p>}
-      {error && <p className="admin-msg admin-error">{error}</p>}
+      {loading && <p className={ADMIN_MSG}>Chargement…</p>}
+      {error && <p className={`${ADMIN_MSG} ${ADMIN_ERROR}`}>{error}</p>}
 
       {!loading && users && (
         users.length === 0 ? (
-          <p className="admin-msg">Aucun utilisateur.</p>
+          <p className={ADMIN_MSG}>Aucun utilisateur.</p>
         ) : (
           <>
-            <div className="admin-table-scroll">
-              <table className="admin-table">
+            <div className={ADMIN_TABLE_SCROLL}>
+              <table className={ADMIN_TABLE}>
                 <thead>
                   <tr>
-                    <th>Email</th>
-                    <th>Nom</th>
-                    <th>Rôle</th>
-                    <th>Statut</th>
-                    <th>Solde</th>
-                    <th>Actions</th>
+                    <th className={ADMIN_TH}>Email</th>
+                    <th className={ADMIN_TH}>Nom</th>
+                    <th className={ADMIN_TH}>Rôle</th>
+                    <th className={ADMIN_TH}>Statut</th>
+                    <th className={ADMIN_TH}>Solde</th>
+                    <th className={ADMIN_TH}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -172,13 +190,14 @@ export default function AdminUsers({ onFlash }: AdminUsersProps) {
                     const busy = busyId === u.id;
                     return (
                       <tr key={u.id}>
-                        <td data-label="Email">{u.email}</td>
-                        <td data-label="Nom">{u.firstName} {u.lastName}</td>
-                        <td data-label="Rôle">
+                        <td className={ADMIN_TD} data-label="Email">{u.email}</td>
+                        <td className={ADMIN_TD} data-label="Nom">{u.firstName} {u.lastName}</td>
+                        <td className={ADMIN_TD} data-label="Rôle">
                           {isAdmin ? (
-                            <span className="admin-badge inactive">ADMIN</span>
+                            <span className={ADMIN_BADGE_INACTIVE}>ADMIN</span>
                           ) : (
                             <select
+                              className={ADMIN_SELECT}
                               value={u.role}
                               disabled={busy}
                               onChange={(e) =>
@@ -190,29 +209,31 @@ export default function AdminUsers({ onFlash }: AdminUsersProps) {
                             </select>
                           )}
                         </td>
-                        <td data-label="Statut">
-                          <span className={`admin-badge ${u.status === 'APPROVED' ? 'active' : 'inactive'}`}>
+                        <td className={ADMIN_TD} data-label="Statut">
+                          <span className={u.status === 'APPROVED' ? 'bg-primo-teal-soft text-primo-teal-dark inline-flex rounded-full px-2 py-0.5 text-xs font-semibold' : ADMIN_BADGE_INACTIVE}>
                             {u.status}
                           </span>
                         </td>
-                        <td data-label="Solde">{u.balance}</td>
-                        <td className="admin-actions" data-label="Actions">
+                        <td className={ADMIN_TD} data-label="Solde">{u.balance}</td>
+                        <td className={ADMIN_TD} data-label="Actions">
+                          <div className={ADMIN_ACTIONS}>
                           {u.status !== 'APPROVED' && (
-                            <button className="admin-btn-link" disabled={busy}
+                            <button className={ADMIN_BTN_LINK} disabled={busy}
                               onClick={() => patchUser(u, { status: 'APPROVED' }, 'Utilisateur approuvé.')}>
                               Approuver
                             </button>
                           )}
                           {u.status !== 'REJECTED' && (
-                            <button className="admin-btn-link" disabled={busy}
+                            <button className={ADMIN_BTN_LINK} disabled={busy}
                               onClick={() => patchUser(u, { status: 'REJECTED' }, 'Utilisateur rejeté.')}>
                               Rejeter
                             </button>
                           )}
-                          <button className="admin-btn-link admin-btn-danger" disabled={busy}
+                          <button className={ADMIN_BTN_DANGER} disabled={busy}
                             onClick={() => remove(u)}>
                             Supprimer
                           </button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -221,15 +242,15 @@ export default function AdminUsers({ onFlash }: AdminUsersProps) {
               </table>
             </div>
 
-            <div className="admin-pagination">
-              <button className="admin-btn-ghost" disabled={page <= 1 || loading}
+            <div className={ADMIN_PAGINATION}>
+              <button className={ADMIN_BTN_GHOST} disabled={page <= 1 || loading}
                 onClick={() => setPage((p) => Math.max(1, p - 1))}>
                  Précédent
               </button>
-              <span className="admin-page-info">
+              <span className={ADMIN_PAGE_INFO}>
                 Page {page} · {total} utilisateur{total > 1 ? 's' : ''}
               </span>
-              <button className="admin-btn-ghost" disabled={!hasMore || loading}
+              <button className={ADMIN_BTN_GHOST} disabled={!hasMore || loading}
                 onClick={() => setPage((p) => p + 1)}>
                 Suivant →
               </button>

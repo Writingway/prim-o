@@ -7,7 +7,6 @@ import {
   logout as apiLogout,
 } from '@/services/api';
 import type { Employee, Role } from '@/types/types';
-import './ManagerDashboard.css';
 import Layout from '@/components/layout/Layout';
 import ManagerBalances from '@/components/manager/ManagerBalances';
 import DistributeForm from '@/components/manager/DistributeForm';
@@ -19,6 +18,46 @@ import { useManagerData } from '@/hooks/useManagerData';
 import { useAllocation } from '@/hooks/useAllocation';
 import { useAttribution } from '@/hooks/useAttribution';
 import { formatDate } from '@/lib/format';
+import { HEADER_BTN_GHOST } from '@/components/layout/headerButtons';
+
+const WRAPPER = 'min-h-screen bg-[#f4f5f7] px-4 py-6 sm:px-5';
+const CONTAINER = 'mx-auto flex w-full max-w-[760px] flex-col';
+const STATS = 'mb-4 flex flex-wrap items-center gap-2.5';
+const STAT = 'rounded-lg border border-primo-border bg-primo-bg px-3.5 py-2 text-[14px] text-[#374151]';
+const STAT_POOL = 'border-[#cfe9e7] bg-primo-teal-soft';
+const INVITE = 'ml-auto rounded-lg border border-dashed border-[#c7c7d1] bg-primo-bg px-3.5 py-2 text-[14px] font-semibold text-primo-ink transition hover:bg-primo-teal-dark hover:text-white';
+const RECHARGE = 'mb-4 flex flex-wrap items-center gap-2';
+const RECHARGE_INPUT = 'w-[130px] rounded-lg border border-[#d1d5db] bg-primo-bg px-[10px] py-2 text-[14px] text-[#1f2937] outline-none focus:border-primo-teal focus:shadow-[0_0_0_3px_rgba(0,161,154,0.15)]';
+const MSG = 'py-8 text-center text-primo-gray';
+const ERROR = 'text-primo-error';
+const RETRY = 'ml-2 rounded-md border-0 bg-primo-teal px-2.5 py-1 text-white cursor-pointer';
+const LIST = 'm-0 flex list-none flex-col gap-2 p-0';
+const ITEM = 'rounded-[10px] border border-primo-border bg-primo-bg px-3.5 py-3';
+const ROW = 'flex items-center gap-3';
+const AVATAR = 'flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primo-teal text-sm font-bold text-white';
+const MAIN = 'min-w-0 flex-1';
+const NAME = 'flex items-center gap-2 font-semibold text-[#111827]';
+const SUB = 'truncate text-xs text-primo-gray';
+const BALANCE = 'shrink-0 text-right';
+const BALANCE_NUM = 'text-[20px] font-bold text-[#1f2937]';
+const BALANCE_LABEL = 'text-[11px] text-primo-gray-light';
+const ACTION_BTN = 'shrink-0 rounded-lg border border-primo-teal bg-primo-bg px-3 py-2 text-[13px] font-semibold text-primo-teal transition hover:bg-primo-teal-soft';
+const DELETE_BTN = 'shrink-0 rounded-lg border border-[#f0c9c9] bg-primo-bg px-3 py-2 text-[13px] font-semibold text-primo-error transition hover:bg-[#fef2f2]';
+const FORM = 'mt-3 flex flex-wrap items-center gap-2 border-t border-[#eef0f3] pt-3';
+const INPUT = 'rounded-lg border border-[#d1d5db] bg-primo-bg px-[10px] py-2 text-[14px] text-[#1f2937] outline-none focus:border-primo-teal focus:shadow-[0_0_0_3px_rgba(0,161,154,0.15)]';
+const INPUT_NUM = 'w-[110px]';
+const INPUT_TEXT = 'min-w-[160px] flex-1';
+const SUBMIT = 'rounded-lg bg-primo-teal px-4 py-[9px] text-[14px] font-semibold text-white transition hover:bg-primo-teal-dark disabled:cursor-not-allowed disabled:opacity-60';
+const HISTORY = 'mb-4 rounded-[12px] border border-primo-border bg-primo-bg px-[18px] py-4';
+const HISTORY_TITLE = 'mb-3 text-[15px] font-bold text-[#1f2937]';
+const HISTORY_LIST = 'm-0 flex list-none flex-col gap-2 p-0';
+const HISTORY_ROW = 'grid grid-cols-1 gap-2 rounded-[10px] border border-[#ececf1] bg-[#fafafb] px-3 py-2.5 sm:grid-cols-[1.2fr_1fr_1fr_auto] sm:items-center';
+const HISTORY_EMP = 'text-sm font-semibold text-[#1f2937]';
+const HISTORY_REASON = 'text-sm text-[#1f2937]';
+const HISTORY_DATE = 'text-xs text-primo-gray';
+const HISTORY_AMOUNT = 'justify-self-start text-base font-bold text-primo-success sm:justify-self-end';
+const BADGE = 'inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold';
+const BADGE_VERIFIED = 'bg-[#ecfdf5] text-primo-success';
 
 type ManagerDashboardProps = {
   role: Role;
@@ -173,17 +212,17 @@ export default function ManagerDashboard({ role, onLogout, onBack }: ManagerDash
       }
       headerActions={
         <>
-          <button className="app-btn app-btn-ghost" type="button" onClick={onBack}>
+          <button className={HEADER_BTN_GHOST} type="button" onClick={onBack}>
              Accueil
           </button>
-          <button className="app-btn app-btn-ghost" type="button" onClick={handleLogout}>
+          <button className={HEADER_BTN_GHOST} type="button" onClick={handleLogout}>
             Se déconnecter
           </button>
         </>
       }
     >
-    <div className="dash-wrapper">
-      <div className="dash-container">
+    <div className={WRAPPER}>
+      <div className={CONTAINER}>
 
         {/* §3.3 — double solde (enveloppe / perso) + historiques envoyés/reçus. */}
         {role === 'manager' && (
@@ -197,32 +236,32 @@ export default function ManagerDashboard({ role, onLogout, onBack }: ManagerDash
           </div>
         )}
 
-        <div className="dash-stats">
-          <div className="dash-stat dash-stat-pool">🏦 <strong>{company?.tokenBalance ?? '-'}</strong>&nbsp;pool entreprise</div>
+        <div className={STATS}>
+          <div className={`${STAT} ${STAT_POOL}`}>🏦 <strong>{company?.tokenBalance ?? '-'}</strong>&nbsp;pool entreprise</div>
           {role === 'manager' && (
-            <div className="dash-stat">🪙 <strong>{myBalance ?? '-'}</strong>&nbsp;mes tokens</div>
+            <div className={STAT}>🪙 <strong>{myBalance ?? '-'}</strong>&nbsp;mes tokens</div>
           )}
-          <div className="dash-stat">👥 <strong>{employees?.length ?? 0}</strong>&nbsp;employés</div>
-          <div className="dash-stat">🪙 <strong>{totalDistributed}</strong>&nbsp;tokens distribués</div>
+          <div className={STAT}>👥 <strong>{employees?.length ?? 0}</strong>&nbsp;employés</div>
+          <div className={STAT}>🪙 <strong>{totalDistributed}</strong>&nbsp;tokens distribués</div>
           {role === 'owner' && (
-            <button className="dash-invite" type="button" onClick={() => handleGenerateInvite('MANAGER')}>
+            <button className={INVITE} type="button" onClick={() => handleGenerateInvite('MANAGER')}>
               Code manager
             </button>
           )}
-          <button className="dash-invite" type="button" onClick={() => handleGenerateInvite('EMPLOYEE')}>
+          <button className={INVITE} type="button" onClick={() => handleGenerateInvite('EMPLOYEE')}>
             Code employé
           </button>
         </div>
 
         {paymentNotice === 'success' && (
-          <div className="dash-msg">✅ Paiement réussi ! Ton pool va être crédité dans un instant.</div>
+          <div className={MSG}>✅ Paiement réussi ! Ton pool va être crédité dans un instant.</div>
         )}
         {paymentNotice === 'cancel' && (
-          <div className="dash-msg dash-error">Paiement annulé.</div>
+          <div className={`${MSG} ${ERROR}`}>Paiement annulé.</div>
         )}
 
         {role === 'owner' && (
-          <form className="dash-recharge" onSubmit={handleRecharge}>
+          <form className={RECHARGE} onSubmit={handleRecharge}>
             <input
               type="number"
               min="1"
@@ -230,35 +269,36 @@ export default function ManagerDashboard({ role, onLogout, onBack }: ManagerDash
               placeholder="Nb de tokens"
               value={rechargeAmount}
               onChange={(e) => setRechargeAmount(e.target.value)}
+              className={RECHARGE_INPUT}
             />
-            <button className="dash-invite" type="submit" disabled={recharging}>
+            <button className={INVITE} type="submit" disabled={recharging}>
               {recharging ? '…' : '💳 Recharger le pool'}
             </button>
-            {rechargeError && <p className="dash-msg dash-error">{rechargeError}</p>}
+            {rechargeError && <p className={`${MSG} ${ERROR}`}>{rechargeError}</p>}
           </form>
         )}
 
         {role === 'owner' && managers.length > 0 && (
-          <section className="history">
-            <h2 className="history-title">Allouer des tokens aux managers</h2>
-            <ul className="emp-list">
+          <section className={HISTORY}>
+            <h2 className={HISTORY_TITLE}>Allouer des tokens aux managers</h2>
+            <ul className={LIST}>
               {managers.map((m) => (
-                <li className="emp-item" key={m.id}>
-                  <div className="emp-row">
-                    <div className="emp-avatar">
+                <li className={ITEM} key={m.id}>
+                  <div className={ROW}>
+                    <div className={AVATAR}>
                       {`${m.firstName?.[0] ?? ''}${m.lastName?.[0] ?? ''}`.toUpperCase()}
                     </div>
-                    <div className="emp-main">
-                      <div className="emp-name">{m.firstName} {m.lastName}</div>
-                      <div className="emp-sub">{m.email}</div>
+                    <div className={MAIN}>
+                      <div className={NAME}>{m.firstName} {m.lastName}</div>
+                      <div className={SUB}>{m.email}</div>
                     </div>
-                    <div className="emp-balance">
-                      <div className="emp-balance-num">{m.balance}</div>
-                      <div className="emp-balance-label">tokens</div>
+                    <div className={BALANCE}>
+                      <div className={BALANCE_NUM}>{m.balance}</div>
+                      <div className={BALANCE_LABEL}>tokens</div>
                     </div>
                     <button
                       type="button"
-                      className="emp-attrib-btn"
+                      className={ACTION_BTN}
                       onClick={() => alloc.toggle(m.id)}
                     >
                       {alloc.openId === m.id ? 'Annuler' : 'Allouer'}
@@ -266,7 +306,7 @@ export default function ManagerDashboard({ role, onLogout, onBack }: ManagerDash
                   </div>
                   {alloc.openId === m.id && (
                     <form
-                      className="emp-attrib-form"
+                      className={FORM}
                       onSubmit={(ev) => { ev.preventDefault(); alloc.submit(m.id); }}
                     >
                       <input
@@ -276,11 +316,12 @@ export default function ManagerDashboard({ role, onLogout, onBack }: ManagerDash
                         placeholder="Montant"
                         value={alloc.amount}
                         onChange={(ev) => alloc.setAmount(ev.target.value)}
+                        className={`${INPUT} ${INPUT_NUM}`}
                       />
-                      <button type="submit" className="emp-attrib-submit" disabled={alloc.submitting}>
+                      <button type="submit" className={SUBMIT} disabled={alloc.submitting}>
                         {alloc.submitting ? '…' : 'Allouer'}
                       </button>
-                      {alloc.error && <p className="emp-attrib-error">{alloc.error}</p>}
+                      {alloc.error && <p className={`${MSG} ${ERROR}`}>{alloc.error}</p>}
                     </form>
                   )}
                 </li>
@@ -290,70 +331,70 @@ export default function ManagerDashboard({ role, onLogout, onBack }: ManagerDash
         )}
 
         {inviteCode && (
-          <div className="dash-msg">
+          <div className={MSG}>
             Code d'invitation : <strong>{inviteCode}</strong>{' '}
             <button
               type="button"
-              className="dash-retry"
+              className={RETRY}
               onClick={() => navigator.clipboard.writeText(inviteCode)}
             >
               Copier
             </button>
           </div>
         )}
-        {inviteError && <p className="dash-msg dash-error">{inviteError}</p>}
+        {inviteError && <p className={`${MSG} ${ERROR}`}>{inviteError}</p>}
 
-        {loading && <p className="dash-msg">Chargement…</p>}
+        {loading && <p className={MSG}>Chargement…</p>}
 
         {!loading && error && (
-          <div className="dash-msg dash-error">
+          <div className={`${MSG} ${ERROR}`}>
             {error}{' '}
-            <button type="button" className="dash-retry" onClick={reload}>Réessayer</button>
+            <button type="button" className={RETRY} onClick={reload}>Réessayer</button>
           </div>
         )}
 
         <div id="nav-equipe" className="scroll-mt-20" aria-hidden="true" />
 
         {!loading && !error && employees && employees.length === 0 && (
-          <p className="dash-msg">Aucun employé pour l'instant.</p>
+          <p className={MSG}>Aucun employé pour l'instant.</p>
         )}
 
         {!loading && !error && employees && employees.length > 0 && (
-          <ul className="emp-list">
+          <ul className={LIST}>
             {employees.map((e) => (
-              <li className="emp-item" key={e.id}>
-                <div className="emp-row">
-                  <div className="emp-avatar">{initials(e)}</div>
-                  <div className="emp-main">
-                    <div className="emp-name">
+              <li className={ITEM} key={e.id}>
+                <div className={ROW}>
+                  <div className={AVATAR}>{initials(e)}</div>
+                  <div className={MAIN}>
+                    <div className={NAME}>
                       {e.firstName} {e.lastName}
                       {e.isEmailVerified ? (
-                        <span className="emp-badge verified">✓ vérifié</span>
+                        <span className={`${BADGE} ${BADGE_VERIFIED}`}>✓ vérifié</span>
                       ) : (
                         <button
                           type="button"
-                          className="emp-attrib-btn"
+                          className={ACTION_BTN}
                           onClick={() => approveEmployee(e.id)}>
                           Approuver
                         </button>
                       )}
                     </div>
-                    <div className="emp-sub">{e.email} · inscrit le {formatDate(e.createdAt)}</div>
+                    <div className={SUB}>{e.email} · inscrit le {formatDate(e.createdAt)}</div>
                   </div>
-                  <div className="emp-balance">
-                    <div className="emp-balance-num">{e.balance}</div>
-                    <div className="emp-balance-label">tokens</div>
+                  <div className={BALANCE}>
+                    <div className={BALANCE_NUM}>{e.balance}</div>
+                    <div className={BALANCE_LABEL}>tokens</div>
                   </div>
                   <button
                     type="button"
-                    className="emp-attrib-btn"
+                    className={ACTION_BTN}
                     onClick={() => attrib.toggle(e.id)}
                   >
                     {attrib.openId === e.id ? 'Annuler' : 'Attribuer'}
                   </button>
                   <button
                     type="button"
-                    className="emp-delete-btn"
+                    className={DELETE_BTN}
                     title="Supprimer cet employé"
                     disabled={deletingId === e.id}
                     onClick={() => handleDelete(e)}
@@ -364,7 +405,7 @@ export default function ManagerDashboard({ role, onLogout, onBack }: ManagerDash
 
                 {attrib.openId === e.id && (
                   <form
-                    className="emp-attrib-form"
+                    className={FORM}
                     onSubmit={(ev) => {
                       ev.preventDefault();
                       attrib.submit(e.id);
@@ -377,17 +418,19 @@ export default function ManagerDashboard({ role, onLogout, onBack }: ManagerDash
                       placeholder="Montant"
                       value={attrib.amount}
                       onChange={(ev) => attrib.setAmount(ev.target.value)}
+                      className={`${INPUT} ${INPUT_NUM}`}
                     />
                     <input
                       type="text"
                       placeholder="Raison (obligatoire)"
                       value={attrib.reason}
                       onChange={(ev) => attrib.setReason(ev.target.value)}
+                      className={`${INPUT} ${INPUT_TEXT}`}
                     />
-                    <button type="submit" className="emp-attrib-submit" disabled={attrib.submitting}>
+                    <button type="submit" className={SUBMIT} disabled={attrib.submitting}>
                       {attrib.submitting ? '…' : 'Valider'}
                     </button>
-                    {attrib.error && <p className="emp-attrib-error">{attrib.error}</p>}
+                    {attrib.error && <p className={`${MSG} ${ERROR}`}>{attrib.error}</p>}
                   </form>
                 )}
               </li>
@@ -396,20 +439,20 @@ export default function ManagerDashboard({ role, onLogout, onBack }: ManagerDash
         )}
 
         {!loading && !error && (
-          <section className="history">
-            <h2 className="history-title">Historique des transactions</h2>
+          <section className={HISTORY}>
+            <h2 className={HISTORY_TITLE}>Historique des transactions</h2>
             {attributions.length === 0 ? (
-              <p className="dash-msg">Aucune transaction pour l'instant.</p>
+              <p className={MSG}>Aucune transaction pour l'instant.</p>
             ) : (
-              <ul className="history-list">
+              <ul className={HISTORY_LIST}>
                 {attributions.map((a) => (
-                  <li className="history-row" key={a.id}>
-                    <span className="history-emp">
+                  <li className={HISTORY_ROW} key={a.id}>
+                    <span className={HISTORY_EMP}>
                       {a.employee.firstName} {a.employee.lastName}
                     </span>
-                    <span className="history-reason">{a.reason}</span>
-                    <span className="history-date">{formatDate(a.createdAt)}</span>
-                    <span className="history-amount">+{a.amount}</span>
+                    <span className={HISTORY_REASON}>{a.reason}</span>
+                    <span className={HISTORY_DATE}>{formatDate(a.createdAt)}</span>
+                    <span className={HISTORY_AMOUNT}>+{a.amount}</span>
                   </li>
                 ))}
               </ul>
