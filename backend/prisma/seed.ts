@@ -12,6 +12,8 @@ async function main() {
   // Vider dans l'ordre (FK oblige)
   await prisma.redemption.deleteMany()
   await prisma.attribution.deleteMany()
+  await prisma.allocation.deleteMany()
+  await prisma.motif.deleteMany()
   await prisma.companyTokenPurchase.deleteMany()
   await prisma.companyInviteCode.deleteMany()
   await prisma.promoCode.deleteMany()
@@ -124,6 +126,32 @@ async function main() {
     },
   })
 
+  // ── Motifs officiels v1.1 (§3.5) : 13 motifs, 4 catégories ──
+  // Liste figée gérée par l'ADMIN (custom employeur = V2). tag = clé stats stable.
+  await prisma.motif.createMany({
+    data: [
+      // Comportements individuels
+      { tag: 'PONCTUALITE_PRESENCE', label: 'Ponctualité & présence', category: 'COMPORTEMENTS_INDIVIDUELS', compliment: "Toujours là, toujours à l'heure", sortOrder: 1 },
+      { tag: 'PRISE_INITIATIVE', label: "Prise d'initiative", category: 'COMPORTEMENTS_INDIVIDUELS', compliment: "Tu n'as pas attendu qu'on te le demande", sortOrder: 2 },
+      { tag: 'QUALITE_EXECUTION', label: "Qualité d'exécution", category: 'COMPORTEMENTS_INDIVIDUELS', compliment: "C'est fait, et c'est bien fait", sortOrder: 3 },
+      { tag: 'AUTONOMIE', label: 'Autonomie', category: 'COMPORTEMENTS_INDIVIDUELS', compliment: 'Tu gères, et ça se voit', sortOrder: 4 },
+      // Relation client
+      { tag: 'ATTITUDE_ACCUEIL_CLIENT', label: 'Attitude & accueil client', category: 'RELATION_CLIENT', compliment: "Tu as mis le client à l'aise dès le premier regard", sortOrder: 5 },
+      { tag: 'GESTION_SITUATION_DIFFICILE', label: 'Gestion situation difficile', category: 'RELATION_CLIENT', compliment: 'Tu as géré avec calme et professionnalisme', sortOrder: 6 },
+      { tag: 'FIDELISATION_CLIENT', label: 'Fidélisation client', category: 'RELATION_CLIENT', compliment: 'Ce client reviendra grâce à toi', sortOrder: 7 },
+      { tag: 'VENTE_ADDITIONNELLE', label: 'Vente additionnelle', category: 'RELATION_CLIENT', compliment: 'Tu as su proposer au bon moment', sortOrder: 8 },
+      // Esprit collectif
+      { tag: 'ENTRAIDE_COOPERATION', label: 'Entraide & coopération', category: 'ESPRIT_COLLECTIF', compliment: "Tu as tiré l'équipe vers le haut", sortOrder: 9 },
+      { tag: 'TRANSMISSION_COMPETENCES', label: 'Transmission de compétences', category: 'ESPRIT_COLLECTIF', compliment: "Tu as pris le temps d'expliquer — c'est rare", sortOrder: 10 },
+      { tag: 'POLYVALENCE_ACCEPTEE', label: 'Polyvalence acceptée', category: 'ESPRIT_COLLECTIF', compliment: "Tu as dit oui quand on avait besoin", sortOrder: 11 },
+      // Engagement
+      { tag: 'PRESENCE_SITUATION_TENDUE', label: 'Présence en situation tendue', category: 'ENGAGEMENT', compliment: "Tu étais là quand c'était difficile", sortOrder: 12 },
+      { tag: 'RESPECT_PROCESS_HYGIENE', label: 'Respect des process & hygiène', category: 'ENGAGEMENT', compliment: 'Rien ne traîne, tout est carré', sortOrder: 13 },
+    ],
+  })
+  const motifQualite = await prisma.motif.findUniqueOrThrow({ where: { tag: 'QUALITE_EXECUTION' } })
+  const motifVente = await prisma.motif.findUniqueOrThrow({ where: { tag: 'VENTE_ADDITIONNELLE' } })
+
   // ── Attributions (débit pool Acme + crédit employé, invariant respecté) ──
   // jean +30, marie +50 → pool Acme : 500 - 80 = 420
   await prisma.$transaction([
@@ -131,6 +159,7 @@ async function main() {
       data: {
         amount: 30,
         reason: 'Excellent travail sur le projet client Q1',
+        motifId: motifQualite.id,
         companyId: acme.id,
         managerId: bossAcme.id,
         employeeId: jean.id,
@@ -140,6 +169,7 @@ async function main() {
       data: {
         amount: 50,
         reason: 'Dépassement des objectifs de vente',
+        motifId: motifVente.id,
         companyId: acme.id,
         managerId: bossAcme.id,
         employeeId: marie.id,
