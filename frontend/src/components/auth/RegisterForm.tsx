@@ -5,8 +5,9 @@ import { register } from '../../services/api';
 type ValidationErrorBody = { details?: Array<{ message: string }> };
 
 type RegisterFormProps = {
-  // Inscription = auto-login → on remonte le token frais (comme onLoginSuccess).
-  onSuccess: (accessToken: string) => void;
+  // Inscription SANS auto-login : vérification email requise. Le parent affiche
+  // un message « vérifie ton email » et bascule sur l'onglet connexion.
+  onSuccess: () => void;
 };
 
 function firstValidationMessage(data: ValidationErrorBody | null): string | null {
@@ -30,7 +31,7 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
     setLoading(true);
     try {
       const res = await register(form);
-      if (res.ok && res.data?.accessToken) { onSuccess(res.data.accessToken); return; }
+      if (res.ok) { onSuccess(); return; }
       if (res.status === 409) setError('Cet email est déjà utilisé.');
       else if (res.status === 400) setError(firstValidationMessage(res.data) || 'Données invalides.');
       else setError('Une erreur est survenue.');

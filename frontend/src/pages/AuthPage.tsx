@@ -7,13 +7,21 @@ import './AuthPage.css';
 
 type AuthPageProps = {
   onLoginSuccess: (accessToken: string) => void;
-  onRegisterSuccess: (accessToken: string) => void;
   initialMode?: Mode;
   onBack?: () => void;
+  // Bandeau passé par le router (ex. retour de vérification email).
+  notice?: { type: 'success' | 'error'; text: string };
 };
 
-export default function AuthPage({ onLoginSuccess, onRegisterSuccess, initialMode = 'login', onBack }: AuthPageProps) {
+export default function AuthPage({ onLoginSuccess, initialMode = 'login', onBack, notice }: AuthPageProps) {
   const [mode, setMode] = useState<Mode>(initialMode);
+  const [successMessage, setSuccessMessage] = useState('');
+
+  // Inscription sans auto-login : on confirme + bascule sur l'onglet connexion.
+  const handleRegisterSuccess = () => {
+    setSuccessMessage('Compte créé ✅ Vérifie ton email pour activer ton compte.');
+    setMode('login');
+  };
 
   return (
     <div className="auth-wrapper">
@@ -23,9 +31,14 @@ export default function AuthPage({ onLoginSuccess, onRegisterSuccess, initialMod
 
         <AuthTabs mode={mode} onChange={setMode} />
 
+        {notice && (
+          <p className={notice.type === 'success' ? 'auth-success' : 'auth-error'}>{notice.text}</p>
+        )}
+        {successMessage && <p className="auth-success">{successMessage}</p>}
+
         {mode === 'login'
           ? <LoginForm onLoginSuccess={onLoginSuccess} />
-          : <RegisterForm onSuccess={onRegisterSuccess} />}
+          : <RegisterForm onSuccess={handleRegisterSuccess} />}
       </div>
     </div>
   );

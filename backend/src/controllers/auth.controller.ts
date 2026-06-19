@@ -4,6 +4,9 @@ import {
   createCompanySchema,
   joinCompanySchema,
   loginSchema,
+  resendVerificationSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
 } from '../schemas/auth.schemas';
 import { AppError, DomainError, ErrorCode } from '../middleware/error.middleware';
 import { config } from '../config';
@@ -16,6 +19,10 @@ import {
   login,
   logout,
   getMe,
+  verifyEmail,
+  resendVerification,
+  requestPasswordReset,
+  resetPassword,
 } from '../services/auth.service';
 
 const refreshCookieOptions = {
@@ -31,9 +38,9 @@ const refreshCookieOptions = {
 
 export async function registerController(req: Request, res: Response): Promise<void> {
   const input = registerSchema.parse(req.body);
-  const { accessToken, refreshToken } = await register(input);
-  res.cookie('refreshToken', refreshToken, { ...refreshCookieOptions });
-  res.status(201).json({ accessToken });
+  await register(input);
+  // Pas d'auto-login : on confirme la création, l'utilisateur active via l'email.
+  res.status(201).json({ message: 'Compte créé. Vérifie ton email pour activer ton compte.' });
 }
 
 export async function createCompanyController(req: Request, res: Response): Promise<void> {
@@ -83,4 +90,41 @@ export async function logoutController(req: Request, res: Response): Promise<voi
   if (rawToken) await logout(rawToken);
   res.clearCookie('refreshToken', { path: '/api/auth' });
   res.status(204).end();
+}
+
+// ─────────────────────── Vérification email + reset mot de passe ───────────────
+
+// Lien cliqué depuis l'email (GET). Consomme le token côté serveur puis
+// redirige vers le front. Try/catch local : on redirige même en cas d'échec
+// (jamais de JSON d'erreur sur une navigation navigateur).
+export async function verifyEmailController(req: Request, res: Response): Promise<void> {
+  const token = typeof req.query.token === 'string' ? req.query.token : '';
+  try {
+    await verifyEmail(token);
+    res.redirect(`${config.CLIENT_URL}/auth?verified=1`);
+  } catch {
+    res.redirect(`${config.CLIENT_URL}/auth?verified=0`);
+  }
+}
+
+// Renvoi du lien de vérification. Réponse toujours générique (anti-énumération) :
+// le service est silencieux si l'email est inconnu ou déjà vérifié.
+export async function resendVerificationController(req: Request, res: Response): Promise<void> {
+  const { email } = resendVerificationSchema.parse(req.body);
+  await resendVerification(email);
+  res.status(200).json({ message: "Si un compte existe et n'est pas vérifié, un email vient d'être renvoyé." });
+}
+
+// Mot de passe oublié : déclenche l'envoi du lien. Réponse générique également.
+export async function forgotPasswordController(req: Request, res: Response): Promise<void> {
+  const { email } = forgotPasswordSchema.parse(req.body);
+  await requestPasswordReset(email);
+  res.status(200).json({ message: "Si un compte correspond à cet email, un lien de réinitialisation a été envoyé." });
+}
+
+// Consomme le token de reset et fixe le nouveau mot de passe (révoque les sessions).
+export async function resetPasswordController(req: Request, res: Response): Promise<void> {
+  const { token, password } = resetPasswordSchema.parse(req.body);
+  await resetPassword(token, password);
+  res.status(200).json({ message: 'Mot de passe réinitialisé. Tu peux te connecter.' });
 }

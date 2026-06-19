@@ -37,11 +37,24 @@ export async function register(input: RegisterInput) {
   if (existing) throw new DomainError(ErrorCode.EMAIL_TAKEN);
 
   const passwordHash = await bcrypt.hash(password, 12);
-  const user = await prisma.user.create({
-    data: { email, passwordHash, firstName, lastName, role: null, companyId: null },
+  const { raw, hash } = generateEmailVerificationToken();
+
+  // Atomique : jamais de compte sans son token de vérification.
+  const user = await prisma.$transaction(async (tx) => {
+    const created = await tx.user.create({
+      data: { email, passwordHash, firstName, lastName, role: null, companyId: null },
+    });
+    await tx.emailVerificationToken.create({
+      data: { userId: created.id, tokenHash: hash, expiresAt: new Date(Date.now() + 86_400_000) },
+    });
+    return created;
   });
 
-  return issueSession(user);
+  // Hors transaction : un échec d'envoi ne doit pas annuler l'inscription.
+  await sendVerificationEmail(user.email, raw);
+
+  // Pas d'auto-login : l'utilisateur doit vérifier son email avant de se connecter.
+  return { email: user.email };
 }
 
 // L'utilisateur flottant crée son entreprise (PENDING) et devient OWNER.
@@ -154,6 +167,9 @@ export async function login(input: LoginInput) {
   // La capacité entreprise est gardée plus loin sur Company.status.
   if (!user.isEmailVerified) throw new DomainError(ErrorCode.EMAIL_NOT_VERIFIED);
 
+  // RGPD : trace la dernière connexion (le job d'anonymisation des comptes inactifs s'en sert).
+  await prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });
+
   return issueSession(user);
 }
 
@@ -186,16 +202,16 @@ export async function verifyEmail(rawToken: string): Promise<void> {
   const tokenHash = hashRefreshToken(rawToken);
   const stored = await prisma.emailVerificationToken.findUnique({ where: { tokenHash } });
 
-  if (!stored) throw new Error('INVALID_VERIFICATION');
-  if (stored.usedAt !== null) throw new Error('INVALID_VERIFICATION');
-  if (stored.expiresAt < new Date()) throw new Error('INVALID_VERIFICATION');
+  if (!stored) throw new DomainError(ErrorCode.INVALID_TOKEN);
+  if (stored.usedAt !== null) throw new DomainError(ErrorCode.INVALID_TOKEN);
+  if (stored.expiresAt < new Date()) throw new DomainError(ErrorCode.INVALID_TOKEN);
 
   await prisma.$transaction(async (tx) => {
     const consumed = await tx.emailVerificationToken.updateMany({
       where: { id: stored.id, usedAt: null },
       data: { usedAt: new Date() },
     });
-    if (consumed.count === 0) throw new Error('INVALID_VERIFICATION');
+    if (consumed.count === 0) throw new DomainError(ErrorCode.INVALID_TOKEN);
 
     await tx.user.update({
       where: { id: stored.userId },
@@ -253,9 +269,9 @@ export async function resetPassword(rawToken: string, newPassword: string): Prom
   const tokenHash = hashRefreshToken(rawToken);
   const stored = await prisma.passwordResetToken.findUnique({ where: { tokenHash } });
 
-  if (!stored) throw new Error('INVALID_RESET');
-  if (stored.usedAt !== null) throw new Error('INVALID_RESET');
-  if (stored.expiresAt < new Date()) throw new Error('INVALID_RESET');
+  if (!stored) throw new DomainError(ErrorCode.INVALID_TOKEN);
+  if (stored.usedAt !== null) throw new DomainError(ErrorCode.INVALID_TOKEN);
+  if (stored.expiresAt < new Date()) throw new DomainError(ErrorCode.INVALID_TOKEN);
 
   const passwordHash = await bcrypt.hash(newPassword, 12);
 
@@ -264,7 +280,7 @@ export async function resetPassword(rawToken: string, newPassword: string): Prom
       where: { id: stored.id, usedAt: null },
       data: { usedAt: new Date() },
     });
-    if (consumed.count === 0) throw new Error('INVALID_RESET');
+    if (consumed.count === 0) throw new DomainError(ErrorCode.INVALID_TOKEN);
 
     await tx.user.update({
       where: { id: stored.userId },

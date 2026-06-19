@@ -12,6 +12,7 @@ import ManagerDashboard from './pages/ManagerDashboard';
 import EmployeeDashboard from './pages/EmployeeDashboard';
 import AdminPage from './pages/AdminPage';
 import OnboardingPage from './pages/OnboardingPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 
 
 // Contexte router = identité (source de vérité). Les gardes Phase B liront ça.
@@ -36,9 +37,22 @@ async function doLogout(navigate: ReturnType<typeof useNavigate>) {
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
+  // Le lien de reset (envoyé par mail) pointe sur /?reset-token=… → on l'intercepte ici.
+  validateSearch: (s: Record<string, unknown>): { 'reset-token'?: string } => ({
+    'reset-token': typeof s['reset-token'] === 'string' ? (s['reset-token'] as string) : undefined,
+  }),
   component: function IndexRoute() {
     const navigate = useNavigate();
     const { identity } = indexRoute.useRouteContext();
+    const { 'reset-token': resetToken } = indexRoute.useSearch();
+    if (resetToken) {
+      return (
+        <ResetPasswordPage
+          token={resetToken}
+          onDone={() => navigate({ to: '/auth', search: { mode: 'login' } })}
+        />
+      );
+    }
     return (
       <LandingPage
         isLoggedIn={!!identity}
@@ -55,31 +69,35 @@ const indexRoute = createRoute({
 const authRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/auth',
-  validateSearch: (s: Record<string, unknown>): { mode?: Mode } => {
+  validateSearch: (s: Record<string, unknown>): { mode?: Mode; verified?: '1' | '0' } => {
     const m = s.mode;
-    return { mode: m === 'register' || m === 'login' ? m : undefined };
+    const v = s.verified;
+    return {
+      mode: m === 'register' || m === 'login' ? m : undefined,
+      verified: v === '1' || v === '0' ? v : undefined,
+    };
   },
   beforeLoad: ({ context }) => {
     if (context.identity) throw redirect({ to: '/' });   // déjà loggé → accueil
   },
   component: function AuthRoute() {
     const navigate = useNavigate();
-    const { mode } = authRoute.useSearch();
+    const { mode, verified } = authRoute.useSearch();
+    // Retour du lien de vérification email (GET backend → redirect ?verified=).
+    const notice =
+      verified === '1' ? { type: 'success' as const, text: 'Email vérifié ✅ Tu peux te connecter.' }
+      : verified === '0' ? { type: 'error' as const, text: 'Lien de vérification invalide ou expiré.' }
+      : undefined;
     return (
       <AuthPage
         initialMode={mode ?? 'login'}
         onBack={() => navigate({ to: '/' })}
+        notice={notice}
         onLoginSuccess={async (token) => {       // identité = /auth/me (plus de décodage JWT)
           setAccessToken(token);
           clearIdentityCache();
           await router.invalidate();
           navigate({ to: '/' });                 // après login → accueil (comportement actuel)
-        }}
-        onRegisterSuccess={async (token) => {    // inscription = auto-login → flottant
-          setAccessToken(token);
-          clearIdentityCache();
-          await router.invalidate();
-          navigate({ to: '/onboarding' });       // flottant doit créer/rejoindre une entreprise
         }}
       />
     );

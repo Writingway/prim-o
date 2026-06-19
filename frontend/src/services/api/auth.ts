@@ -43,6 +43,6 @@ export function logout() {
   
 // Account-first : inscription = utilisateur flottant, auto-login (cookie + accessToken).
 export function register(payload: { firstName: string; lastName: string; email: string; password: string }) {
-  return post<{ accessToken: string } & ValidationErrorBody>('/auth/register', payload);
+  return post<{ message?: string } & ValidationErrorBody>('/auth/register', payload);
 }
 
