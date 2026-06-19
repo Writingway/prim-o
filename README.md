@@ -1,6 +1,6 @@
 # Prim'O
 
-> Plateforme B2B2C de récompense instantanée — Tes efforts récompensés instantanément !
+> Plateforme B2B2C de récompense instantanée - Tes efforts récompensés instantanément !
 
 **Stack :** React · Express/Node.js · PostgreSQL · Prisma · JWT
 
@@ -106,7 +106,7 @@ prim-o/
 ## Règles métier importantes
 
 1. Le solde token ne peut **jamais** être négatif
-2. **Pas de conversion token → cash** — uniquement échangeable contre des offres partenaires
+2. **Pas de conversion token → cash** - uniquement échangeable contre des offres partenaires
 3. Un compte employé nécessite une **double validation** (email + SMS) avant activation
 4. Chaque attribution de tokens exige une **raison** (champ obligatoire)
 5. Un code promo est délivré **exactement une fois** (opération atomique)
@@ -116,7 +116,7 @@ prim-o/
 
 ## Workflow Git
 
-> À définir en équipe — suggestion :
+> À définir en équipe - suggestion :
 
 ```
 main          → production

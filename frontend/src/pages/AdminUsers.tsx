@@ -224,7 +224,7 @@ export default function AdminUsers({ onFlash }: AdminUsersProps) {
             <div className="admin-pagination">
               <button className="admin-btn-ghost" disabled={page <= 1 || loading}
                 onClick={() => setPage((p) => Math.max(1, p - 1))}>
-                ← Précédent
+                 Précédent
               </button>
               <span className="admin-page-info">
                 Page {page} · {total} utilisateur{total > 1 ? 's' : ''}

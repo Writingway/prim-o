@@ -37,10 +37,10 @@ function PrivacyPolicy() {
 
       <h2>3. Pourquoi (finalités) et sur quelle base légale ?</h2>
       <ul>
-        <li>Gérer votre compte et vous fournir le service — base : exécution du contrat (CGU) ;</li>
-        <li>Attribuer et utiliser les récompenses — base : exécution du contrat ;</li>
-        <li>Assurer la sécurité et prévenir les abus — base : intérêt légitime ;</li>
-        <li>Respecter nos obligations comptables et légales — base : obligation légale.</li>
+        <li>Gérer votre compte et vous fournir le service - base : exécution du contrat (CGU) ;</li>
+        <li>Attribuer et utiliser les récompenses - base : exécution du contrat ;</li>
+        <li>Assurer la sécurité et prévenir les abus - base : intérêt légitime ;</li>
+        <li>Respecter nos obligations comptables et légales - base : obligation légale.</li>
       </ul>
 
       <h2>4. Qui peut accéder à vos données ?</h2>
@@ -183,7 +183,7 @@ export default function LegalPage({ page, onBack }: LegalPageProps) {
     <div className="legal-wrapper">
       <div className="legal-card">
         <button className="legal-back" type="button" onClick={onBack}>
-          ← Retour
+           Retour
         </button>
         {page === 'privacy' && <PrivacyPolicy />}
         {page === 'mentions' && <LegalNotice />}

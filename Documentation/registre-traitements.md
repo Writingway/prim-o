@@ -1,4 +1,4 @@
-# Registre des activités de traitement — Prim'O
+# Registre des activités de traitement - Prim'O
 
 > Registre tenu au titre de l'article 30 du RGPD. Il recense les traitements de
 > données personnelles mis en œuvre par Prim'O en tant que responsable de traitement.
@@ -12,7 +12,7 @@
 
 ---
 
-## Traitement n°1 — Gestion des comptes utilisateurs
+## Traitement n°1 - Gestion des comptes utilisateurs
 
 | Élément | Détail |
 |---|---|
@@ -24,7 +24,7 @@
 | Durée de conservation | Durée de vie du compte ; anonymisation à la suppression, ou après 3 ans d'inactivité |
 | Mesures de sécurité | Authentification JWT, cloisonnement par entreprise (multi-tenant), anonymisation à la suppression |
 
-## Traitement n°2 — Authentification et sécurité
+## Traitement n°2 - Authentification et sécurité
 
 | Élément | Détail |
 |---|---|
@@ -36,7 +36,7 @@
 | Durée de conservation | Tokens supprimés à expiration/révocation (job de nettoyage quotidien) ; suppression à la clôture du compte |
 | Mesures de sécurité | Bcrypt (coût 12), cookies httpOnly, hachage SHA-256 des tokens, rate limiting, en-têtes Helmet |
 
-## Traitement n°3 — Attribution et utilisation des récompenses
+## Traitement n°3 - Attribution et utilisation des récompenses
 
 | Élément | Détail |
 |---|---|
@@ -48,7 +48,7 @@
 | Durée de conservation | Registre comptable conservé sous forme anonymisée jusqu'à 10 ans (obligation comptable, art. L123-22 du Code de commerce) |
 | Mesures de sécurité | Registre en ajout seul (append-only), transactions atomiques, contraintes en base |
 
-## Traitement n°4 — Gestion des entreprises clientes
+## Traitement n°4 - Gestion des entreprises clientes
 
 | Élément | Détail |
 |---|---|

@@ -1,6 +1,6 @@
 // Types transverses (auth, enveloppe API, pagination).
 
-// Rôle utilisateur — valeurs alignées sur l'enum Prisma backend (MANAGER, EMPLOYEE, OWNER, ADMIN),
+// Rôle utilisateur - valeurs alignées sur l'enum Prisma backend (MANAGER, EMPLOYEE, OWNER, ADMIN),
 // en minuscules. Le rôle vient du JWT renvoyé au login.
 export type Role = 'manager' | 'employee' | 'owner' | 'admin';
 

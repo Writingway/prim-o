@@ -5,7 +5,7 @@ import { refreshLimiter, loginLimiter } from '../lib/rateLimit';
 
 const router = Router();
 
-// POST /api/invites/generate — protégé (manager connecté)
+// POST /api/invites/generate - protégé (manager connecté)
 router.post('/generate', requireAuth, loginLimiter, generateInviteController);
 
 export default router;

@@ -40,7 +40,7 @@ export async function createAttributionController(
   }
 }
 
-// POST /api/attributions/allocate — le patron alloue des tokens à un manager.
+// POST /api/attributions/allocate - le patron alloue des tokens à un manager.
 export async function allocateController(
   req: Request,
   res: Response,
@@ -75,7 +75,7 @@ export async function allocateController(
   }
 }
 
-// GET /api/attributions/my-balance — solde perso de l'utilisateur courant.
+// GET /api/attributions/my-balance - solde perso de l'utilisateur courant.
 export async function myBalanceController(
   req: Request,
   res: Response,
@@ -93,7 +93,7 @@ export async function myBalanceController(
   }
 }
 
-// GET /api/attributions/managers — liste des managers de l'entreprise (patron).
+// GET /api/attributions/managers - liste des managers de l'entreprise (patron).
 export async function listManagersController(
   req: Request,
   res: Response,
@@ -109,7 +109,7 @@ export async function listManagersController(
   }
 }
 
-// GET /api/attributions — historique des attributions de l'entreprise du manager.
+// GET /api/attributions - historique des attributions de l'entreprise du manager.
 export async function listAttributionsController(
   req: Request,
   res: Response,

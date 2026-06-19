@@ -246,7 +246,7 @@ export default function AdminCompanies({ onFlash }: AdminCompaniesProps) {
             <div className="admin-pagination">
               <button className="admin-btn-ghost" disabled={page <= 1 || loading}
                 onClick={() => setPage((p) => Math.max(1, p - 1))}>
-                ← Précédent
+                 Précédent
               </button>
               <span className="admin-page-info">
                 Page {page} · {total} entreprise{total > 1 ? 's' : ''}

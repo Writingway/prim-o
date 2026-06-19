@@ -1,4 +1,4 @@
-/* AdminPage — design temporaire aligné sur la charte PRIM'O.
+/* AdminPage - design temporaire aligné sur la charte PRIM'O.
    Tokens (--primo-*) et police Poppins définis globalement dans index.css.
    Mobile-first. À retravailler quand les maquettes arrivent. */
 
@@ -382,7 +382,7 @@
   border-bottom-color: var(--primo-teal);
 }
 
-/* Barre de filtres (utilisateurs) — se replie, ne déborde jamais */
+/* Barre de filtres (utilisateurs) - se replie, ne déborde jamais */
 .admin-filters {
   display: flex;
   flex-wrap: wrap;

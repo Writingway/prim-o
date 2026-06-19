@@ -17,6 +17,9 @@ import type { CompanyManager } from '../services/api';
 import type { Employee, Company, AttributionHistory, Role } from '../types/types';
 import './ManagerDashboard.css';
 import Layout from '../components/layout/Layout';
+import ManagerBalances from '../components/manager/ManagerBalances';
+import DistributeForm from '../components/manager/DistributeForm';
+import BottomNav from '../components/layout/BottomNav';
 import PrivacySection from '../components/privacy/PrivacySection';
 import EditProfile from '../components/privacy/EditProfile';
 import { useConfirm } from '../components/ui/ConfirmDialog';
@@ -298,11 +301,24 @@ export default function ManagerDashboard({ role, onLogout, onBack }: ManagerDash
 
   return (
     <Layout
-      title="Prim'O — Mes employés"
+      title="Prim'O - Mes employés"
+      chrome={role === 'manager' ? 'app' : 'public'}
+      bottomNav={
+        role === 'manager' ? (
+          <BottomNav
+            items={[
+              { key: 'solde', label: 'Solde', icon: '🪙', targetId: 'nav-solde' },
+              { key: 'distribuer', label: 'Distribuer', icon: '🎁', targetId: 'nav-distribuer' },
+              { key: 'equipe', label: 'Équipe', icon: '👥', targetId: 'nav-equipe' },
+              { key: 'profil', label: 'Profil', icon: '👤', targetId: 'nav-profil' },
+            ]}
+          />
+        ) : undefined
+      }
       headerActions={
         <>
           <button className="app-btn app-btn-ghost" type="button" onClick={onBack}>
-            ← Accueil
+             Accueil
           </button>
           <button className="app-btn app-btn-ghost" type="button" onClick={handleLogout}>
             Se déconnecter
@@ -313,10 +329,22 @@ export default function ManagerDashboard({ role, onLogout, onBack }: ManagerDash
     <div className="dash-wrapper">
       <div className="dash-container">
 
+        {/* §3.3 — double solde (enveloppe / perso) + historiques envoyés/reçus. */}
+        {role === 'manager' && (
+          <div className="mb-4 flex flex-col gap-4">
+            <div id="nav-solde" className="scroll-mt-20">
+              <ManagerBalances />
+            </div>
+            <div id="nav-distribuer" className="scroll-mt-20">
+              <DistributeForm employees={employees ?? []} onDone={load} />
+            </div>
+          </div>
+        )}
+
         <div className="dash-stats">
-          <div className="dash-stat dash-stat-pool">🏦 <strong>{company?.tokenBalance ?? '—'}</strong>&nbsp;pool entreprise</div>
+          <div className="dash-stat dash-stat-pool">🏦 <strong>{company?.tokenBalance ?? '-'}</strong>&nbsp;pool entreprise</div>
           {role === 'manager' && (
-            <div className="dash-stat">🪙 <strong>{myBalance ?? '—'}</strong>&nbsp;mes tokens</div>
+            <div className="dash-stat">🪙 <strong>{myBalance ?? '-'}</strong>&nbsp;mes tokens</div>
           )}
           <div className="dash-stat">👥 <strong>{employees?.length ?? 0}</strong>&nbsp;employés</div>
           <div className="dash-stat">🪙 <strong>{totalDistributed}</strong>&nbsp;tokens distribués</div>
@@ -428,6 +456,8 @@ export default function ManagerDashboard({ role, onLogout, onBack }: ManagerDash
           </div>
         )}
 
+        <div id="nav-equipe" className="scroll-mt-20" aria-hidden="true" />
+
         {!loading && !error && employees && employees.length === 0 && (
           <p className="dash-msg">Aucun employé pour l'instant.</p>
         )}
@@ -531,6 +561,7 @@ export default function ManagerDashboard({ role, onLogout, onBack }: ManagerDash
           </section>
         )}
         {!loading && <EditProfile />}
+        <div id="nav-profil" className="scroll-mt-20" />
         {!loading && <PrivacySection onAccountDeleted={onLogout} />}
       </div>
     </div>

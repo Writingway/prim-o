@@ -86,7 +86,7 @@ export async function setCompanyStatus(companyId: string, status: 'APPROVED' | '
 
 // Soft-delete a company and everything tied to it, atomically.
 // Keeps the append-only ledgers (Attribution/Redemption/CompanyTokenPurchase)
-// intact for audit — we only flag deletedAt and kill sessions.
+// intact for audit - we only flag deletedAt and kill sessions.
 export async function softDeleteCompany(companyId: string) {
   return prisma.$transaction(async (tx) => {
     const company = await tx.company.findFirst({
@@ -136,7 +136,7 @@ export async function softDeleteCompany(companyId: string) {
 
 // Reverse a cascade soft-delete. Only restores users killed by THIS
 // company-deletion (same deletedAt timestamp). Sessions stay revoked:
-// users must log in again — safer, and the tokens were short-lived anyway.
+// users must log in again - safer, and the tokens were short-lived anyway.
 export async function restoreCompany(companyId: string) {
   return prisma.$transaction(async (tx) => {
     const company = await tx.company.findFirst({
@@ -179,7 +179,7 @@ export async function restoreCompany(companyId: string) {
 }
 
 // Single source of truth for what an admin may see about a user.
-// passwordHash is NOT here — never leak it.
+// passwordHash is NOT here - never leak it.
 const ADMIN_SAFE_SELECT = {
   id: true, email: true, role: true,
   firstName: true, lastName: true, balance: true,

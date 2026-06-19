@@ -26,7 +26,7 @@ export default function AuthPage({ onLoginSuccess, initialMode = 'login', onBack
   return (
     <div className="auth-wrapper">
       <div className="auth-card">
-        {onBack && <button type="button" className="auth-back" onClick={onBack}>← Retour</button>}
+        {onBack && <button type="button" className="auth-back" onClick={onBack}> Retour</button>}
         <h1 className="auth-logo">Prim'O</h1>
 
         <AuthTabs mode={mode} onChange={setMode} />

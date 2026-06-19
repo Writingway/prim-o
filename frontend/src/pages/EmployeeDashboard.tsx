@@ -111,11 +111,11 @@ export default function EmployeeDashboard({ onLogout, onBack }: EmployeeDashboar
 
   return (
     <Layout
-      title="Prim'O — Mon espace"
+      title="Mon espace"
       headerActions={
         <>
           <button className="app-btn app-btn-ghost" type="button" onClick={onBack}>
-            ← Accueil
+            Accueil
           </button>
           <button className="app-btn app-btn-ghost" type="button" onClick={handleLogout}>
             Se déconnecter

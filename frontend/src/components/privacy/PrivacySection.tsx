@@ -4,7 +4,7 @@ import './privacy.css';
 
 type PrivacySectionProps = {
   // Appelé après une suppression réussie : le parent doit clore la session
-  // (vider le token, revenir à l'accueil) — le compte n'existe plus.
+  // (vider le token, revenir à l'accueil) - le compte n'existe plus.
   onAccountDeleted: () => void;
 };
 

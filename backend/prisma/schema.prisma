@@ -1,5 +1,5 @@
 // ============================================================
-//  Prim'O — schema.prisma
+//  Prim'O - schema.prisma
 //  User unifié + Company (multi-tenant). Corrige les règles
 //  métier violées + dette technique de l'ancienne version.
 //  ⚠️ Deux contraintes ne s'expriment pas en Prisma : voir le
@@ -40,7 +40,7 @@ enum OfferCategory {
   OTHER
 }
 
-// Addendum v1.1 §3.5 — 4 catégories officielles de motifs d'attribution.
+// Addendum v1.1 §3.5 - 4 catégories officielles de motifs d'attribution.
 enum MotifCategory {
   COMPORTEMENTS_INDIVIDUELS
   RELATION_CLIENT
@@ -48,7 +48,7 @@ enum MotifCategory {
   ENGAGEMENT
 }
 
-// Addendum v1.1 §3.4 — mode de rétribution choisi par l'employeur à chaque allocation.
+// Addendum v1.1 §3.4 - mode de rétribution choisi par l'employeur à chaque allocation.
 enum RetributionMode {
   PART_EGALE    // mode 1 : enveloppe ÷ (nbCollaborateurs + 1)
   POURCENTAGE   // mode 2 : % fixe de l'enveloppe
@@ -192,7 +192,7 @@ model CompanyTokenPurchase {
   companyId   String   @db.Uuid
   createdById String   @db.Uuid              // l'ADMIN qui a crédité
   createdAt   DateTime @default(now())
-  stripeSessionId String?  @unique   // id de la session Stripe (cs_...) — garantit l'idempotence
+  stripeSessionId String?  @unique   // id de la session Stripe (cs_...) - garantit l'idempotence
 
 
   company   Company @relation(fields: [companyId], references: [id])
@@ -210,7 +210,7 @@ model CompanyTokenPurchase {
 model Attribution {
   id               String   @id @default(uuid()) @db.Uuid
   amount           Int                            // tokens crédités à l'employé. > 0 (Zod + CHECK)
-  reason           String                         // LEGACY (texte libre) — remplacé par motifId (addendum v1.1 §3.5). Conservé pour les lignes existantes.
+  reason           String                         // LEGACY (texte libre) - remplacé par motifId (addendum v1.1 §3.5). Conservé pour les lignes existantes.
   motifId          String?  @db.Uuid              // motif officiel (§3.5). Nullable en DB pour les lignes legacy ; REQUIS côté Zod pour toute nouvelle attribution.
   retributionAmount Int     @default(0)           // part rétribution manager prélevée sur l'enveloppe pour CETTE attribution (§3.4). 0 si mode AUCUNE.
   companyId        String   @db.Uuid              // dénormalisé pour filtre multi-tenant rapide

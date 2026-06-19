@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// CONTRATS API — addendum v1.1 (Manager & Rétribution). Shapes GELÉES Day-0.
+// CONTRATS API - addendum v1.1 (Manager & Rétribution). Shapes GELÉES Day-0.
 // Dev A (motifs/stats), Dev B (allocation/rétribution/soldes), Dev C (front)
 // codent contre ces interfaces. Toute modif = accord des 3 puis bump ici.
 //
@@ -18,7 +18,7 @@ export type MotifCategory =
 export type RetributionMode = 'PART_EGALE' | 'POURCENTAGE' | 'AUCUNE';
 
 // ── Motifs (Dev A) ───────────────────────────────────────────────
-// GET /api/motifs — liste officielle groupée par catégorie.
+// GET /api/motifs - liste officielle groupée par catégorie.
 export interface MotifDTO {
   id: string;
   tag: string;
@@ -53,14 +53,14 @@ export interface DistributeResponse {
   envelopeRemaining: number;                   // enveloppe manager restante après l'opération
 }
 
-// ── Double solde manager (Dev B) — §3.3 ──────────────────────────
+// ── Double solde manager (Dev B) - §3.3 ──────────────────────────
 // GET /api/managers/me/balances
 export interface ManagerBalancesResponse {
   envelopeRemaining: number; // enveloppe à distribuer (dérivée du registre Allocation/Attribution)
   personalBalance: number;   // solde perso reçu = rétribution cumulée (user.balance)
 }
 
-// GET /api/managers/me/history — deux historiques distincts.
+// GET /api/managers/me/history - deux historiques distincts.
 export interface ManagerHistoryResponse {
   sent: Array<{
     attributionId: string;
@@ -77,7 +77,7 @@ export interface ManagerHistoryResponse {
   }>;
 }
 
-// ── Stats employeur (Dev A) — §3.2 / §3.4 ────────────────────────
+// ── Stats employeur (Dev A) - §3.2 / §3.4 ────────────────────────
 // GET /api/stats?teamId=&from=&to=  (filtres optionnels)
 export interface MotifAggregateRow {
   motifTag: string;

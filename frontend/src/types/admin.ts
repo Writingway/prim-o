@@ -5,7 +5,7 @@ export type AdminStats = {
   managers: number;
 };
 
-// Rôle / statut côté admin — enums Prisma en MAJUSCULES (≠ Role JWT minuscule).
+// Rôle / statut côté admin - enums Prisma en MAJUSCULES (≠ Role JWT minuscule).
 export type AdminRole = 'ADMIN' | 'MANAGER' | 'EMPLOYEE';
 export type AdminStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 
@@ -24,7 +24,7 @@ export type AdminUser = {
   createdAt: string;
 };
 
-// Entreprise vue admin (GET /api/admin/companies) — avec nb d'utilisateurs.
+// Entreprise vue admin (GET /api/admin/companies) - avec nb d'utilisateurs.
 export type AdminCompany = {
   id: string;
   name: string;

@@ -104,7 +104,7 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
           className="auth-link"
           onClick={() => { setForgotMode(false); setForgotMsg(''); }}
         >
-          ← Retour à la connexion
+           Retour à la connexion
         </button>
       </form>
     );

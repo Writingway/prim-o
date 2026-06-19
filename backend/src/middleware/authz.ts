@@ -7,7 +7,7 @@ export type ManagerContext = { userId: string; role: 'MANAGER' | 'OWNER'; compan
 // Garde commun aux routes "espace entreprise" : MANAGER et OWNER y accèdent.
 // OWNER est un sur-ensemble du MANAGER (tout ce que fait le manager + l'achat de tokens).
 // Renvoie { userId, role, companyId } validés, ou null après avoir signalé
-// l'erreur via next() — même idiome que requireEmployee().
+// l'erreur via next() - même idiome que requireEmployee().
 export function requireManagerOrOwner(req: Request, next: NextFunction): ManagerContext | null {
   if (req.user?.role !== 'MANAGER' && req.user?.role !== 'OWNER') {
     next(new AppError(403, 'Accès réservé aux managers et patrons.'));

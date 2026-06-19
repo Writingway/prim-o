@@ -8,7 +8,7 @@ export async function createAttribution(
   companyId: string,
   input: CreateAttributionInput,
 ) {
-  const { employeeId, amount, reason } = input;
+  const { employeeId, amount, reason, motifId } = input;
 
   // Vérification employé
   const employee = await prisma.user.findUnique({
@@ -55,7 +55,7 @@ export async function createAttribution(
       });
 
       return tx.attribution.create({
-        data: { amount, reason, companyId, managerId: attributorId, employeeId },
+        data: { amount, reason: reason ?? '', motifId, companyId, managerId: attributorId, employeeId },
         select: { id: true, amount: true, reason: true, createdAt: true },
       });
     });

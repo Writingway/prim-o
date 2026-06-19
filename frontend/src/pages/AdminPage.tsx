@@ -284,7 +284,7 @@ export default function AdminPage({ onLogout, onBack }: AdminPageProps) {
       headerActions={
         <>
           <button className="app-btn app-btn-ghost" type="button" onClick={onBack}>
-            ← Accueil
+             Accueil
           </button>
           <button className="app-btn app-btn-ghost" type="button" onClick={onLogout}>Se déconnecter</button>
         </>

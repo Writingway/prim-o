@@ -153,7 +153,7 @@ export default function AdminLedgers() {
                         <td data-label="Entreprise">{p.company.name}</td>
                         <td data-label="Crédité par">{fullName(p.createdBy)}</td>
                         <td data-label="Montant">{p.amount}</td>
-                        <td data-label="Note">{p.note ?? '—'}</td>
+                        <td data-label="Note">{p.note ?? '-'}</td>
                         <td data-label="Session Stripe"><code>{p.stripeSessionId}</code></td>
                       </tr>
                     ))}
@@ -165,7 +165,7 @@ export default function AdminLedgers() {
             <div className="admin-pagination">
               <button className="admin-btn-ghost" disabled={page <= 1 || loading}
                 onClick={() => setPage((p) => Math.max(1, p - 1))}>
-                ← Précédent
+                 Précédent
               </button>
               <span className="admin-page-info">
                 Page {page} · {total} entrée{total > 1 ? 's' : ''}
