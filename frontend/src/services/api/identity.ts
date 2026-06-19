@@ -33,9 +33,16 @@ const TTL_MS = 30_000;
 export async function getIdentity(): Promise<Identity | null> {
   if (cache && Date.now() - cache.at < TTL_MS) return cache.identity;
   const res = await authRequest<{ user: Identity }>('GET', '/auth/me');
-  const identity = res.ok && res.data ? res.data.user : null;
-  cache = { identity, at: Date.now() };
-  return identity;
+  if (res.ok && res.data) {
+    const identity = res.data.user;
+    cache = { identity, at: Date.now() };
+    return identity;
+  }
+  // 401 = vraiment pas de session → on cache le null (rapide, légitime).
+  // 429 / 5xx / coupure réseau = échec TRANSITOIRE → on NE cache PAS, sinon
+  // un blip empoisonne l'identité pendant TTL_MS et casse toute l'app.
+  if (res.status === 401) cache = { identity: null, at: Date.now() };
+  return null;
 }
 
 // Invalide le cache aux transitions d'identité (login/logout/session morte).

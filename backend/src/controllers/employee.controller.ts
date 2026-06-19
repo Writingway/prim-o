@@ -25,10 +25,10 @@ export async function listEmployeesController(
   next: NextFunction
 ): Promise<void> {
   try {
-    const companyId = requireManagerOrOwner(req, next);
-    if (!companyId) return;
+    const ctx = requireManagerOrOwner(req, next);
+    if (!ctx) return;
 
-    const employees = await listEmployeesByEmployer(companyId);
+    const employees = await listEmployeesByEmployer(ctx.companyId);
     res.status(200).json({ employees });
   } catch (err) {
     next(err);
@@ -42,8 +42,8 @@ export async function deleteEmployeeController(
   next: NextFunction
 ): Promise<void> {
   try {
-    const companyId = requireManagerOrOwner(req, next);
-    if (!companyId) return;
+    const ctx = requireManagerOrOwner(req, next);
+    if (!ctx) return;
 
     const id = req.params.id;
     if (typeof id !== 'string') {
@@ -51,7 +51,7 @@ export async function deleteEmployeeController(
       return;
     }
 
-    await softDeleteEmployee(companyId, id);
+    await softDeleteEmployee(ctx.companyId, id);
     res.status(204).end();
   } catch (err) {
     if (err instanceof Error) {

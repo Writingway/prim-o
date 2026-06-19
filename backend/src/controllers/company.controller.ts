@@ -10,10 +10,10 @@ export async function getCompanyController(
   next: NextFunction,
 ): Promise<void> {
   try {
-    const companyId = requireManagerOrOwner(req, next);
-    if (!companyId) return;
+    const ctx = requireManagerOrOwner(req, next);
+    if (!ctx) return;
 
-    const company = await getCompany(companyId);
+    const company = await getCompany(ctx.companyId);
     res.status(200).json({ company });
   } catch (err) {
     if (err instanceof Error && err.message === 'COMPANY_NOT_FOUND') {
