@@ -1,341 +1,130 @@
-import { useEffect, useState, useRef, Fragment } from 'react';
-import { 
-  listOffers,
-  createOffer,
-  updateOffer,
-  deactivateOffer,
-  getAdminStats,
-  addPromoCodes,
-  listPromoCodes,
-  deletePromoCode
-} from '../services/api';
-import type { AdminPromoCode } from '../services/api';
-import type { Offer, OfferCategory, AdminStats } from '../types/types';
-import './AdminPage.css';
-import Layout from '../components/layout/Layout';
-import { useConfirm } from '../components/ui/ConfirmDialog';
+import { useState, Fragment } from 'react';
+import type { Offer, OfferCategory } from '@/types/types';
+import Layout from '@/components/layout/Layout';
+import { useConfirm } from '@/components/ui/ConfirmDialog';
 import AdminUsers from './AdminUsers';
 import AdminCompanies from './AdminCompanies';
 import AdminLedgers from './AdminLedgers';
+import { useFlash } from '@/hooks/useFlash';
+import { useAdminOffers } from '@/hooks/useAdminOffers';
+import { useOfferForm } from '@/hooks/useOfferForm';
+import { usePromoCodes } from '@/hooks/usePromoCodes';
+import { HEADER_BTN_GHOST } from '@/components/layout/headerButtons';
+import {
+  ADMIN_ACTIONS,
+  ADMIN_BADGE_ACTIVE,
+  ADMIN_BADGE_INACTIVE,
+  ADMIN_BTN_GHOST,
+  ADMIN_BTN_LINK,
+  ADMIN_BTN_PRIMARY,
+  ADMIN_CODES_ACTIONS,
+  ADMIN_CODES_LIST,
+  ADMIN_CODES_ITEM,
+  ADMIN_CODES_LIST_UL,
+  ADMIN_CODES_PANEL,
+  ADMIN_CODES_ROW,
+  ADMIN_CODE,
+  ADMIN_CONTAINER,
+  ADMIN_ERROR,
+  ADMIN_FORM,
+  ADMIN_FORM_ACTIONS,
+  ADMIN_FORM_ERROR,
+  ADMIN_FORM_GRID,
+  ADMIN_FORM_TITLE,
+  ADMIN_MSG,
+  ADMIN_OFFERS_BAR,
+  ADMIN_SECTION_TITLE,
+  ADMIN_TAB,
+  ADMIN_TAB_ACTIVE,
+  ADMIN_TABLE,
+  ADMIN_TABLE_SCROLL,
+  ADMIN_TD,
+  ADMIN_TH,
+  ADMIN_TABS,
+  ADMIN_WRAPPER,
+  ADMIN_STATS,
+  ADMIN_STAT_CARD,
+  ADMIN_STAT_LABEL,
+  ADMIN_STAT_VALUE,
+} from './adminClasses';
 
 type AdminPageProps = { onLogout: () => void; onBack: () => void };
 
 const CATEGORIES: OfferCategory[] = ['FOOD', 'SHOPPING', 'CULTURE', 'TRAVEL', 'WELLNESS', 'OTHER'];
 
-// Form vide pour une nouvelle offre.
-const emptyForm = { partnerName: '', cost: '', discountPercent: '', category: 'FOOD' as OfferCategory };
-
 export default function AdminPage({ onLogout, onBack }: AdminPageProps) {
   const { confirm, confirmDialog } = useConfirm();
+  const { notice, flash } = useFlash();
   const [tab, setTab] = useState<'offers' | 'users' | 'companies' | 'ledgers'>('offers');
-  const [offers, setOffers] = useState<Offer[] | null>(null);
-  const [stats, setStats] = useState<AdminStats | null>(null);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(true);
 
-  // Form : panneau de création/édition. editingId === null → création.
-  const [showForm, setShowForm] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState(emptyForm);
-  const [formError, setFormError] = useState('');
-  const [saving, setSaving] = useState(false);
-
-  // Message de confirmation transitoire (remplace les alert()).
-  const [notice, setNotice] = useState('');
-
-  // Panneau « Gérer les codes » : ouvert pour une offre à la fois.
-  const [codesOpenId, setCodesOpenId] = useState<string | null>(null);
-  const [codesText, setCodesText] = useState('');
-  const [codesError, setCodesError] = useState('');
-  const [codesSubmitting, setCodesSubmitting] = useState(false);
-  const csvInputRef = useRef<HTMLInputElement>(null);
-  // Liste des codes de l'offre ouverte (lecture).
-  const [codesList, setCodesList] = useState<AdminPromoCode[] | null>(null);
-  const [codesListLoading, setCodesListLoading] = useState(false);
-
-  const load = async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const [offersRes, statsRes] = await Promise.all([listOffers(), getAdminStats()]);
-      if (offersRes.ok && offersRes.data) {
-        setOffers(offersRes.data.offers);
-      } else if (offersRes.status === 401) {
-        setError('Session expirée, reconnecte-toi.');
-      } else {
-        setError('Impossible de charger les offres.');
-      }
-      if (statsRes.ok && statsRes.data) setStats(statsRes.data);
-    } catch {
-      setError('Impossible de joindre le serveur. Le backend est-il lancé ?');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-
-  useEffect(() => {
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const flash = (msg: string) => {
-    setNotice(msg);
-    setTimeout(() => setNotice(''), 3000);
-  };
-
-  const openCreate = () => {
-    setEditingId(null);
-    setForm(emptyForm);
-    setFormError('');
-    setShowForm(true);
-  };
-
-  const openEdit = (offer: Offer) => {
-    setEditingId(offer.id);
-    setForm({
-      partnerName: offer.partnerName,
-      cost: String(offer.cost),
-      discountPercent: String(offer.discountPercent),
-      category: offer.category,
-    });
-    setFormError('');
-    setShowForm(true);
-  };
-
-  const closeForm = () => {
-    setShowForm(false);
-    setEditingId(null);
-    setFormError('');
-  };
-
-  const handleSubmit = async (e: React.ChangeEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setFormError('');
-
-    const cost = Number(form.cost);
-    const discountPercent = Number(form.discountPercent);
-    if (!form.partnerName.trim()) return setFormError('Le nom du partenaire est requis.');
-    if (isNaN(cost) || cost < 0) return setFormError('Coût invalide.');
-    if (isNaN(discountPercent) || discountPercent < 0 || discountPercent > 100)
-      return setFormError('Réduction invalide (0-100).');
-
-    setSaving(true);
-    try {
-      const payload = {
-        partnerName: form.partnerName.trim(),
-        cost,
-        discountPercent,
-        category: form.category,
-      };
-      const res = editingId
-        ? await updateOffer(editingId, payload)
-        : await createOffer(payload);
-
-      if (res.ok) {
-        flash(editingId ? 'Offre mise à jour.' : 'Offre créée.');
-        closeForm();
-        load();
-      } else if (res.status === 401) {
-        setFormError('Session expirée, reconnecte-toi.');
-      } else {
-        setFormError("Erreur lors de l'enregistrement de l'offre.");
-      }
-    } catch {
-      setFormError('Impossible de joindre le serveur.');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleToggle = async (offer: Offer) => {
-    const ok = await confirm({
-      title: offer.isActive ? 'Désactiver cette offre ?' : 'Réactiver cette offre ?',
-      message: offer.isActive
-        ? `Désactiver « ${offer.partnerName} » ? Elle ne sera plus visible.`
-        : `Réactiver « ${offer.partnerName} » ?`,
-      confirmLabel: offer.isActive ? 'Désactiver' : 'Réactiver',
-      danger: offer.isActive,
-    });
-    if (!ok) return;
-    try {
-      // Désactivation = soft delete dédié ; réactivation = update isActive.
-      const res = offer.isActive
-        ? await deactivateOffer(offer.id)
-        : await updateOffer(offer.id, { isActive: true });
-      if (res.ok) {
-        flash(offer.isActive ? 'Offre désactivée.' : 'Offre réactivée.');
-        load();
-      } else if (res.status === 401) {
-        setError('Session expirée, reconnecte-toi.');
-        onLogout();
-      } else {
-        setError("Erreur lors de la mise à jour de l'offre.");
-      }
-    } catch {
-      setError('Impossible de joindre le serveur.');
-    }
-  };
-
-  const toggleCodes = async (offerId: string) => {
-    const opening = codesOpenId !== offerId;
-    setCodesOpenId(opening ? offerId : null);
-    setCodesText('');
-    setCodesError('');
-    setCodesList(null);
-    if (opening) {
-      setCodesListLoading(true);
-      try {
-        const res = await listPromoCodes(offerId);
-        if (res.ok && res.data) setCodesList(res.data.codes);
-      } finally {
-        setCodesListLoading(false);
-      }
-    }
-  };
-
-  const handleDeleteCode = async (codeId: string) => {
-    setCodesError('');
-    const ok = await confirm({
-      title: 'Supprimer ce code ?',
-      message: 'Ce code disponible sera définitivement supprimé.',
-      confirmLabel: 'Supprimer',
-      danger: true,
-    });
-    if (!ok) return;
-    const res = await deletePromoCode(codeId);
-    if (res.ok) {
-      flash('Code supprimé.');
-      load(); // rafraîchit les compteurs de stock
-    } else if (res.status === 409) {
-      setCodesError('Ce code a déjà été utilisé, impossible de le supprimer.');
-    } else {
-      setCodesError('Impossible de supprimer ce code.');
-    }
-    // Dans tous les cas, on resynchronise la liste affichée.
-    if (codesOpenId) {
-      const r = await listPromoCodes(codesOpenId);
-      if (r.ok && r.data) setCodesList(r.data.codes);
-    }
-  };
-
-  // Lit un fichier CSV côté navigateur et remplit le textarea avec les codes
-  // (un par ligne). On gère le séparateur ligne ET virgule, et on ignore une
-  // éventuelle ligne d'en-tête « code ».
-  const handleCsvFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setCodesError('');
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      const raw = String(reader.result ?? '');
-      const codes = raw
-        .split(/[\r\n,;]+/)        // lignes, virgules ou points-virgules
-        .map((c) => c.trim())
-        .filter((c) => c.length > 0 && c.toLowerCase() !== 'code'); // saute l'en-tête éventuel
-      if (codes.length === 0) {
-        setCodesError('Aucun code trouvé dans le fichier.');
-      } else {
-        setCodesText(codes.join('\n')); // l'admin vérifie avant d'ajouter
-      }
-    };
-    reader.onerror = () => setCodesError('Impossible de lire le fichier.');
-    reader.readAsText(file);
-    e.target.value = ''; // permet de re-sélectionner le même fichier
-  };
-
-  const handleAddCodes = async (offer: Offer) => {
-    setCodesError('');
-    // Découpe sur retour à la ligne, virgule ou point-virgule (même logique que le CSV).
-    const codes = codesText
-      .split(/[\r\n,;]+/)
-      .map((c) => c.trim())
-      .filter((c) => c.length > 0);
-    if (codes.length === 0) {
-      setCodesError('Colle au moins un code (un par ligne).');
-      return;
-    }
-    setCodesSubmitting(true);
-    try {
-      const res = await addPromoCodes(offer.id, codes);
-      if (res.ok && res.data) {
-        flash(`✅ ${res.data.added} code(s) ajouté(s), ${res.data.skipped} ignoré(s).`);
-        setCodesText('');
-        setCodesOpenId(null);
-        load(); // rafraîchit le badge de stock
-      } else if (res.status === 401) {
-        setError('Session expirée, reconnecte-toi.');
-        onLogout();
-      } else if (res.status === 404) {
-        setCodesError('Offre introuvable.');
-      } else {
-        setCodesError("Impossible d'ajouter les codes.");
-      }
-    } catch {
-      setCodesError('Impossible de joindre le serveur.');
-    } finally {
-      setCodesSubmitting(false);
-    }
-  };
+  const offers = useAdminOffers({ confirm, flash, onAuthExpired: onLogout });
+  const offerForm = useOfferForm({ reload: offers.reload, flash });
+  const codes = usePromoCodes({
+    confirm,
+    flash,
+    reload: offers.reload,
+    setError: offers.setError,
+    onAuthExpired: onLogout,
+  });
 
   return (
     <Layout
       title="Admin"
       headerActions={
         <>
-          <button className="app-btn app-btn-ghost" type="button" onClick={onBack}>
-            ← Accueil
+          <button className={HEADER_BTN_GHOST} type="button" onClick={onBack}>
+             Accueil
           </button>
-          <button className="app-btn app-btn-ghost" type="button" onClick={onLogout}>Se déconnecter</button>
+          <button className={HEADER_BTN_GHOST} type="button" onClick={onLogout}>Se déconnecter</button>
         </>
       }
     >
-    <div className="admin-wrapper">
-      <div className="admin-container">
-        {stats && (
-          <div className="admin-stats">
-            <div className="admin-stat-card">
-              <span className="admin-stat-value">{stats.companies}</span>
-              <span className="admin-stat-label">Entreprises</span>
+    <div className={ADMIN_WRAPPER}>
+      <div className={ADMIN_CONTAINER}>
+        {offers.stats && (
+          <div className={ADMIN_STATS}>
+            <div className={ADMIN_STAT_CARD}>
+              <span className={ADMIN_STAT_VALUE}>{offers.stats.companies}</span>
+              <span className={ADMIN_STAT_LABEL}>Entreprises</span>
             </div>
-            <div className="admin-stat-card">
-              <span className="admin-stat-value">{stats.users}</span>
-              <span className="admin-stat-label">Utilisateurs</span>
+            <div className={ADMIN_STAT_CARD}>
+              <span className={ADMIN_STAT_VALUE}>{offers.stats.users}</span>
+              <span className={ADMIN_STAT_LABEL}>Utilisateurs</span>
             </div>
-            <div className="admin-stat-card">
-              <span className="admin-stat-value">{stats.managers}</span>
-              <span className="admin-stat-label">Managers</span>
+            <div className={ADMIN_STAT_CARD}>
+              <span className={ADMIN_STAT_VALUE}>{offers.stats.managers}</span>
+              <span className={ADMIN_STAT_LABEL}>Managers</span>
             </div>
           </div>
         )}
 
-        {notice && <p className="admin-notice">{notice}</p>}
+        {notice && <p className={ADMIN_MSG}>{notice}</p>}
 
-        <div className="admin-tabs">
+        <div className={ADMIN_TABS}>
           <button
             type="button"
-            className={`admin-tab ${tab === 'offers' ? 'active' : ''}`}
+            className={`${ADMIN_TAB} ${tab === 'offers' ? ADMIN_TAB_ACTIVE : ''}`}
             onClick={() => setTab('offers')}
           >
             Offres
           </button>
           <button
             type="button"
-            className={`admin-tab ${tab === 'users' ? 'active' : ''}`}
+            className={`${ADMIN_TAB} ${tab === 'users' ? ADMIN_TAB_ACTIVE : ''}`}
             onClick={() => setTab('users')}
           >
             Utilisateurs
           </button>
           <button
             type="button"
-            className={`admin-tab ${tab === 'companies' ? 'active' : ''}`}
+            className={`${ADMIN_TAB} ${tab === 'companies' ? ADMIN_TAB_ACTIVE : ''}`}
             onClick={() => setTab('companies')}
           >
             Entreprises
           </button>
           <button
             type="button"
-            className={`admin-tab ${tab === 'ledgers' ? 'active' : ''}`}
+            className={`${ADMIN_TAB} ${tab === 'ledgers' ? ADMIN_TAB_ACTIVE : ''}`}
             onClick={() => setTab('ledgers')}
           >
             Registres
@@ -344,49 +133,53 @@ export default function AdminPage({ onLogout, onBack }: AdminPageProps) {
 
         {tab === 'offers' && (
           <>
-        <div className="admin-offers-bar">
-          <h2 className="admin-section-title">Offres</h2>
-          {!showForm && (
-            <button className="admin-btn-primary" type="button" onClick={openCreate}>+ Nouvelle offre</button>
+        <div className={ADMIN_OFFERS_BAR}>
+          <h2 className={ADMIN_SECTION_TITLE}>Offres</h2>
+          {!offerForm.showForm && (
+            <button className={ADMIN_BTN_PRIMARY} type="button" onClick={offerForm.openCreate}>+ Nouvelle offre</button>
           )}
         </div>
-        {showForm && (
-          <form className="admin-form" onSubmit={handleSubmit}>
-            <h2 className="admin-form-title">{editingId ? "Modifier l'offre" : 'Nouvelle offre'}</h2>
-            <div className="admin-form-grid">
-              <label>
+        {offerForm.showForm && (
+          <form className={ADMIN_FORM} onSubmit={offerForm.submit}>
+            <h2 className={ADMIN_FORM_TITLE}>{offerForm.editingId ? "Modifier l'offre" : 'Nouvelle offre'}</h2>
+            <div className={ADMIN_FORM_GRID}>
+              <label className="flex flex-col gap-1.5 text-sm font-medium text-primo-gray">
                 Partenaire
                 <input
+                  className="w-full rounded-lg border border-[#d1d5db] bg-primo-bg px-3 py-[9px] text-sm text-[#1f2937] outline-none transition focus:border-primo-teal focus:shadow-[0_0_0_3px_rgba(0,161,154,0.15)]"
                   type="text"
-                  value={form.partnerName}
-                  onChange={(e) => setForm({ ...form, partnerName: e.target.value })}
+                  value={offerForm.form.partnerName}
+                  onChange={(e) => offerForm.setForm({ ...offerForm.form, partnerName: e.target.value })}
                   placeholder="Ex. Cinéma Pathé"
                 />
               </label>
-              <label>
+              <label className="flex flex-col gap-1.5 text-sm font-medium text-primo-gray">
                 Coût (points)
                 <input
+                  className="w-full rounded-lg border border-[#d1d5db] bg-primo-bg px-3 py-[9px] text-sm text-[#1f2937] outline-none transition focus:border-primo-teal focus:shadow-[0_0_0_3px_rgba(0,161,154,0.15)]"
                   type="number"
                   min={0}
-                  value={form.cost}
-                  onChange={(e) => setForm({ ...form, cost: e.target.value })}
+                  value={offerForm.form.cost}
+                  onChange={(e) => offerForm.setForm({ ...offerForm.form, cost: e.target.value })}
                 />
               </label>
-              <label>
+              <label className="flex flex-col gap-1.5 text-sm font-medium text-primo-gray">
                 Réduction (%)
                 <input
+                  className="w-full rounded-lg border border-[#d1d5db] bg-primo-bg px-3 py-[9px] text-sm text-[#1f2937] outline-none transition focus:border-primo-teal focus:shadow-[0_0_0_3px_rgba(0,161,154,0.15)]"
                   type="number"
                   min={0}
                   max={100}
-                  value={form.discountPercent}
-                  onChange={(e) => setForm({ ...form, discountPercent: e.target.value })}
+                  value={offerForm.form.discountPercent}
+                  onChange={(e) => offerForm.setForm({ ...offerForm.form, discountPercent: e.target.value })}
                 />
               </label>
-              <label>
+              <label className="flex flex-col gap-1.5 text-sm font-medium text-primo-gray">
                 Catégorie
                 <select
-                  value={form.category}
-                  onChange={(e) => setForm({ ...form, category: e.target.value as OfferCategory })}
+                  className="w-full rounded-lg border border-[#d1d5db] bg-primo-bg px-3 py-[9px] text-sm text-[#1f2937] outline-none transition focus:border-primo-teal focus:shadow-[0_0_0_3px_rgba(0,161,154,0.15)]"
+                  value={offerForm.form.category}
+                  onChange={(e) => offerForm.setForm({ ...offerForm.form, category: e.target.value as OfferCategory })}
                 >
                   {CATEGORIES.map((c) => (
                     <option key={c} value={c}>{c}</option>
@@ -394,118 +187,121 @@ export default function AdminPage({ onLogout, onBack }: AdminPageProps) {
                 </select>
               </label>
             </div>
-            {formError && <p className="admin-form-error">{formError}</p>}
-            <div className="admin-form-actions">
-              <button type="submit" className="admin-btn-primary" disabled={saving}>
-                {saving ? 'Enregistrement…' : editingId ? 'Mettre à jour' : 'Créer'}
+            {offerForm.formError && <p className={ADMIN_FORM_ERROR}>{offerForm.formError}</p>}
+            <div className={ADMIN_FORM_ACTIONS}>
+              <button type="submit" className={ADMIN_BTN_PRIMARY} disabled={offerForm.saving}>
+                {offerForm.saving ? 'Enregistrement…' : offerForm.editingId ? 'Mettre à jour' : 'Créer'}
               </button>
-              <button type="button" className="admin-btn-ghost" onClick={closeForm}>Annuler</button>
+              <button type="button" className={ADMIN_BTN_GHOST} onClick={offerForm.closeForm}>Annuler</button>
             </div>
           </form>
         )}
 
-        {loading && <p className="admin-msg">Chargement…</p>}
-        {error && <p className="admin-msg admin-error">{error}</p>}
+        {offers.loading && <p className={ADMIN_MSG}>Chargement…</p>}
+        {offers.error && <p className={`${ADMIN_MSG} ${ADMIN_ERROR}`}>{offers.error}</p>}
 
-        {!loading && offers && (
-          offers.length === 0 ? (
-            <p className="admin-msg">Aucune offre pour le moment.</p>
+        {!offers.loading && offers.offers && (
+          offers.offers.length === 0 ? (
+            <p className={ADMIN_MSG}>Aucune offre pour le moment.</p>
           ) : (
-            <div className="admin-table-scroll">
-            <table className="admin-table">
+            <div className={ADMIN_TABLE_SCROLL}>
+            <table className={ADMIN_TABLE}>
               <thead>
                 <tr>
-                  <th>Partenaire</th>
-                  <th>Coût</th>
-                  <th>Réduction</th>
-                  <th>Catégorie</th>
-                  <th>Statut</th>
-                  <th>Codes</th>
-                  <th>Actions</th>
+                  <th className={ADMIN_TH}>Partenaire</th>
+                  <th className={ADMIN_TH}>Coût</th>
+                  <th className={ADMIN_TH}>Réduction</th>
+                  <th className={ADMIN_TH}>Catégorie</th>
+                  <th className={ADMIN_TH}>Statut</th>
+                  <th className={ADMIN_TH}>Codes</th>
+                  <th className={ADMIN_TH}>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {offers.map((offer) => (
+                {offers.offers.map((offer: Offer) => (
                   <Fragment key={offer.id}>
-                  <tr className={offer.isActive ? '' : 'admin-row-inactive'}>
-                    <td data-label="Partenaire">{offer.partnerName}</td>
-                    <td data-label="Coût">{offer.cost}</td>
-                    <td data-label="Réduction">{offer.discountPercent}%</td>
-                    <td data-label="Catégorie">{offer.category}</td>
-                    <td data-label="Statut">
-                      <span className={`admin-badge ${offer.isActive ? 'active' : 'inactive'}`}>
+                  <tr className={offer.isActive ? '' : 'bg-[#fafafb] text-primo-gray'}>
+                    <td className={ADMIN_TD} data-label="Partenaire">{offer.partnerName}</td>
+                    <td className={ADMIN_TD} data-label="Coût">{offer.cost}</td>
+                    <td className={ADMIN_TD} data-label="Réduction">{offer.discountPercent}%</td>
+                    <td className={ADMIN_TD} data-label="Catégorie">{offer.category}</td>
+                    <td className={ADMIN_TD} data-label="Statut">
+                      <span className={offer.isActive ? ADMIN_BADGE_ACTIVE : ADMIN_BADGE_INACTIVE}>
                         {offer.isActive ? 'Active' : 'Désactivée'}
                       </span>
                     </td>
-                    <td data-label="Codes">
+                    <td className={ADMIN_TD} data-label="Codes">
                       🎟️ {offer.availableCodes ?? 0} dispo · {offer.usedCodes ?? 0} utilisés
                     </td>
-                    <td className="admin-actions" data-label="Actions">
-                      <button className="admin-btn-link" onClick={() => openEdit(offer)}>Modifier</button>
-                      <button className="admin-btn-link" onClick={() => handleToggle(offer)}>
+                    <td className={ADMIN_TD} data-label="Actions">
+                      <div className={ADMIN_ACTIONS}>
+                      <button className={ADMIN_BTN_LINK} onClick={() => offerForm.openEdit(offer)}>Modifier</button>
+                      <button className={ADMIN_BTN_LINK} onClick={() => offers.toggleActive(offer)}>
                         {offer.isActive ? 'Désactiver' : 'Réactiver'}
                       </button>
-                      <button className="admin-btn-link" onClick={() => toggleCodes(offer.id)}>
-                        {codesOpenId === offer.id ? 'Fermer' : 'Gérer les codes'}
+                      <button className={ADMIN_BTN_LINK} onClick={() => codes.toggle(offer.id)}>
+                        {codes.openId === offer.id ? 'Fermer' : 'Gérer les codes'}
                       </button>
+                      </div>
                     </td>
                   </tr>
-                  {codesOpenId === offer.id && (
-                    <tr className="admin-codes-row">
+                  {codes.openId === offer.id && (
+                    <tr className={ADMIN_CODES_ROW}>
                       <td colSpan={7}>
-                        <div className="admin-codes-panel">
+                        <div className={ADMIN_CODES_PANEL}>
                           <textarea
                             rows={5}
-                            value={codesText}
-                            onChange={(e) => setCodesText(e.target.value)}
+                            value={codes.text}
+                            onChange={(e) => codes.setText(e.target.value)}
                             placeholder={'AMZN-XXXX-1111\nAMZN-XXXX-2222\n...'}
+                            className="w-full resize-y rounded-lg border border-[#d1d5db] bg-primo-bg px-3 py-2 text-sm text-[#1f2937] outline-none transition focus:border-primo-teal focus:shadow-[0_0_0_3px_rgba(0,161,154,0.15)]"
                           />
-                          {codesError && <p className="admin-error">{codesError}</p>}
+                          {codes.error && <p className={ADMIN_ERROR}>{codes.error}</p>}
                           <input
-                            ref={csvInputRef}
+                            ref={codes.csvInputRef}
                             type="file"
                             accept=".csv,text/csv,text/plain"
                             style={{ display: 'none' }}
-                            onChange={handleCsvFile}
+                            onChange={codes.handleCsvFile}
                           />
-                          <div className="admin-codes-actions">
+                          <div className={ADMIN_CODES_ACTIONS}>
                             <button
                               type="button"
-                              className="admin-btn-ghost"
-                              onClick={() => csvInputRef.current?.click()}
+                              className={ADMIN_BTN_GHOST}
+                              onClick={() => codes.csvInputRef.current?.click()}
                             >
                               📄 Importer un CSV
                             </button>
                             <button
                               type="button"
-                              className="admin-btn-primary"
-                              disabled={codesSubmitting}
-                              onClick={() => handleAddCodes(offer)}
+                              className={ADMIN_BTN_PRIMARY}
+                              disabled={codes.submitting}
+                              onClick={() => codes.addCodes(offer)}
                             >
-                              {codesSubmitting ? '…' : 'Ajouter les codes'}
+                              {codes.submitting ? '…' : 'Ajouter les codes'}
                             </button>
                           </div>
 
-                          <div className="admin-codes-list">
-                            {codesListLoading ? (
-                              <p className="admin-msg">Chargement des codes…</p>
-                            ) : codesList && codesList.length > 0 ? (
-                              <ul>
-                                {codesList.map((c) => (
-                                  <li key={c.id}>
-                                    <code>{c.code}</code>{' '}
+                          <div className={ADMIN_CODES_LIST}>
+                            {codes.listLoading ? (
+                              <p className={ADMIN_MSG}>Chargement des codes…</p>
+                            ) : codes.list && codes.list.length > 0 ? (
+                              <ul className={ADMIN_CODES_LIST_UL}>
+                                {codes.list.map((c) => (
+                                  <li key={c.id} className={ADMIN_CODES_ITEM}>
+                                    <code className={ADMIN_CODE}>{c.code}</code>{' '}
                                     {c.isUsed ? (
-                                      <span className="admin-badge inactive">
+                                      <span className={ADMIN_BADGE_INACTIVE}>
                                         utilisé{c.usedAt ? ` le ${new Date(c.usedAt).toLocaleDateString('fr-FR')}` : ''}
                                       </span>
                                     ) : (
                                       <>
-                                        <span className="admin-badge active">dispo</span>
+                                        <span className={ADMIN_BADGE_ACTIVE}>dispo</span>
                                         <button
                                           type="button"
-                                          className="admin-btn-link"
+                                          className={ADMIN_BTN_LINK}
                                           title="Supprimer ce code"
-                                          onClick={() => handleDeleteCode(c.id)}
+                                          onClick={() => codes.deleteCode(c.id)}
                                         >
                                           🗑️
                                         </button>
@@ -515,7 +311,7 @@ export default function AdminPage({ onLogout, onBack }: AdminPageProps) {
                                 ))}
                               </ul>
                             ) : (
-                              <p className="admin-msg">Aucun code pour cette offre.</p>
+                              <p className={ADMIN_MSG}>Aucun code pour cette offre.</p>
                             )}
                           </div>
                         </div>

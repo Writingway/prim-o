@@ -49,14 +49,14 @@ async function rawRequest<T = unknown>(method: string, path: string, body?: unkn
   try {
     data = await res.json();
   } catch {
-    // Pas de corps JSON (204, page d'erreur...) — on ignore.
+    // Pas de corps JSON (204, page d'erreur...) - on ignore.
   }
 
   return { ok: res.ok, status: res.status, data };
 }
 
 // POST public (login, register, refresh, logout) : pas de Bearer, pas de
-// retry — un 401 ici est une vraie réponse métier, pas un token expiré.
+// retry - un 401 ici est une vraie réponse métier, pas un token expiré.
 export async function post<T = unknown>(path: string, body?: unknown): Promise<ApiResult<T>> {
   const res = await fetch(`${API_URL}${path}`, {
     method: 'POST',
@@ -69,7 +69,7 @@ export async function post<T = unknown>(path: string, body?: unknown): Promise<A
   try {
     data = await res.json();
   } catch {
-    // Pas de corps JSON — on ignore.
+    // Pas de corps JSON - on ignore.
   }
 
   return { ok: res.ok, status: res.status, data };

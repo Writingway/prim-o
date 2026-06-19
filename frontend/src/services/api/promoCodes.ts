@@ -12,7 +12,7 @@ export type AdminPromoCode = {
 export const listPromoCodes = (offerId: string) =>
   authRequest<{ codes: AdminPromoCode[] }>('GET', `/admin/offers/${offerId}/promo-codes`);
 
-// Supprime un code promo (admin) — réussit seulement s'il est encore disponible.
+// Supprime un code promo (admin) - réussit seulement s'il est encore disponible.
 export const deletePromoCode = (codeId: string) =>
   authRequest<{ ok: boolean }>('DELETE', `/admin/promo-codes/${codeId}`);
 

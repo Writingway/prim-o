@@ -34,7 +34,7 @@ const refreshCookieOptions = {
 };
 
 // Express 5 propage les rejets async vers errorHandler : pas de try/catch
-// ni de remap par chaîne ici — le mapping code -> HTTP est centralisé.
+// ni de remap par chaîne ici - le mapping code -> HTTP est centralisé.
 
 export async function registerController(req: Request, res: Response): Promise<void> {
   const input = registerSchema.parse(req.body);

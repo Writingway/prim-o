@@ -1,7 +1,7 @@
-# Résumé global pour validation — Porteurs de projet
+# Résumé global pour validation - Porteurs de projet
 
 **Date :** 2026-06-17
-**Objet :** vue d'ensemble de **tous les comportements** de l'application — ce qu'on garde et ce qu'on change — pour que vous validiez le tout.
+**Objet :** vue d'ensemble de **tous les comportements** de l'application - ce qu'on garde et ce qu'on change - pour que vous validiez le tout.
 
 Langage simple, sans technique. Pour chaque point : « oui c'est ça » ou « non, plutôt comme ça ». Les points marqués 🆕 sont des **nouveaux choix** ; les autres existent déjà et on les **garde**. Les points marqués ❓ ont besoin de votre décision. Checklist à la fin.
 
@@ -9,10 +9,10 @@ Langage simple, sans technique. Pour chaque point : « oui c'est ça » ou « no
 
 ## 1. Les rôles (qui fait quoi)
 
-- **Administrateur de la plateforme** — vous / votre équipe. Valide les entreprises, gère le catalogue d'offres, surveille l'activité.
-- **Responsable d'entreprise** — la personne qui crée l'entreprise. Achète des crédits, invite et gère ses employés, distribue les crédits.
-- **Manager** — peut distribuer des crédits et gérer les employés (selon ce que le responsable délègue).
-- **Employé** — reçoit des crédits, les dépense.
+- **Administrateur de la plateforme** - vous / votre équipe. Valide les entreprises, gère le catalogue d'offres, surveille l'activité.
+- **Responsable d'entreprise** - la personne qui crée l'entreprise. Achète des crédits, invite et gère ses employés, distribue les crédits.
+- **Manager** - peut distribuer des crédits et gérer les employés (selon ce que le responsable délègue).
+- **Employé** - reçoit des crédits, les dépense.
 
 ❓ À confirmer : la distinction **Responsable** vs **Manager** est-elle nécessaire, ou un seul niveau « gestionnaire » suffit ?
 
@@ -49,13 +49,13 @@ Une entreprise créée n'est pas active tout de suite : elle attend la validatio
 
 Le responsable génère un **code d'invitation** (durée limitée, nombre d'usages limité). L'employé entre ce code pour rejoindre.
 
-🆕 **Le code suffit** : avant, l'employé devait *encore* être validé manuellement après le code. On supprime cette étape en double — le code valant déjà autorisation, l'employé est **actif directement**.
+🆕 **Le code suffit** : avant, l'employé devait *encore* être validé manuellement après le code. On supprime cette étape en double - le code valant déjà autorisation, l'employé est **actif directement**.
 
 On garde la possibilité de **retirer** un employé qui quitte l'entreprise.
 
 ---
 
-## 5. Les crédits (cœur du produit) — comportements gardés
+## 5. Les crédits (cœur du produit) - comportements gardés
 
 - **L'entreprise achète des crédits** par paiement en ligne (carte). Ces crédits alimentent une **réserve commune** de l'entreprise.
 - **Le responsable/manager distribue** des crédits depuis cette réserve vers le **portefeuille d'un employé**.
@@ -66,7 +66,7 @@ On garde la possibilité de **retirer** un employé qui quitte l'entreprise.
 
 **Notre proposition (choix senior) pour une première version :**
 - L'employé choisit une offre, ses crédits sont **débités immédiatement** de son portefeuille, et il reçoit un **bon / code à usage unique** (à présenter chez le partenaire). C'est le modèle des plateformes d'avantages : simple, en libre-service, sans dépendance externe à brancher tout de suite.
-- Chaque dépense est **enregistrée** (qui, quoi, quand, combien) — traçabilité complète, déjà prévue.
+- Chaque dépense est **enregistrée** (qui, quoi, quand, combien) - traçabilité complète, déjà prévue.
 - Garde-fous : on ne peut pas dépenser plus que son solde ; pas de double-débit si l'employé clique deux fois.
 - Pour que ça marche, chaque offre doit avoir un **coût en crédits** clairement défini (à ajouter si absent).
 - On **reporte à plus tard** (pas maintenant) : intégrations partenaires automatiques, conversion en cartes cadeaux externes, livraison physique. On le fera si le besoin est confirmé.
@@ -75,7 +75,7 @@ On garde la possibilité de **retirer** un employé qui quitte l'entreprise.
 
 ---
 
-## 6. Le catalogue d'offres — comportements gardés
+## 6. Le catalogue d'offres - comportements gardés
 
 - Un catalogue d'**offres** classées par catégories : **Alimentation, Shopping, Culture, Voyage, Bien-être, Autre**.
 - Les offres sont **consultables** (y compris, semble-t-il, sans être connecté).
@@ -85,7 +85,7 @@ On garde la possibilité de **retirer** un employé qui quitte l'entreprise.
 
 ---
 
-## 7. Côté administrateur de la plateforme — comportements gardés
+## 7. Côté administrateur de la plateforme - comportements gardés
 
 - **Valider / refuser** les entreprises.
 - **Gérer le catalogue** d'offres.
@@ -112,11 +112,11 @@ On corrige au passage des choix anciens risqués (messages d'erreur incohérents
 ## ✅ À valider
 
 **Nouveaux choix :**
-1. Compte d'abord, entreprise ensuite (créer OU rejoindre) — OK ?
-2. Responsable toujours capable de se connecter, usage avancé bloqué tant que l'entreprise n'est pas validée — OK ?
-3. Entreprise nouvellement créée → validation par un administrateur — OK ?
-4. Code d'invitation suffisant (plus de validation manuelle en double) — OK ?
-5. Navigation modernisée — OK ?
+1. Compte d'abord, entreprise ensuite (créer OU rejoindre) - OK ?
+2. Responsable toujours capable de se connecter, usage avancé bloqué tant que l'entreprise n'est pas validée - OK ?
+3. Entreprise nouvellement créée → validation par un administrateur - OK ?
+4. Code d'invitation suffisant (plus de validation manuelle en double) - OK ?
+5. Navigation modernisée - OK ?
 
 **Questions de cadrage (❓) :**
 

@@ -128,7 +128,7 @@ const dashboardRoute = createRoute({
   },
 });
 
-// ── /admin (spec) — pour l'instant = AdminPage ──
+// ── /admin (spec) - pour l'instant = AdminPage ──
 const adminRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/admin',

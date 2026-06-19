@@ -1,9 +1,21 @@
 import { useEffect, useState } from 'react';
 import { listOffers, redeemOffer } from '../services/api';
 import type { Offer, Role } from '../types/types';
-import './LandingPage.css';
 import Layout from '../components/layout/Layout';
 import { useConfirm } from '../components/ui/ConfirmDialog';
+import { HEADER_BTN_PRIMARY, HEADER_BTN_GHOST } from '../components/layout/headerButtons';
+
+// Classes Tailwind réutilisées (déduplication, cf. authClasses.ts / ConfirmDialog BTN).
+const OFFER_EMOJI = 'mb-2.5 text-[40px] leading-none';
+const OFFER_COST = 'text-[15px] font-semibold text-primo-teal';
+const MODAL_OVERLAY =
+  'fixed inset-0 z-[1000] flex items-center justify-center bg-black/50 p-4';
+const MODAL =
+  'w-full max-w-[420px] rounded-2xl bg-white px-6 py-7 text-center shadow-[0_20px_60px_rgba(0,0,0,0.3)]';
+const MODAL_TITLE = 'mb-1.5 text-xl text-[#111827]';
+const MODAL_SUB = 'mb-4 text-sm text-primo-gray';
+const MODAL_ACTIONS = 'flex justify-center gap-2';
+const MODAL_NOTE = 'mt-3.5 text-xs text-primo-gray-light';
 
 type LandingPageProps = {
   isLoggedIn: boolean;
@@ -102,59 +114,61 @@ export default function LandingPage({
       headerActions={
         isLoggedIn ? (
           <>
-            <button className="app-btn app-btn-primary" type="button" onClick={onDashboard}>
+            <button className={HEADER_BTN_PRIMARY} type="button" onClick={onDashboard}>
               Mon tableau de bord
             </button>
-            <button className="app-btn app-btn-ghost" type="button" onClick={onLogout}>
+            <button className={HEADER_BTN_GHOST} type="button" onClick={onLogout}>
               Se déconnecter
             </button>
           </>
         ) : (
           <>
-            <button className="app-btn app-btn-ghost" type="button" onClick={onLogin}>
+            <button className={HEADER_BTN_GHOST} type="button" onClick={onLogin}>
               Se connecter
             </button>
-            <button className="app-btn app-btn-primary" type="button" onClick={onRegister}>
+            <button className={HEADER_BTN_PRIMARY} type="button" onClick={onRegister}>
               S'inscrire
             </button>
           </>
         )
       }
     >
-    <div className="landing-wrapper">
-      <section className="landing-hero">
-        <h1 className="landing-hero-title">Tes efforts récompensés instantanément</h1>
-        <p className="landing-hero-sub">
+    <div className="min-h-screen bg-[#f4f5f7]">
+      <section className="px-5 pt-16 pb-10 text-center">
+        <h1 className="mx-auto max-w-[720px] text-[30px] font-extrabold leading-[1.15] tracking-[-1px] text-[#1f2937] sm:text-[40px]">
+          Tes efforts récompensés instantanément
+        </h1>
+        <p className="mx-auto mt-4 max-w-[560px] text-[18px] text-primo-gray">
           Échange tes tokens contre des offres exclusives chez nos partenaires.
         </p>
       </section>
 
-      <section className="landing-offers">
-        <h2 className="landing-offers-title">Nos offres partenaires</h2>
+      <section className="mx-auto max-w-[1000px] px-5 pt-6 pb-16">
+        <h2 className="mb-5 text-center text-[22px] font-bold text-[#1f2937]">Nos offres partenaires</h2>
 
         {loading ? (
-          <p className="landing-muted">Chargement des offres…</p>
+          <p className="text-center text-primo-gray-light">Chargement des offres…</p>
         ) : offers.length === 0 ? (
-          <p className="landing-muted">Aucune offre disponible pour le moment.</p>
+          <p className="text-center text-primo-gray-light">Aucune offre disponible pour le moment.</p>
         ) : (
-          <div className="offer-grid">
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-4">
             {offers.map((o) => {
               const meta = categoryMeta[o.category] ?? categoryMeta.OTHER;
               return (
                 <article
-                  className="offer-card offer-card-clickable"
+                  className="relative cursor-pointer rounded-[14px] border border-primo-border bg-white px-[18px] py-[22px] text-center transition-[transform,box-shadow] duration-150 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(0,0,0,0.1)]"
                   key={o.id}
                   onClick={() => openDetail(o)}
                   role="button"
                   tabIndex={0}
                   onKeyDown={(e) => { if (e.key === 'Enter') openDetail(o); }}
                 >
-                  <span className="offer-discount">-{o.discountPercent}%</span>
-                  <div className="offer-emoji">{meta.emoji}</div>
-                  <h3 className="offer-name">{o.partnerName}</h3>
-                  <p className="offer-category">{meta.label}</p>
-                  <p className="offer-cost">{o.cost} 🪙 tokens</p>
-                  <span className="offer-details-hint">Voir le détail →</span>
+                  <span className="absolute right-3 top-3 rounded-[20px] bg-[#ecfdf5] px-2 py-[3px] text-xs font-bold text-primo-success">-{o.discountPercent}%</span>
+                  <div className={OFFER_EMOJI}>{meta.emoji}</div>
+                  <h3 className="text-[17px] font-bold text-[#111827]">{o.partnerName}</h3>
+                  <p className="mb-3 mt-1 text-xs uppercase tracking-[0.5px] text-primo-gray-light">{meta.label}</p>
+                  <p className={OFFER_COST}>{o.cost} 🪙 tokens</p>
+                  <span className="mt-2.5 block text-[13px] font-semibold text-primo-teal">Voir le détail →</span>
                 </article>
               );
             })}
@@ -165,22 +179,22 @@ export default function LandingPage({
 
     {/* Détail d'une offre */}
     {selected && selectedMeta && (
-      <div className="landing-modal-overlay" onClick={() => setSelected(null)}>
-        <div className="landing-modal" onClick={(e) => e.stopPropagation()}>
-          <div className="offer-emoji">{selectedMeta.emoji}</div>
-          <h3 className="landing-modal-title">{selected.partnerName}</h3>
-          <p className="landing-modal-sub">{selectedMeta.label} · -{selected.discountPercent}%</p>
-          <p className="offer-cost">{selected.cost} 🪙 tokens</p>
-          <p className={selected.available ? 'offer-stock-ok' : 'offer-stock-ko'}>
+      <div className={MODAL_OVERLAY} onClick={() => setSelected(null)}>
+        <div className={MODAL} onClick={(e) => e.stopPropagation()}>
+          <div className={OFFER_EMOJI}>{selectedMeta.emoji}</div>
+          <h3 className={MODAL_TITLE}>{selected.partnerName}</h3>
+          <p className={MODAL_SUB}>{selectedMeta.label} · -{selected.discountPercent}%</p>
+          <p className={OFFER_COST}>{selected.cost} 🪙 tokens</p>
+          <p className={selected.available ? 'mt-1 font-semibold text-primo-success' : 'mt-1 font-semibold text-primo-error'}>
             {selected.available ? '✅ Disponible' : '❌ Épuisé'}
           </p>
 
-          {redeemError && <p className="landing-redeem-error">{redeemError}</p>}
+          {redeemError && <p className="mb-3 text-center text-primo-error">{redeemError}</p>}
 
-          <div className="landing-modal-actions">
+          <div className={MODAL_ACTIONS}>
             {isEmployee && (
               <button
-                className="app-btn app-btn-primary"
+                className={HEADER_BTN_PRIMARY}
                 type="button"
                 disabled={!selected.available || redeeming}
                 onClick={() => handleRedeem(selected)}
@@ -188,12 +202,12 @@ export default function LandingPage({
                 {redeeming ? '…' : `Acheter (${selected.cost})`}
               </button>
             )}
-            <button className="app-btn app-btn-ghost" type="button" onClick={() => setSelected(null)}>
+            <button className={HEADER_BTN_GHOST} type="button" onClick={() => setSelected(null)}>
               Fermer
             </button>
           </div>
           {!isEmployee && (
-            <p className="landing-modal-note">Connecte-toi en tant qu'employé pour acheter un code.</p>
+            <p className={MODAL_NOTE}>Connecte-toi en tant qu'employé pour acheter un code.</p>
           )}
         </div>
       </div>
@@ -201,24 +215,24 @@ export default function LandingPage({
 
     {/* Révélation du code obtenu */}
     {revealed && (
-      <div className="landing-modal-overlay" onClick={() => setRevealed(null)}>
-        <div className="landing-modal" onClick={(e) => e.stopPropagation()}>
-          <h3 className="landing-modal-title">🎉 Code « {revealed.offerName} »</h3>
-          <p className="landing-modal-sub">{revealed.amount} tokens débités. Voici ton code :</p>
-          <div className="landing-modal-code">{revealed.code}</div>
-          <div className="landing-modal-actions">
+      <div className={MODAL_OVERLAY} onClick={() => setRevealed(null)}>
+        <div className={MODAL} onClick={(e) => e.stopPropagation()}>
+          <h3 className={MODAL_TITLE}>🎉 Code « {revealed.offerName} »</h3>
+          <p className={MODAL_SUB}>{revealed.amount} tokens débités. Voici ton code :</p>
+          <div className="mb-4 break-all rounded-[10px] border border-dashed border-primo-teal bg-primo-teal-soft p-3.5 font-mono text-[22px] font-bold tracking-[1px] text-primo-teal-dark">{revealed.code}</div>
+          <div className={MODAL_ACTIONS}>
             <button
-              className="app-btn app-btn-ghost"
+              className={HEADER_BTN_GHOST}
               type="button"
               onClick={() => navigator.clipboard.writeText(revealed.code)}
             >
               Copier
             </button>
-            <button className="app-btn app-btn-primary" type="button" onClick={() => setRevealed(null)}>
+            <button className={HEADER_BTN_PRIMARY} type="button" onClick={() => setRevealed(null)}>
               Fermer
             </button>
           </div>
-          <p className="landing-modal-note">Tu le retrouveras dans « Mes dépenses » sur ton tableau de bord.</p>
+          <p className={MODAL_NOTE}>Tu le retrouveras dans « Mes dépenses » sur ton tableau de bord.</p>
         </div>
       </div>
     )}

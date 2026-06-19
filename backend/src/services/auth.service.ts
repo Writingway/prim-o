@@ -83,7 +83,7 @@ export async function createCompany(userId: string, input: CreateCompanyInput) {
 }
 
 // L'utilisateur flottant rejoint une entreprise via code d'invitation.
-// Code valide = membre actif direct (plus d'approbation manager — spec §4).
+// Code valide = membre actif direct (plus d'approbation manager - spec §4).
 export async function joinCompany(userId: string, input: JoinCompanyInput) {
   const { code } = input;
   const user = await prisma.user.findFirst({ where: { id: userId, deletedAt: null } });
@@ -174,7 +174,7 @@ export async function login(input: LoginInput) {
 }
 
 // Source unique d'identité pour le frontend : rôle + entreprise + statut.
-// Lu en DB — le token peut être périmé et ne porte pas company.status.
+// Lu en DB - le token peut être périmé et ne porte pas company.status.
 export async function getMe(userId: string) {
   const user = await prisma.user.findFirst({
     where: { id: userId, deletedAt: null },

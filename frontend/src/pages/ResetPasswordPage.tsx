@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { SyntheticEvent } from 'react';
 import { resetPassword } from '../services/api';
-import './AuthPage.css';
+import { WRAPPER, CARD, LOGO, FORM, INPUT, SUBMIT, ERROR, SUCCESS } from '../components/auth/authClasses';
 
 type ResetPasswordPageProps = {
   token: string;
@@ -48,18 +48,19 @@ export default function ResetPasswordPage({ token, onDone }: ResetPasswordPagePr
   };
 
   return (
-    <div className="auth-wrapper">
-      <div className="auth-card">
-        <h1 className="auth-logo">Prim'O</h1>
+    <div className={WRAPPER}>
+      <div className={CARD}>
+        <h1 className={LOGO}>Prim'O</h1>
 
         {success ? (
           <>
-            <p className="auth-success">Mot de passe réinitialisé ✅ Tu peux te connecter.</p>
-            <button type="button" onClick={onDone}>Aller à la connexion</button>
+            <p className={SUCCESS}>Mot de passe réinitialisé ✅ Tu peux te connecter.</p>
+            <button className={SUBMIT} type="button" onClick={onDone}>Aller à la connexion</button>
           </>
         ) : (
-          <form className="auth-form" onSubmit={handleSubmit}>
+          <form className={FORM} onSubmit={handleSubmit}>
             <input
+              className={INPUT}
               type="password"
               placeholder="Nouveau mot de passe"
               value={password}
@@ -67,6 +68,7 @@ export default function ResetPasswordPage({ token, onDone }: ResetPasswordPagePr
               autoComplete="new-password"
             />
             <input
+              className={INPUT}
               type="password"
               placeholder="Confirme le mot de passe"
               value={confirm}
@@ -74,9 +76,9 @@ export default function ResetPasswordPage({ token, onDone }: ResetPasswordPagePr
               autoComplete="new-password"
             />
 
-            {error && <p className="auth-error">{error}</p>}
+            {error && <p className={ERROR}>{error}</p>}
 
-            <button type="submit" disabled={loading}>
+            <button className={SUBMIT} type="submit" disabled={loading}>
               {loading ? 'Chargement…' : 'Réinitialiser'}
             </button>
           </form>

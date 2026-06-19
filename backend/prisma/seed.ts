@@ -142,7 +142,7 @@ async function main() {
       { tag: 'VENTE_ADDITIONNELLE', label: 'Vente additionnelle', category: 'RELATION_CLIENT', compliment: 'Tu as su proposer au bon moment', sortOrder: 8 },
       // Esprit collectif
       { tag: 'ENTRAIDE_COOPERATION', label: 'Entraide & coopération', category: 'ESPRIT_COLLECTIF', compliment: "Tu as tiré l'équipe vers le haut", sortOrder: 9 },
-      { tag: 'TRANSMISSION_COMPETENCES', label: 'Transmission de compétences', category: 'ESPRIT_COLLECTIF', compliment: "Tu as pris le temps d'expliquer — c'est rare", sortOrder: 10 },
+      { tag: 'TRANSMISSION_COMPETENCES', label: 'Transmission de compétences', category: 'ESPRIT_COLLECTIF', compliment: "Tu as pris le temps d'expliquer - c'est rare", sortOrder: 10 },
       { tag: 'POLYVALENCE_ACCEPTEE', label: 'Polyvalence acceptée', category: 'ESPRIT_COLLECTIF', compliment: "Tu as dit oui quand on avait besoin", sortOrder: 11 },
       // Engagement
       { tag: 'PRESENCE_SITUATION_TENDUE', label: 'Présence en situation tendue', category: 'ENGAGEMENT', compliment: "Tu étais là quand c'était difficile", sortOrder: 12 },

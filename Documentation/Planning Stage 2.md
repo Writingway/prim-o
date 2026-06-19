@@ -1,4 +1,4 @@
-# Prim'O — Stage 2: Project Planning
+# Prim'O - Stage 2: Project Planning
 
 **Date:** May 5, 2026  
 **Team:** Mario Colomas (PM/Backend), Mateo Marques (Fullstack), Lucas Nevano (Frontend)
