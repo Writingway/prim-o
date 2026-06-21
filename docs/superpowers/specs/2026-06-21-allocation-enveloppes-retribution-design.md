@@ -152,6 +152,12 @@ données. Cf. mémoire projet : Prisma v5.22 épinglé, synchro DB via `migrate`
   atomique décrite plus haut.
 - **Distribution directe employeur → employé** (cas TPE du schéma pyramidal) : reste
   inchangée (débit pool, crédit employé).
+- **`GET /api/motifs`** (inclus dans cette branche) : lecture seule, renvoie les motifs
+  **actifs** groupés par catégorie, conforme à `ListMotifsResponse` déjà gelé dans
+  `manager.contracts.ts`. Les 13 motifs officiels sont déjà seedés en base
+  ([seed.ts:129](../../../backend/prisma/seed.ts)). Route + contrôleur + service à créer
+  (aucun n'existe aujourd'hui). C'est la source du sélecteur de motif du bloc de
+  redistribution.
 
 ## Points de coordination (hors code)
 
