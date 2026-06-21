@@ -86,10 +86,11 @@ redistribution complète), soit rien ne bouge.
 | `POURCENTAGE` | `R = floor(montant × pourcentage ÷ 100)` |
 | `AUCUNE` | `R = 0` |
 
-- **`nbEquipe`** = nombre d'**employés actifs rattachés au manager** dans l'entreprise,
-  compté **au moment de l'envoi** (pas seulement les destinataires de cette enveloppe).
-  Principe d'équité du mode dynamique : le manager compte comme une part au même titre
-  que chaque membre de l'équipe.
+- **`nbEquipe`** = nombre d'**employés actifs de l'entreprise** (role `EMPLOYEE`,
+  `deletedAt == null`), compté **au moment de l'envoi**. Le modèle ne relie pas un
+  employé à un manager précis : les employés appartiennent à l'**entreprise**. Le
+  manager compte comme le `+1` (principe d'équité du mode dynamique). Pas seulement les
+  destinataires de l'enveloppe.
 - **Budget équipe** = `montant − R` (toujours entier).
 
 ### Arrondi
