@@ -1,13 +1,11 @@
 import { z } from 'zod';
-import { safeText } from '../lib/validation';
 
 // Distribution manager → employé (§3.3/§3.5). Le motif est OBLIGATOIRE (tag
-// officiel) — fini le texte libre. `reason` = note libre optionnelle du manager.
+// officiel) — le texte libre `reason` a été retiré (le motif porte le sens).
 export const createAttributionSchema = z.object({
   employeeId: z.uuid(),
   amount:     z.number().int().positive(),
   motifId:    z.uuid(),
-  reason:     safeText(1).optional(),
 });
 
 export type CreateAttributionInput = z.infer<typeof createAttributionSchema>;
@@ -38,7 +36,6 @@ export const distributeEnvelopeSchema = z.object({
         employeeId: z.uuid(),
         amount:     z.number().int().positive(),
         motifId:    z.uuid(),
-        reason:     safeText(1).optional(),
       }),
     )
     .min(1)

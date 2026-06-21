@@ -158,7 +158,6 @@ async function main() {
     prisma.attribution.create({
       data: {
         amount: 30,
-        reason: 'Excellent travail sur le projet client Q1',
         motifId: motifQualite.id,
         companyId: acme.id,
         managerId: bossAcme.id,
@@ -168,7 +167,6 @@ async function main() {
     prisma.attribution.create({
       data: {
         amount: 50,
-        reason: 'Dépassement des objectifs de vente',
         motifId: motifVente.id,
         companyId: acme.id,
         managerId: bossAcme.id,

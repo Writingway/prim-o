@@ -28,9 +28,9 @@ export const generateInviteCode = (role: 'MANAGER' | 'EMPLOYEE' = 'EMPLOYEE') =>
 
 // Envoi direct employeur → employé (TPE) : montant + motif obligatoire, sans mode.
 // Le backend débite le pool entreprise et crédite l'employé de façon atomique.
-export const createAttribution = (payload: { employeeId: string; amount: number; motifId: string; reason?: string }) =>
+export const createAttribution = (payload: { employeeId: string; amount: number; motifId: string }) =>
   authRequest<
-    { attribution: { id: string; amount: number; reason: string; createdAt: string } } | { error: string }
+    { attribution: { id: string; amount: number; createdAt: string } } | { error: string }
   >('POST', '/attributions', payload);
 
 // Un manager de l'entreprise (pour l'allocation côté patron).
@@ -45,10 +45,6 @@ export type CompanyManager = {
 // Liste les managers de l'entreprise (patron).
 export const listManagers = () =>
   authRequest<{ managers: CompanyManager[] }>('GET', '/attributions/managers');
-
-// Solde perso de l'utilisateur courant (manager : tokens alloués par le patron).
-export const getMyBalance = () =>
-  authRequest<{ balance: number }>('GET', '/attributions/my-balance');
 
 // Allocation patron → manager : crée une enveloppe (débite le pool). Le mode décide
 // de la rétribution du manager ; percentage requis UNIQUEMENT en mode POURCENTAGE.

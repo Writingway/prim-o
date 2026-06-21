@@ -52,7 +52,7 @@ export type SentEnvelope = {
 };
 
 // Une ligne de redistribution (POST /api/attributions/distribute).
-export type DistributeLine = { employeeId: string; amount: number; motifId: string; reason?: string };
+export type DistributeLine = { employeeId: string; amount: number; motifId: string };
 
 // Libellés FR pour l'affichage (les valeurs DB sont en ASCII).
 export const MODE_LABELS: Record<RetributionMode, string> = {

@@ -4,13 +4,15 @@ import type { RetributionMode } from '@prisma/client';
 import type { CreateAttributionInput, DistributeEnvelopeInput } from '../schemas/attribution.schemas';
 import { computeRetribution } from '../lib/retribution';
 
+// Envoi direct employeur → employé (TPE) : débite le POOL entreprise, crédite l'employé
+// et enregistre le motif. Atomique + gardé. Réservé à l'OWNER (les managers passent par
+// les enveloppes — voir distributeEnvelope).
 export async function createAttribution(
   attributorId: string,
-  attributorRole: string,
   companyId: string,
   input: CreateAttributionInput,
 ) {
-  const { employeeId, amount, reason } = input;
+  const { employeeId, amount, motifId } = input;
 
   // Vérification employé
   const employee = await prisma.user.findUnique({
@@ -35,21 +37,11 @@ export async function createAttribution(
 
   try {
     return await prisma.$transaction(async (tx) => {
-      if (attributorRole === 'OWNER') {
-        // Le patron distribue depuis le POOL entreprise.
-        const debit = await tx.company.updateMany({
-          where: { id: companyId, tokenBalance: { gte: amount } },
-          data: { tokenBalance: { decrement: amount } },
-        });
-        if (debit.count === 0) throw new Error('INSUFFICIENT_POOL');
-      } else {
-        // Le manager distribue depuis SON solde perso (alloué par le patron).
-        const debit = await tx.user.updateMany({
-          where: { id: attributorId, balance: { gte: amount } },
-          data: { balance: { decrement: amount } },
-        });
-        if (debit.count === 0) throw new Error('INSUFFICIENT_BALANCE');
-      }
+      const debit = await tx.company.updateMany({
+        where: { id: companyId, tokenBalance: { gte: amount } },
+        data: { tokenBalance: { decrement: amount } },
+      });
+      if (debit.count === 0) throw new Error('INSUFFICIENT_POOL');
 
       await tx.user.update({
         where: { id: employeeId },
@@ -57,15 +49,16 @@ export async function createAttribution(
       });
 
       return tx.attribution.create({
-        // reason = champ legacy requis en DB ; le motif officiel (motifId) porte le sens.
-        data: { amount, reason: reason ?? '', companyId, managerId: attributorId, employeeId },
-        select: { id: true, amount: true, reason: true, createdAt: true },
+        data: { amount, motifId, companyId, managerId: attributorId, employeeId },
+        select: { id: true, amount: true, createdAt: true },
       });
     });
   } catch (err) {
-    if (err instanceof Prisma.PrismaClientUnknownRequestError) {
-      if (err.message.includes('company_pool_non_negative')) throw new Error('INSUFFICIENT_POOL');
-      if (err.message.includes('user_balance_non_negative')) throw new Error('INSUFFICIENT_BALANCE');
+    if (
+      err instanceof Prisma.PrismaClientUnknownRequestError &&
+      err.message.includes('company_pool_non_negative')
+    ) {
+      throw new Error('INSUFFICIENT_POOL');
     }
     throw err;
   }
@@ -183,7 +176,6 @@ export async function distributeEnvelope(
       await tx.attribution.create({
         data: {
           amount: l.amount,
-          reason: l.reason ?? '',
           motifId: l.motifId,
           companyId,
           managerId,
@@ -273,12 +265,6 @@ export async function getManagerBalances(managerId: string, companyId: string) {
   return { envelopeRemaining, personalBalance: user?.balance ?? 0 };
 }
 
-// Solde perso de l'utilisateur courant (manager : tokens alloués par le patron).
-export async function getUserBalance(userId: string): Promise<number> {
-  const u = await prisma.user.findUnique({ where: { id: userId }, select: { balance: true } });
-  return u?.balance ?? 0;
-}
-
 // Liste les managers d'une entreprise (pour l'allocation côté patron).
 export async function listCompanyManagers(companyId: string) {
   return prisma.user.findMany({
@@ -289,16 +275,19 @@ export async function listCompanyManagers(companyId: string) {
 }
 
 // Historique des attributions d'une entreprise (récentes d'abord).
+// `reason` est dérivé du motif (le texte libre n'existe plus) pour rester compatible
+// avec l'affichage existant.
 export async function listAttributionsByCompany(companyId: string) {
-  return prisma.attribution.findMany({
+  const rows = await prisma.attribution.findMany({
     where: { companyId },
     orderBy: { createdAt: 'desc' },
     select: {
       id: true,
       amount: true,
-      reason: true,
       createdAt: true,
       employee: { select: { firstName: true, lastName: true } },
+      motif: { select: { label: true } },
     },
   });
+  return rows.map(({ motif, ...a }) => ({ ...a, reason: motif?.label ?? '' }));
 }

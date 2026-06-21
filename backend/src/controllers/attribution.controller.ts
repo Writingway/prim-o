@@ -6,7 +6,6 @@ import {
   listAttributionsByCompany,
   allocateToManager,
   listCompanyManagers,
-  getUserBalance,
   distributeEnvelope,
   listManagerEnvelopes,
   getManagerBalances,
@@ -30,7 +29,7 @@ export async function createAttributionController(
 
     const input = createAttributionSchema.parse(req.body);
 
-    const attribution = await createAttribution(ctx.userId, ctx.role, ctx.companyId, input);
+    const attribution = await createAttribution(ctx.userId, ctx.companyId, input);
     res.status(201).json({ attribution });
   } catch (err) {
     if (err instanceof Error) {
@@ -40,7 +39,6 @@ export async function createAttributionController(
         COMPANY_NOT_FOUND:       [404, 'Entreprise introuvable.'],
         COMPANY_INACTIVE:        [403, 'Entreprise non validée.'],
         INSUFFICIENT_POOL:       [409, 'Solde de tokens insuffisant dans le pool entreprise.'],
-        INSUFFICIENT_BALANCE:    [409, 'Ton solde de tokens est insuffisant.'],
       };
       const mapped = map[err.message];
       if (mapped) { next(new AppError(mapped[0], mapped[1])); return; }
@@ -121,24 +119,6 @@ export async function distributeEnvelopeController(
       const mapped = map[err.message];
       if (mapped) { next(new AppError(mapped[0], mapped[1])); return; }
     }
-    next(err);
-  }
-}
-
-// GET /api/attributions/my-balance — solde perso de l'utilisateur courant.
-export async function myBalanceController(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-): Promise<void> {
-  try {
-    if (!req.user) {
-      next(new AppError(401, 'Non authentifié.'));
-      return;
-    }
-    const balance = await getUserBalance(req.user.id);
-    res.status(200).json({ balance });
-  } catch (err) {
     next(err);
   }
 }
