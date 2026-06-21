@@ -38,26 +38,43 @@ export interface AllocateResponse {
   amount: number;
   mode: RetributionMode;
   percentage: number | null;
+  status: 'A_DISTRIBUER' | 'DISTRIBUEE';
   companyTokenBalance: number; // pool employeur restant après débit
 }
 
-// ── Distribution manager → employé (Dev B) ───────────────────────
-// POST /api/attributions  (body = CreateAttributionInput)
-// Transaction atomique : débit enveloppe + crédit employé + crédit rétribution manager.
-export interface DistributeResponse {
-  attributionId: string;
-  employeeId: string;
-  amount: number;
-  motif: { tag: string; compliment: string }; // compliment montré au salarié
-  retributionAmount: number;                   // part créditée au manager (§3.4) ; 0 si AUCUNE
-  envelopeRemaining: number;                   // enveloppe manager restante après l'opération
+// ── Envoi groupé d'une enveloppe (Dev B) ─────────────────────────
+// POST /api/attributions/distribute — transaction atomique : crédit manager (R) +
+// crédit de chaque employé + verrouillage de l'enveloppe (DISTRIBUEE).
+export interface DistributeEnvelopeResponse {
+  allocationId: string;
+  retributionAmount: number; // part créditée au manager (§3.4) ; 0 si AUCUNE
+  distributed: number;       // total distribué aux employés (= montant − R)
+  lineCount: number;         // nb d'attributions créées
+  status: 'DISTRIBUEE';
 }
 
 // ── Double solde manager (Dev B) — §3.3 ──────────────────────────
-// GET /api/managers/me/balances
+// GET /api/attributions/balances
 export interface ManagerBalancesResponse {
-  envelopeRemaining: number; // enveloppe à distribuer (dérivée du registre Allocation/Attribution)
+  envelopeRemaining: number; // budget non distribué des enveloppes A_DISTRIBUER
   personalBalance: number;   // solde perso reçu = rétribution cumulée (user.balance)
+}
+
+// ── "Mes enveloppes" du manager (Dev B) ──────────────────────────
+// GET /api/attributions/envelopes
+export interface ManagerEnvelopeDTO {
+  allocationId: string;
+  amount: number;
+  mode: RetributionMode;
+  percentage: number | null;
+  status: 'A_DISTRIBUER' | 'DISTRIBUEE';
+  retributionAmount: number;    // R (live si A_DISTRIBUER, figé si DISTRIBUEE)
+  distributableBudget: number;  // montant − R
+  distributedAt: string | null; // ISO
+  createdAt: string;            // ISO
+}
+export interface ManagerEnvelopesResponse {
+  envelopes: ManagerEnvelopeDTO[];
 }
 
 // GET /api/managers/me/history — deux historiques distincts.

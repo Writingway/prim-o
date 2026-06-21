@@ -1,6 +1,8 @@
 import { prisma } from '../lib/db';
 import { Prisma } from '@prisma/client';
-import type { CreateAttributionInput } from '../schemas/attribution.schemas';
+import type { RetributionMode } from '@prisma/client';
+import type { CreateAttributionInput, DistributeEnvelopeInput } from '../schemas/attribution.schemas';
+import { computeRetribution } from '../lib/retribution';
 
 export async function createAttribution(
   attributorId: string,
@@ -69,9 +71,17 @@ export async function createAttribution(
   }
 }
 
-// Allocation patron → manager : débite le POOL entreprise, crédite le solde du manager.
-// Atomique + gardé. Le manager doit appartenir à l'entreprise du patron.
-export async function allocateToManager(companyId: string, managerId: string, amount: number) {
+// Allocation employeur → manager : débite le POOL entreprise et CRÉE une enveloppe
+// (Allocation, statut A_DISTRIBUER). NE crédite PLUS le solde du manager : les tokens
+// "vivent" dans l'enveloppe jusqu'à l'envoi (où R lui est crédité). Atomique + gardé.
+export async function allocateToManager(
+  companyId: string,
+  createdById: string,
+  managerId: string,
+  amount: number,
+  mode: RetributionMode,
+  percentage: number | null,
+) {
   const manager = await prisma.user.findUnique({
     where: { id: managerId },
     select: { id: true, role: true, companyId: true, deletedAt: true },
@@ -96,11 +106,15 @@ export async function allocateToManager(companyId: string, managerId: string, am
       });
       if (debit.count === 0) throw new Error('INSUFFICIENT_POOL');
 
-      return tx.user.update({
-        where: { id: managerId },
-        data: { balance: { increment: amount } },
-        select: { id: true, firstName: true, lastName: true, balance: true },
+      const allocation = await tx.allocation.create({
+        data: { amount, mode, percentage, companyId, managerId, createdById, status: 'A_DISTRIBUER' },
+        select: { id: true, amount: true, mode: true, percentage: true, status: true },
       });
+      const refreshed = await tx.company.findUnique({
+        where: { id: companyId },
+        select: { tokenBalance: true },
+      });
+      return { allocation, companyTokenBalance: refreshed?.tokenBalance ?? 0 };
     });
   } catch (err) {
     if (
@@ -111,6 +125,127 @@ export async function allocateToManager(companyId: string, managerId: string, am
     }
     throw err;
   }
+}
+
+// Envoi atomique d'une enveloppe : recalcule R, vérifie l'invariant Σ(montants) =
+// montant − R, crédite le manager (R) + chaque employé, marque l'enveloppe DISTRIBUEE.
+// Tout échec → rollback complet, l'enveloppe reste A_DISTRIBUER.
+export async function distributeEnvelope(
+  managerId: string,
+  companyId: string,
+  input: DistributeEnvelopeInput,
+) {
+  const { allocationId, lines } = input;
+  return prisma.$transaction(async (tx) => {
+    const alloc = await tx.allocation.findUnique({
+      where: { id: allocationId },
+      select: { id: true, amount: true, mode: true, percentage: true, status: true, managerId: true, companyId: true },
+    });
+    if (!alloc) throw new Error('ALLOCATION_NOT_FOUND');
+    if (alloc.managerId !== managerId) throw new Error('ALLOCATION_NOT_OWNED');
+    if (alloc.companyId !== companyId) throw new Error('ALLOCATION_NOT_IN_COMPANY');
+    if (alloc.status !== 'A_DISTRIBUER') throw new Error('ALLOCATION_ALREADY_DISTRIBUTED');
+
+    // nbEquipe = employés actifs de l'entreprise au moment de l'envoi (le manager = +1).
+    const teamSize = await tx.user.count({
+      where: { companyId, role: 'EMPLOYEE', deletedAt: null },
+    });
+    const retribution = computeRetribution({
+      mode: alloc.mode,
+      amount: alloc.amount,
+      percentage: alloc.percentage,
+      teamSize,
+    });
+    const budget = alloc.amount - retribution;
+
+    const total = lines.reduce((sum, l) => sum + l.amount, 0);
+    if (total !== budget) throw new Error('DISTRIBUTION_MISMATCH');
+
+    // Tous les destinataires doivent être des employés actifs de l'entreprise.
+    const employeeIds = lines.map((l) => l.employeeId);
+    const validEmployees = await tx.user.count({
+      where: { id: { in: employeeIds }, companyId, role: 'EMPLOYEE', deletedAt: null },
+    });
+    if (validEmployees !== employeeIds.length) throw new Error('EMPLOYEE_INVALID');
+
+    // Tous les motifs doivent exister et être actifs.
+    const motifIds = [...new Set(lines.map((l) => l.motifId))];
+    const validMotifs = await tx.motif.count({ where: { id: { in: motifIds }, active: true } });
+    if (validMotifs !== motifIds.length) throw new Error('MOTIF_INVALID');
+
+    // Crédit rétribution manager (solde perso).
+    if (retribution > 0) {
+      await tx.user.update({ where: { id: managerId }, data: { balance: { increment: retribution } } });
+    }
+    // Crédit employés + création des attributions, rattachées à l'enveloppe.
+    for (const l of lines) {
+      await tx.user.update({ where: { id: l.employeeId }, data: { balance: { increment: l.amount } } });
+      await tx.attribution.create({
+        data: {
+          amount: l.amount,
+          reason: l.reason ?? '',
+          motifId: l.motifId,
+          companyId,
+          managerId,
+          employeeId: l.employeeId,
+          allocationId,
+        },
+      });
+    }
+    await tx.allocation.update({
+      where: { id: allocationId },
+      data: { status: 'DISTRIBUEE', retributionAmount: retribution, distributedAt: new Date() },
+    });
+
+    return { allocationId, retributionAmount: retribution, distributed: total, lineCount: lines.length, status: 'DISTRIBUEE' as const };
+  });
+}
+
+// Liste les enveloppes d'un manager ("Mes enveloppes"). Pour A_DISTRIBUER, R et le
+// budget sont calculés en direct (taille d'équipe courante) ; pour DISTRIBUEE on relit
+// le R figé à l'envoi.
+export async function listManagerEnvelopes(managerId: string, companyId: string) {
+  const allocations = await prisma.allocation.findMany({
+    where: { managerId },
+    orderBy: { createdAt: 'desc' },
+    select: {
+      id: true, amount: true, mode: true, percentage: true, status: true,
+      retributionAmount: true, distributedAt: true, createdAt: true,
+    },
+  });
+  const teamSize = await prisma.user.count({ where: { companyId, role: 'EMPLOYEE', deletedAt: null } });
+  return allocations.map((a) => {
+    const retribution = a.status === 'DISTRIBUEE'
+      ? a.retributionAmount
+      : computeRetribution({ mode: a.mode, amount: a.amount, percentage: a.percentage, teamSize });
+    return {
+      allocationId: a.id,
+      amount: a.amount,
+      mode: a.mode,
+      percentage: a.percentage,
+      status: a.status,
+      retributionAmount: retribution,
+      distributableBudget: a.amount - retribution,
+      distributedAt: a.distributedAt?.toISOString() ?? null,
+      createdAt: a.createdAt.toISOString(),
+    };
+  });
+}
+
+// Doubles soldes manager (§3.3) : enveloppe restante (budget non distribué des
+// enveloppes A_DISTRIBUER) + solde perso (rétribution cumulée = user.balance).
+export async function getManagerBalances(managerId: string, companyId: string) {
+  const user = await prisma.user.findUnique({ where: { id: managerId }, select: { balance: true } });
+  const pending = await prisma.allocation.findMany({
+    where: { managerId, status: 'A_DISTRIBUER' },
+    select: { amount: true, mode: true, percentage: true },
+  });
+  const teamSize = await prisma.user.count({ where: { companyId, role: 'EMPLOYEE', deletedAt: null } });
+  const envelopeRemaining = pending.reduce((sum, a) => {
+    const r = computeRetribution({ mode: a.mode, amount: a.amount, percentage: a.percentage, teamSize });
+    return sum + (a.amount - r);
+  }, 0);
+  return { envelopeRemaining, personalBalance: user?.balance ?? 0 };
 }
 
 // Solde perso de l'utilisateur courant (manager : tokens alloués par le patron).

@@ -27,3 +27,25 @@ export const allocateSchema = z
   });
 
 export type AllocateInput = z.infer<typeof allocateSchema>;
+
+// Envoi groupé manager → employés depuis une enveloppe (§3.3). Redistribution COMPLÈTE
+// et atomique : chaque ligne a un motif obligatoire ; un employé n'apparaît qu'une fois.
+export const distributeEnvelopeSchema = z.object({
+  allocationId: z.uuid(),
+  lines: z
+    .array(
+      z.object({
+        employeeId: z.uuid(),
+        amount:     z.number().int().positive(),
+        motifId:    z.uuid(),
+        reason:     safeText(1).optional(),
+      }),
+    )
+    .min(1)
+    .refine(
+      (lines) => new Set(lines.map((l) => l.employeeId)).size === lines.length,
+      { message: 'Un employé ne peut apparaître qu’une seule fois dans la répartition.' },
+    ),
+});
+
+export type DistributeEnvelopeInput = z.infer<typeof distributeEnvelopeSchema>;
