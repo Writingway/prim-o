@@ -9,6 +9,7 @@ import {
   distributeEnvelopeController,
   listEnvelopesController,
   balancesController,
+  listSentEnvelopesController,
 } from '../controllers/attribution.controller';
 
 const router = Router();
@@ -24,5 +25,6 @@ router.get('/managers', requireAuth, listManagersController);
 router.get('/my-balance', requireAuth, myBalanceController);
 router.get('/envelopes', requireAuth, listEnvelopesController);
 router.get('/balances', requireAuth, balancesController);
+router.get('/sent-envelopes', requireAuth, listSentEnvelopesController);
 
 export default router;

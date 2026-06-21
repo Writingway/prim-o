@@ -7,3 +7,4 @@ export * from './offer';
 export * from './employee';
 export * from './company';
 export * from './admin';
+export * from './allocation';

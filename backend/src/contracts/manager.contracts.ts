@@ -77,6 +77,23 @@ export interface ManagerEnvelopesResponse {
   envelopes: ManagerEnvelopeDTO[];
 }
 
+// ── "Mes enveloppes envoyées" de l'employeur (Dev B) ─────────────
+// GET /api/attributions/sent-envelopes
+export interface SentEnvelopeDTO {
+  allocationId: string;
+  amount: number;
+  mode: RetributionMode;
+  percentage: number | null;
+  status: 'A_DISTRIBUER' | 'DISTRIBUEE';
+  retributionAmount: number;
+  managerName: string;          // manager destinataire
+  distributedAt: string | null; // ISO
+  createdAt: string;            // ISO
+}
+export interface SentEnvelopesResponse {
+  envelopes: SentEnvelopeDTO[];
+}
+
 // GET /api/managers/me/history — deux historiques distincts.
 export interface ManagerHistoryResponse {
   sent: Array<{

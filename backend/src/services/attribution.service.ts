@@ -232,6 +232,31 @@ export async function listManagerEnvelopes(managerId: string, companyId: string)
   });
 }
 
+// Enveloppes ENVOYÉES par un employeur ("Mes enveloppes envoyées") : filtrées par
+// createdById, avec le manager destinataire. Lecture seule, pas de calcul de R.
+export async function listSentEnvelopes(companyId: string, createdById: string) {
+  const allocations = await prisma.allocation.findMany({
+    where: { companyId, createdById },
+    orderBy: { createdAt: 'desc' },
+    select: {
+      id: true, amount: true, mode: true, percentage: true, status: true,
+      retributionAmount: true, distributedAt: true, createdAt: true,
+      manager: { select: { firstName: true, lastName: true } },
+    },
+  });
+  return allocations.map((a) => ({
+    allocationId: a.id,
+    amount: a.amount,
+    mode: a.mode,
+    percentage: a.percentage,
+    status: a.status,
+    retributionAmount: a.retributionAmount,
+    managerName: `${a.manager.firstName ?? ''} ${a.manager.lastName ?? ''}`.trim(),
+    distributedAt: a.distributedAt?.toISOString() ?? null,
+    createdAt: a.createdAt.toISOString(),
+  }));
+}
+
 // Doubles soldes manager (§3.3) : enveloppe restante (budget non distribué des
 // enveloppes A_DISTRIBUER) + solde perso (rétribution cumulée = user.balance).
 export async function getManagerBalances(managerId: string, companyId: string) {

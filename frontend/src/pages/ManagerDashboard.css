@@ -358,3 +358,126 @@
     margin-left: 0;
   }
 }
+
+/* ─────────────── Allocation par enveloppes (addendum v1.1) ─────────────── */
+
+/* Onglets */
+.dash-tabs {
+  display: flex;
+  gap: 6px;
+  margin: 18px 0 14px;
+  border-bottom: 2px solid #eef0f3;
+}
+.dash-tab {
+  border: none;
+  background: transparent;
+  color: #6b7280;
+  padding: 10px 16px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+}
+.dash-tab.is-active {
+  color: #00827c;
+  border-bottom-color: #00827c;
+}
+
+/* Champs (montant, %, motif) — lisibles, fond clair */
+.alloc-input {
+  padding: 8px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
+  background: #fff;
+  color: #1f2937;
+}
+.alloc-input:focus { outline: 2px solid #00a19a33; border-color: #00a19a; }
+input.alloc-input[type='number'] { width: 110px; }
+
+/* Sélecteur de mode */
+.alloc-mode { width: 100%; }
+.alloc-mode-options { display: flex; flex-wrap: wrap; gap: 8px; }
+.alloc-mode-opt {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 999px;
+  font-size: 14px;
+  cursor: pointer;
+  color: #374151;
+}
+.alloc-mode-opt.is-active { border-color: #00827c; background: #ecfdf5; color: #00827c; }
+.alloc-mode-hint { margin: 6px 0; font-size: 13px; color: #6b7280; }
+
+/* Grille des enveloppes */
+.env-grid { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 8px; }
+.env-tile {
+  width: 150px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 14px 10px;
+  border: 2px solid #00827c;
+  border-radius: 12px;
+  background: #fff;
+  text-align: center;
+}
+.env-tile.is-locked { border-color: #e5e7eb; opacity: 0.7; }
+.env-icon { font-size: 34px; line-height: 1; }
+.env-amount { font-size: 22px; font-weight: 700; color: #111827; }
+.env-mode { font-size: 13px; color: #6b7280; }
+.env-part { font-size: 12px; color: #6b7280; }
+.env-state-done { font-size: 12px; color: #059669; font-weight: 600; }
+
+/* Bloc de redistribution */
+.rb {
+  margin-top: 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #fafbfc;
+  overflow: hidden;
+}
+.rb-header {
+  padding: 12px 16px;
+  background: #00827c;
+  color: #fff;
+  font-weight: 600;
+}
+.rb-stats { display: flex; gap: 12px; padding: 14px 16px; }
+.rb-stat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px;
+  border-radius: 10px;
+  background: #fff;
+  border: 1px solid #eef0f3;
+}
+.rb-stat span { font-size: 12px; color: #6b7280; }
+.rb-stat strong { font-size: 20px; color: #111827; }
+.rb-stat-rest { border: 2px solid #00827c; }
+.rb-stat-rest.is-ok strong { color: #059669; }
+
+.rb-list { padding: 0 16px; }
+.rb-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+}
+.rb-name { flex: 1; color: #1f2937; }
+input.rb-amount[type='number'] { width: 90px; }
+.motif-select { min-width: 190px; }
+
+.rb-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 12px 16px;
+}

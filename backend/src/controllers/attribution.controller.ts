@@ -10,6 +10,7 @@ import {
   distributeEnvelope,
   listManagerEnvelopes,
   getManagerBalances,
+  listSentEnvelopes,
 } from '../services/attribution.service';
 import { requireManagerOrOwner } from '../middleware/authz';
 
@@ -152,6 +153,22 @@ export async function listEnvelopesController(
     const ctx = requireManagerOrOwner(req, next);
     if (!ctx) return;
     const envelopes = await listManagerEnvelopes(ctx.userId, ctx.companyId);
+    res.status(200).json({ envelopes });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// GET /api/attributions/sent-envelopes — enveloppes envoyées par l'employeur courant.
+export async function listSentEnvelopesController(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const ctx = requireManagerOrOwner(req, next);
+    if (!ctx) return;
+    const envelopes = await listSentEnvelopes(ctx.companyId, ctx.userId);
     res.status(200).json({ envelopes });
   } catch (err) {
     next(err);
