@@ -67,8 +67,9 @@ Transaction atomique unique :
 2. **recalcule R côté serveur** (jamais de confiance au client) ;
 3. vérifie l'invariant **`Σ(amount employés) == montant − R`** (montants entiers) ;
 4. `manager.balance += R` (sa part perso, dépensable comme un employé) ;
-5. crée toutes les `Attribution` (crédite chaque employé, `motifId` obligatoire),
-   rattachées à `allocationId` ;
+5. crée toutes les `Attribution` (crédite chaque employé) rattachées à `allocationId` ;
+   **chaque ligne exige un `motifId` valide** (motif actif en base) — refus de l'envoi
+   sinon ;
 6. passe l'enveloppe `DISTRIBUÉE` + `distributedAt = now()`.
 
 **En cas d'échec à n'importe quelle étape → rollback total**, l'enveloppe reste
@@ -110,6 +111,10 @@ Exemples :
 - Redistribution **complète obligatoire** : l'envoi n'est accepté que si
   `Σ(amount) == montant − R`. (Côté UI : compteur « reste à distribuer » en live,
   bouton « Envoyer » actif uniquement quand le compteur atteint 0.)
+- **Motif obligatoire par ligne** : à côté du montant de chaque employé, un sélecteur
+  de motif alimenté par les motifs **actifs** en base (`GET /api/motifs`). Aucune ligne
+  ne peut être validée sans `motifId`. Le backend rejette tout `motifId` absent ou
+  inactif.
 
 ## Invariant de conservation
 
