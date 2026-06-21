@@ -55,7 +55,8 @@ export async function createAttribution(
       });
 
       return tx.attribution.create({
-        data: { amount, reason, companyId, managerId: attributorId, employeeId },
+        // reason = champ legacy requis en DB ; le motif officiel (motifId) porte le sens.
+        data: { amount, reason: reason ?? '', companyId, managerId: attributorId, employeeId },
         select: { id: true, amount: true, reason: true, createdAt: true },
       });
     });
