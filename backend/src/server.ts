@@ -14,6 +14,7 @@ import cookieParser from 'cookie-parser';
 import inviteRouter from './routes/invite.routes';
 import offerRouter from './routes/offer.routes';
 import companyRouter from './routes/company.routes';
+import statsRouter from './routes/stats.routes';
 
 import adminRouter from './routes/admin.routes';
 import privacyRouter from './routes/privacy.routes';
@@ -75,6 +76,7 @@ app.use('/api/motifs', motifRouter);
 app.use('/api/invites', inviteRouter);
 app.use('/api/company', companyRouter);
 app.use('/api/offers', offerRouter);
+app.use('/api/stats', statsRouter);
 app.use('/api/admin', requireAuth, requireAdmin, adminRouter);
 
 //Stripe endpoints

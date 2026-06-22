@@ -21,3 +21,21 @@ export function requireManagerOrOwner(req: Request, next: NextFunction): Manager
   // role narrowé en 'MANAGER' | 'OWNER' par le guard ci-dessus.
   return { userId: req.user.id, role: req.user.role, companyId };
 }
+
+// Garde back-office employeur : OWNER uniquement (§3.2). L'ADMIN plateforme n'a pas de
+// companyId → exclu. Même idiome que requireManagerOrOwner : renvoie le contexte ou null
+// après avoir signalé l'erreur via next().
+export type OwnerContext = { userId: string; companyId: string };
+
+export function requireOwner(req: Request, next: NextFunction): OwnerContext | null {
+  if (req.user?.role !== 'OWNER') {
+    next(new AppError(403, 'Accès réservé au patron.'));
+    return null;
+  }
+  const companyId = req.user.companyId;
+  if (!companyId) {
+    next(new AppError(403, 'Aucune entreprise associée.'));
+    return null;
+  }
+  return { userId: req.user.id, companyId };
+}

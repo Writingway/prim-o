@@ -11,6 +11,7 @@ import AuthPage from './pages/AuthPage';
 import ManagerDashboard from './pages/ManagerDashboard';
 import OwnerDashboard from './pages/OwnerDashboard';
 import EmployeeDashboard from './pages/EmployeeDashboard';
+import StatsPage from './pages/StatsPage';
 import AdminPage from './pages/AdminPage';
 import OnboardingPage from './pages/OnboardingPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
@@ -122,7 +123,7 @@ const dashboardRoute = createRoute({
     const role = normalizeRole(identity?.role ?? null);
     const onLogout = () => doLogout(navigate);
     const onBack = () => navigate({ to: '/' });
-    if (role === 'owner') return <OwnerDashboard onLogout={onLogout} onBack={onBack} />;
+    if (role === 'owner') return <OwnerDashboard onLogout={onLogout} onBack={onBack} onStats={() => navigate({ to: '/stats' })} />;
     if (role === 'manager') return <ManagerDashboard onLogout={onLogout} onBack={onBack} />;
     if (role === 'employee') return <EmployeeDashboard onLogout={onLogout} onBack={onBack} />;
     if (role === 'admin') return <AdminPage onLogout={onLogout} onBack={onBack} />;
@@ -130,7 +131,22 @@ const dashboardRoute = createRoute({
   },
 });
 
-// ── /admin (spec) - pour l'instant = AdminPage ──
+// ── /stats : tableau de bord statistiques employeur (§3.2/§3.4) — OWNER only ──
+const statsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/stats',
+  beforeLoad: ({ context }) => {
+    const id = context.identity;
+    if (!id) throw redirect({ to: '/auth' });
+    if (id.role !== 'OWNER') throw redirect({ to: '/dashboard' });
+  },
+  component: function StatsRoute() {
+    const navigate = useNavigate();
+    return <StatsPage onLogout={() => doLogout(navigate)} onBack={() => navigate({ to: '/dashboard' })} />;
+  },
+});
+
+// ── /admin (spec) — pour l'instant = AdminPage ──
 const adminRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/admin',
@@ -182,7 +198,7 @@ const billingReturnRoute = createRoute({
 });
 
 const routeTree = rootRoute.addChildren([
-  indexRoute, authRoute, dashboardRoute, adminRoute, onboardingRoute, billingReturnRoute,
+  indexRoute, authRoute, dashboardRoute, statsRoute, adminRoute, onboardingRoute, billingReturnRoute,
 ]);
 
 export const router = createRouter({
