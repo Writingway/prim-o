@@ -5,46 +5,32 @@ import {
   listAttributions,
   deleteEmployee,
   generateInviteCode,
-  createAttribution,
   approveEmployee as apiApproveEmployee,
-  createCheckout,
-  listManagers,
-  getMyBalance,
-  allocateTokens,
   listMotifs,
+  listEnvelopes,
+  getManagerBalances,
   logout as apiLogout,
 } from '../services/api';
-import type { CompanyManager, MotifCategoryGroup, MotifCategory } from '../services/api';
-import type { Employee, Company, AttributionHistory, Role } from '../types/types';
+import type { Employee, Company, AttributionHistory } from '../types/types';
+import type { MotifCategoryGroup, ManagerEnvelope, ManagerBalances } from '../types/types';
+import { formatDate } from '../lib/format';
 import './ManagerDashboard.css';
 import Layout from '../components/layout/Layout';
 import PrivacySection from '../components/privacy/PrivacySection';
 import EditProfile from '../components/privacy/EditProfile';
 import { useConfirm } from '../components/ui/ConfirmDialog';
+import EnvelopeTile from '../components/allocation/EnvelopeTile';
+import RedistributionBlock from '../components/allocation/RedistributionBlock';
+import DashHistory from '../components/dashboard/DashHistory';
 
-type ManagerDashboardProps = {
-  role: Role;
-  onLogout: () => void;
-  onBack: () => void;
-  onStats?: () => void;
-};
+type Props = { onLogout: () => void; onBack: () => void };
 
 const initials = (e: Employee) =>
   `${e.firstName[0] ?? ''}${e.lastName[0] ?? ''}`.toUpperCase();
 
-const formatDate = (iso: string) =>
-  new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-
-// Libellés FR des 4 catégories de motifs (§3.5) pour les <optgroup>.
-const CATEGORY_LABELS: Record<MotifCategory, string> = {
-  COMPORTEMENTS_INDIVIDUELS: 'Comportements individuels',
-  RELATION_CLIENT: 'Relation client',
-  ESPRIT_COLLECTIF: 'Esprit collectif',
-  ENGAGEMENT: 'Engagement',
-};
-
-// Dashboard employeur : liste des employés de son entreprise (lecture seule).
-export default function ManagerDashboard({ role, onLogout, onBack, onStats }: ManagerDashboardProps) {
+// Dashboard manager : ouvre ses enveloppes reçues et redistribue à ses employés.
+// (Le manager ne distribue plus en direct : tout passe par les enveloppes.)
+export default function ManagerDashboard({ onLogout, onBack }: Props) {
   const { confirm, confirmDialog } = useConfirm();
   const [employees, setEmployees] = useState<Employee[] | null>(null);
   const [company, setCompany] = useState<Company | null>(null);
@@ -55,39 +41,21 @@ export default function ManagerDashboard({ role, onLogout, onBack, onStats }: Ma
   const [inviteCode, setInviteCode] = useState<string | null>(null);
   const [inviteError, setInviteError] = useState('');
 
-  // Recharge du pool via Stripe.
-  const [rechargeAmount, setRechargeAmount] = useState('');
-  const [rechargeError, setRechargeError] = useState('');
-  const [recharging, setRecharging] = useState(false);
-  const [paymentNotice, setPaymentNotice] = useState<'success' | 'cancel' | null>(null);
-
-  // Solde perso (manager) + allocation patron → manager.
-  const [myBalance, setMyBalance] = useState<number | null>(null);
-  const [managers, setManagers] = useState<CompanyManager[]>([]);
-  const [allocOpenId, setAllocOpenId] = useState<string | null>(null);
-  const [allocAmount, setAllocAmount] = useState('');
-  const [allocError, setAllocError] = useState('');
-  const [allocSubmitting, setAllocSubmitting] = useState(false);
-
-  // Formulaire d'attribution inline : un seul ouvert à la fois.
-  const [attribOpenId, setAttribOpenId] = useState<string | null>(null);
-  const [attribAmount, setAttribAmount] = useState('');
-  const [attribReason, setAttribReason] = useState('');
-  const [attribMotifId, setAttribMotifId] = useState('');
-  const [attribError, setAttribError] = useState('');
-  const [attribSubmitting, setAttribSubmitting] = useState(false);
-
-  // Liste officielle des motifs (§3.5), chargée une fois pour le sélecteur de distribution.
-  const [motifCategories, setMotifCategories] = useState<MotifCategoryGroup[]>([]);
+  const [activeTab, setActiveTab] = useState<'enveloppes' | 'employes'>('enveloppes');
+  const [motifGroups, setMotifGroups] = useState<MotifCategoryGroup[]>([]);
+  const [envelopes, setEnvelopes] = useState<ManagerEnvelope[]>([]);
+  const [balances, setBalances] = useState<ManagerBalances | null>(null);
+  const [openEnvelope, setOpenEnvelope] = useState<ManagerEnvelope | null>(null);
 
   const load = async () => {
     setLoading(true);
     setError('');
     try {
-      const [empRes, compRes, attrRes] = await Promise.all([
+      const [empRes, compRes, attrRes, motifRes] = await Promise.all([
         listEmployees(),
         getCompany(),
         listAttributions(),
+        listMotifs(),
       ]);
 
       if (empRes.status === 401) {
@@ -102,21 +70,22 @@ export default function ManagerDashboard({ role, onLogout, onBack, onStats }: Ma
       setEmployees(empRes.data.employees);
       if (compRes.ok && compRes.data) setCompany(compRes.data.company);
       if (attrRes.ok && attrRes.data) setAttributions(attrRes.data.attributions);
+      if (motifRes.ok && motifRes.data) setMotifGroups(motifRes.data.categories);
 
-      // Manager : son solde perso. Patron : la liste des managers à alimenter.
-      if (role === 'manager') {
-        const balRes = await getMyBalance();
-        if (balRes.ok && balRes.data) setMyBalance(balRes.data.balance);
-      } else if (role === 'owner') {
-        const mgrRes = await listManagers();
-        if (mgrRes.ok && mgrRes.data) setManagers(mgrRes.data.managers);
-      }
+      const [envRes, balRes] = await Promise.all([listEnvelopes(), getManagerBalances()]);
+      if (envRes.ok && envRes.data) setEnvelopes(envRes.data.envelopes);
+      if (balRes.ok && balRes.data) setBalances(balRes.data);
     } catch {
       setError('Impossible de joindre le serveur. Le backend est-il lancé ?');
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleDelete = async (e: Employee) => {
     const ok = await confirm({
@@ -129,11 +98,8 @@ export default function ManagerDashboard({ role, onLogout, onBack, onStats }: Ma
     setDeletingId(e.id);
     try {
       const res = await deleteEmployee(e.id);
-      if (res.ok) {
-        await load(); // recharge liste + solde + historique
-      } else {
-        setError("Impossible de supprimer cet employé.");
-      }
+      if (res.ok) await load();
+      else setError("Impossible de supprimer cet employé.");
     } catch {
       setError('Impossible de joindre le serveur.');
     } finally {
@@ -141,204 +107,57 @@ export default function ManagerDashboard({ role, onLogout, onBack, onStats }: Ma
     }
   };
 
-  useEffect(() => {
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Motifs officiels (§3.5) : référentiel statique, chargé une seule fois.
-  useEffect(() => {
-    listMotifs()
-      .then((res) => { if (res.ok && res.data) setMotifCategories(res.data.categories); })
-      .catch(() => { /* silencieux : le sélecteur restera vide */ });
-  }, []);
-
   const handleLogout = async () => {
     try {
       await apiLogout();
     } catch {
-      // On déconnecte côté front même si l'appel échoue.
+      // déconnexion front même si l'appel échoue
     }
     onLogout();
   };
 
-  const handleGenerateInvite = async (inviteRole: 'MANAGER' | 'EMPLOYEE' = 'EMPLOYEE') => {
+  const handleGenerateInvite = async () => {
     setInviteError('');
     try {
-      const res = await generateInviteCode(inviteRole);
-      if (res.ok && res.data?.invite) {
-        setInviteCode(res.data.invite.code);
-      } else if (res.status === 401) {
-        setInviteError('Session expirée, reconnecte-toi.');
-      } else {
-        setInviteError('Impossible de générer le code d\'invitation.');
-      }
+      const res = await generateInviteCode('EMPLOYEE');
+      if (res.ok && res.data?.invite) setInviteCode(res.data.invite.code);
+      else if (res.status === 401) setInviteError('Session expirée, reconnecte-toi.');
+      else setInviteError("Impossible de générer le code d'invitation.");
     } catch {
       setInviteError('Impossible de joindre le serveur.');
     }
   };
 
-  const handleRecharge = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setRechargeError('');
-    const amount = Number(rechargeAmount);
-    if (!Number.isInteger(amount) || amount <= 0) {
-      setRechargeError('Le montant doit être un entier positif.');
-      return;
-    }
-    setRecharging(true);
-    try {
-      const res = await createCheckout(amount);
-      if (res.ok && res.data?.url) {
-        window.location.href = res.data.url; // on quitte le SPA pour la page Stripe
-      } else if (res.status === 401) {
-        setRechargeError('Session expirée, reconnecte-toi.');
-      } else {
-        setRechargeError('Impossible de démarrer le paiement.');
-      }
-    } catch {
-      setRechargeError('Impossible de joindre le serveur.');
-    } finally {
-      setRecharging(false);
-    }
-  };
-
-  const openAlloc = (id: string) => {
-    setAllocOpenId(id);
-    setAllocAmount('');
-    setAllocError('');
-  };
-
-  const submitAlloc = async (managerId: string) => {
-    setAllocError('');
-    const amount = Number(allocAmount);
-    if (!Number.isInteger(amount) || amount <= 0) {
-      setAllocError('Le montant doit être un entier positif.');
-      return;
-    }
-    setAllocSubmitting(true);
-    try {
-      const res = await allocateTokens(managerId, amount);
-      if (res.ok) {
-        setAllocOpenId(null);
-        await load(); // rafraîchit pool + soldes managers
-      } else if (res.status === 401) {
-        setAllocError('Session expirée, reconnecte-toi.');
-      } else {
-        const msg = res.data && 'error' in res.data ? res.data.error : "Échec de l'allocation.";
-        setAllocError(msg);
-      }
-    } catch {
-      setAllocError('Impossible de joindre le serveur.');
-    } finally {
-      setAllocSubmitting(false);
-    }
-  };
-
-  // Retour de Stripe : lit ?payment=success|cancel, affiche un message,
-  // nettoie l'URL, et recharge le solde (le webhook crédite en ~1-2 s).
-  useEffect(() => {
-    const payment = new URLSearchParams(window.location.search).get('payment');
-    if (payment === 'success' || payment === 'cancel') {
-      setPaymentNotice(payment);
-      window.history.replaceState({}, '', window.location.pathname);
-      if (payment === 'success') {
-        setTimeout(() => { load(); }, 1500);
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const openAttrib = (id: string) => {
-    setAttribOpenId(id);
-    setAttribAmount('');
-    setAttribReason('');
-    setAttribMotifId('');
-    setAttribError('');
-  };
-
-  const closeAttrib = () => {
-    setAttribOpenId(null);
-    setAttribError('');
-  };
-
-  const submitAttrib = async (employeeId: string) => {
-    setAttribError('');
-    const amount = Number(attribAmount);
-    if (!Number.isInteger(amount) || amount <= 0) {
-      setAttribError('Le montant doit être un entier positif.');
-      return;
-    }
-    if (!attribMotifId) {
-      setAttribError('Le motif est obligatoire.');
-      return;
-    }
-
-    setAttribSubmitting(true);
-    try {
-      const res = await createAttribution({
-        employeeId,
-        amount,
-        motifId: attribMotifId,
-        ...(attribReason.trim() ? { reason: attribReason.trim() } : {}),
-      });
-      if (res.ok) {
-        closeAttrib();
-        await load(); // recharge la liste → le solde de l'employé est à jour
-      } else if (res.status === 409) {
-        const msg = res.data && 'error' in res.data ? res.data.error : 'Solde de tokens insuffisant.';
-        setAttribError(msg);
-      } else if (res.status === 400) {
-        setAttribError('Montant et motif obligatoires.');
-      } else if (res.status === 401) {
-        setAttribError('Session expirée, reconnecte-toi.');
-      } else {
-        const msg = res.data && 'error' in res.data ? res.data.error : "Échec de l'attribution.";
-        setAttribError(msg);
-      }
-    } catch {
-      setAttribError('Impossible de joindre le serveur.');
-    } finally {
-      setAttribSubmitting(false);
-    }
-  };
-
-  const totalDistributed = (employees ?? []).reduce((sum, e) => sum + e.balance, 0);
-
-  //Approved button for manager when employee is pending
   const approveEmployee = async (employeeId: string) => {
     try {
-      // Passe par api.ts : profite du wrapper 401 → refresh → retry.
       const res = await apiApproveEmployee(employeeId);
-      if (res.ok) {
-        await load();
-      } else if (res.status === 401) {
-        setError('Session expirée, reconnecte-toi.');
-      } else {
-        setError("Impossible d'approuver cet employé.");
-      }
+      if (res.ok) await load();
+      else if (res.status === 401) setError('Session expirée, reconnecte-toi.');
+      else setError("Impossible d'approuver cet employé.");
     } catch {
       setError('Impossible de joindre le serveur.');
     }
   };
 
+  const onEnvelopeDistributed = async () => {
+    setOpenEnvelope(null);
+    await load();
+  };
+
+  const totalDistributed = (employees ?? []).reduce((sum, e) => sum + e.balance, 0);
+
+  const tabs: { key: typeof activeTab; label: string }[] = [
+    { key: 'enveloppes', label: 'Mes enveloppes' },
+    { key: 'employes', label: 'Mes employés' },
+  ];
 
   return (
     <Layout
-      title="Prim'O — Mes employés"
+      title="Prim'O — Espace manager"
       headerActions={
         <>
-          {role === 'owner' && onStats && (
-            <button className="app-btn app-btn-ghost" type="button" onClick={onStats}>
-              📊 Statistiques
-            </button>
-          )}
-          <button className="app-btn app-btn-ghost" type="button" onClick={onBack}>
-            ← Accueil
-          </button>
-          <button className="app-btn app-btn-ghost" type="button" onClick={handleLogout}>
-            Se déconnecter
-          </button>
+          <button className="app-btn app-btn-ghost" type="button" onClick={onBack}>← Accueil</button>
+          <button className="app-btn app-btn-ghost" type="button" onClick={handleLogout}>Se déconnecter</button>
         </>
       }
     >
@@ -347,112 +166,35 @@ export default function ManagerDashboard({ role, onLogout, onBack, onStats }: Ma
 
         <div className="dash-stats">
           <div className="dash-stat dash-stat-pool">🏦 <strong>{company?.tokenBalance ?? '—'}</strong>&nbsp;pool entreprise</div>
-          {role === 'manager' && (
-            <div className="dash-stat">🪙 <strong>{myBalance ?? '—'}</strong>&nbsp;mes tokens</div>
-          )}
+          <div className="dash-stat">🪙 <strong>{balances?.personalBalance ?? '—'}</strong>&nbsp;mes tokens</div>
+          <div className="dash-stat">✉️ <strong>{balances?.envelopeRemaining ?? '—'}</strong>&nbsp;à distribuer</div>
           <div className="dash-stat">👥 <strong>{employees?.length ?? 0}</strong>&nbsp;employés</div>
           <div className="dash-stat">🪙 <strong>{totalDistributed}</strong>&nbsp;tokens distribués</div>
-          {role === 'owner' && (
-            <button className="dash-invite" type="button" onClick={() => handleGenerateInvite('MANAGER')}>
-              Code manager
-            </button>
-          )}
-          <button className="dash-invite" type="button" onClick={() => handleGenerateInvite('EMPLOYEE')}>
-            Code employé
-          </button>
+          <button className="dash-invite" type="button" onClick={handleGenerateInvite}>Code employé</button>
         </div>
-
-        {paymentNotice === 'success' && (
-          <div className="dash-msg">✅ Paiement réussi ! Ton pool va être crédité dans un instant.</div>
-        )}
-        {paymentNotice === 'cancel' && (
-          <div className="dash-msg dash-error">Paiement annulé.</div>
-        )}
-
-        {role === 'owner' && (
-          <form className="dash-recharge" onSubmit={handleRecharge}>
-            <input
-              type="number"
-              min="1"
-              step="1"
-              placeholder="Nb de tokens"
-              value={rechargeAmount}
-              onChange={(e) => setRechargeAmount(e.target.value)}
-            />
-            <button className="dash-invite" type="submit" disabled={recharging}>
-              {recharging ? '…' : '💳 Recharger le pool'}
-            </button>
-            {rechargeError && <p className="dash-msg dash-error">{rechargeError}</p>}
-          </form>
-        )}
-
-        {role === 'owner' && managers.length > 0 && (
-          <section className="history">
-            <h2 className="history-title">Allouer des tokens aux managers</h2>
-            <ul className="emp-list">
-              {managers.map((m) => (
-                <li className="emp-item" key={m.id}>
-                  <div className="emp-row">
-                    <div className="emp-avatar">
-                      {`${m.firstName?.[0] ?? ''}${m.lastName?.[0] ?? ''}`.toUpperCase()}
-                    </div>
-                    <div className="emp-main">
-                      <div className="emp-name">{m.firstName} {m.lastName}</div>
-                      <div className="emp-sub">{m.email}</div>
-                    </div>
-                    <div className="emp-balance">
-                      <div className="emp-balance-num">{m.balance}</div>
-                      <div className="emp-balance-label">tokens</div>
-                    </div>
-                    <button
-                      type="button"
-                      className="emp-attrib-btn"
-                      onClick={() => (allocOpenId === m.id ? setAllocOpenId(null) : openAlloc(m.id))}
-                    >
-                      {allocOpenId === m.id ? 'Annuler' : 'Allouer'}
-                    </button>
-                  </div>
-                  {allocOpenId === m.id && (
-                    <form
-                      className="emp-attrib-form"
-                      onSubmit={(ev) => { ev.preventDefault(); submitAlloc(m.id); }}
-                    >
-                      <input
-                        type="number"
-                        min="1"
-                        step="1"
-                        placeholder="Montant"
-                        value={allocAmount}
-                        onChange={(ev) => setAllocAmount(ev.target.value)}
-                      />
-                      <button type="submit" className="emp-attrib-submit" disabled={allocSubmitting}>
-                        {allocSubmitting ? '…' : 'Allouer'}
-                      </button>
-                      {allocError && <p className="emp-attrib-error">{allocError}</p>}
-                    </form>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
 
         {inviteCode && (
           <div className="dash-msg">
             Code d'invitation : <strong>{inviteCode}</strong>{' '}
-            <button
-              type="button"
-              className="dash-retry"
-              onClick={() => navigator.clipboard.writeText(inviteCode)}
-            >
-              Copier
-            </button>
+            <button type="button" className="dash-retry" onClick={() => navigator.clipboard.writeText(inviteCode)}>Copier</button>
           </div>
         )}
         {inviteError && <p className="dash-msg dash-error">{inviteError}</p>}
 
-        {loading && <p className="dash-msg">Chargement…</p>}
+        <div className="dash-tabs">
+          {tabs.map((t) => (
+            <button
+              key={t.key}
+              type="button"
+              className={`dash-tab${activeTab === t.key ? ' is-active' : ''}`}
+              onClick={() => setActiveTab(t.key)}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
 
+        {loading && <p className="dash-msg">Chargement…</p>}
         {!loading && error && (
           <div className="dash-msg dash-error">
             {error}{' '}
@@ -460,123 +202,72 @@ export default function ManagerDashboard({ role, onLogout, onBack, onStats }: Ma
           </div>
         )}
 
-        {!loading && !error && employees && employees.length === 0 && (
-          <p className="dash-msg">Aucun employé pour l'instant.</p>
-        )}
-
-        {!loading && !error && employees && employees.length > 0 && (
-          <ul className="emp-list">
-            {employees.map((e) => (
-              <li className="emp-item" key={e.id}>
-                <div className="emp-row">
-                  <div className="emp-avatar">{initials(e)}</div>
-                  <div className="emp-main">
-                    <div className="emp-name">
-                      {e.firstName} {e.lastName}
-                      {e.isEmailVerified ? (
-                        <span className="emp-badge verified">✓ vérifié</span>
-                      ) : (
-                          <button
-                          type="button"
-                          className="emp-attrib-btn"
-                          onClick={() => approveEmployee(e.id)}>
-                          Approuver
-                        </button>
-                      )}
-                    </div>
-                    <div className="emp-sub">{e.email} · inscrit le {formatDate(e.createdAt)}</div>
-                  </div>
-                  <div className="emp-balance">
-                    <div className="emp-balance-num">{e.balance}</div>
-                    <div className="emp-balance-label">tokens</div>
-                  </div>
-                  <button
-                    type="button"
-                    className="emp-attrib-btn"
-                    onClick={() => (attribOpenId === e.id ? closeAttrib() : openAttrib(e.id))}
-                  >
-                    {attribOpenId === e.id ? 'Annuler' : 'Attribuer'}
-                  </button>
-                  <button
-                    type="button"
-                    className="emp-delete-btn"
-                    title="Supprimer cet employé"
-                    disabled={deletingId === e.id}
-                    onClick={() => handleDelete(e)}
-                  >
-                    {deletingId === e.id ? '…' : '🗑️'}
-                  </button>
-                </div>
-
-                {attribOpenId === e.id && (
-                  <form
-                    className="emp-attrib-form"
-                    onSubmit={(ev) => {
-                      ev.preventDefault();
-                      submitAttrib(e.id);
-                    }}
-                  >
-                    <input
-                      type="number"
-                      min="1"
-                      step="1"
-                      placeholder="Montant"
-                      value={attribAmount}
-                      onChange={(ev) => setAttribAmount(ev.target.value)}
-                    />
-                    <select
-                      className="emp-attrib-motif"
-                      value={attribMotifId}
-                      onChange={(ev) => setAttribMotifId(ev.target.value)}
-                      required
-                    >
-                      <option value="">— Motif (obligatoire) —</option>
-                      {motifCategories.map((cat) => (
-                        <optgroup key={cat.category} label={CATEGORY_LABELS[cat.category]}>
-                          {cat.motifs.map((m) => (
-                            <option key={m.id} value={m.id}>{m.label}</option>
-                          ))}
-                        </optgroup>
-                      ))}
-                    </select>
-                    <input
-                      type="text"
-                      placeholder="Note (optionnelle)"
-                      value={attribReason}
-                      onChange={(ev) => setAttribReason(ev.target.value)}
-                    />
-                    <button type="submit" className="emp-attrib-submit" disabled={attribSubmitting}>
-                      {attribSubmitting ? '…' : 'Valider'}
-                    </button>
-                    {attribError && <p className="emp-attrib-error">{attribError}</p>}
-                  </form>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
-
-        {!loading && !error && (
+        {/* Mes enveloppes reçues */}
+        {!loading && !error && activeTab === 'enveloppes' && (
           <section className="history">
-            <h2 className="history-title">Historique des transactions</h2>
-            {attributions.length === 0 ? (
-              <p className="dash-msg">Aucune transaction pour l'instant.</p>
+            <h2 className="history-title">Mes enveloppes reçues</h2>
+            {envelopes.length === 0 ? (
+              <p className="dash-msg">Aucune enveloppe pour l'instant.</p>
             ) : (
-              <ul className="history-list">
-                {attributions.map((a) => (
-                  <li className="history-row" key={a.id}>
-                    <span className="history-emp">
-                      {a.employee.firstName} {a.employee.lastName}
-                    </span>
-                    <span className="history-reason">{a.reason}</span>
-                    <span className="history-date">{formatDate(a.createdAt)}</span>
-                    <span className="history-amount">+{a.amount}</span>
+              <div className="env-grid">
+                {envelopes.map((e) => <EnvelopeTile key={e.allocationId} envelope={e} onOpen={setOpenEnvelope} />)}
+              </div>
+            )}
+            {openEnvelope && (
+              <RedistributionBlock
+                envelope={openEnvelope}
+                employees={employees ?? []}
+                motifGroups={motifGroups}
+                onCancel={() => setOpenEnvelope(null)}
+                onDistributed={onEnvelopeDistributed}
+              />
+            )}
+          </section>
+        )}
+
+        {/* Mes employés (lecture + gestion d'équipe) + historique */}
+        {!loading && !error && activeTab === 'employes' && (
+          <>
+            {employees && employees.length === 0 && <p className="dash-msg">Aucun employé pour l'instant.</p>}
+            {employees && employees.length > 0 && (
+              <ul className="emp-list">
+                {employees.map((e) => (
+                  <li className="emp-item" key={e.id}>
+                    <div className="emp-row">
+                      <div className="emp-avatar">{initials(e)}</div>
+                      <div className="emp-main">
+                        <div className="emp-name">
+                          {e.firstName} {e.lastName}
+                          {e.isEmailVerified ? (
+                            <span className="emp-badge verified">✓ vérifié</span>
+                          ) : (
+                            <button type="button" className="emp-attrib-btn" onClick={() => approveEmployee(e.id)}>Approuver</button>
+                          )}
+                        </div>
+                        <div className="emp-sub">{e.email} · inscrit le {formatDate(e.createdAt)}</div>
+                      </div>
+                      <div className="emp-balance">
+                        <div className="emp-balance-num">{e.balance}</div>
+                        <div className="emp-balance-label">tokens</div>
+                      </div>
+                      <button
+                        type="button"
+                        className="emp-delete-btn"
+                        title="Supprimer cet employé"
+                        disabled={deletingId === e.id}
+                        onClick={() => handleDelete(e)}
+                      >
+                        {deletingId === e.id ? '…' : '🗑️'}
+                      </button>
+                    </div>
                   </li>
                 ))}
               </ul>
             )}
-          </section>
+            <DashHistory attributions={attributions} />
+          </>
         )}
+
         {!loading && <EditProfile />}
         {!loading && <PrivacySection onAccountDeleted={onLogout} />}
       </div>

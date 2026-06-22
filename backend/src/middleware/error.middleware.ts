@@ -2,11 +2,11 @@ import type { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
 
 // ============================================================
-//  Erreurs typées — source unique de vérité (B1)
+//  Erreurs typées - source unique de vérité (B1)
 //  - ErrorCode      : identité stable d'une erreur métier
 //  - ERROR_CATALOG  : code -> { status HTTP, message FR }
 //  - DomainError    : levée par les services (type-safe, pas de chaîne magique)
-//  - AppError       : erreur HTTP ad-hoc (status + message direct) — conservée
+//  - AppError       : erreur HTTP ad-hoc (status + message direct) - conservée
 //  Le mapping code -> HTTP se fait ICI, une seule fois. Les controllers
 //  ne catchent plus par chaîne : ils laissent remonter (Express 5 auto-catch async).
 // ============================================================
@@ -106,7 +106,7 @@ export function errorHandler(
   res: Response,
   _next: NextFunction
 ): void {
-  // 1. Erreur métier typée — mapping centralisé
+  // 1. Erreur métier typée - mapping centralisé
   if (err instanceof DomainError) {
     const { status, message } = resolveCatalog(err.code, err.detail);
     res.status(status).json({ error: message, code: err.code });

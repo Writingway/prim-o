@@ -4,7 +4,7 @@ const envSchema = z.object({
   PORT: z.string().default('4000'),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   CLIENT_URL: z.string().default('http://localhost:5180'),
-  // URL publique du backend — sert à construire le lien de vérification email.
+  // URL publique du backend - sert à construire le lien de vérification email.
   API_URL: z.string().default('http://localhost:4000'),
   DATABASE_URL: z.string(),
   JWT_SECRET: z.string().min(32),

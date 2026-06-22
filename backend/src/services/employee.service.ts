@@ -62,23 +62,20 @@ export async function getEmployeeReceived(employeeId: string, page: number, limi
       select: {
         id: true,
         amount: true,
-        reason: true,
         createdAt: true,
         manager: { select: { firstName: true, lastName: true } },
-        // §3.5 — le compliment du motif est affiché au salarié à la réception.
-        motif: { select: { compliment: true, label: true } },
+        motif: { select: { compliment: true } },
       },
     }),
     prisma.attribution.count({ where: { employeeId } }),
   ]);
 
   return {
+    // `reason` = compliment du motif (texte montré au salarié) ; le texte libre n'existe plus.
     items: rows.map((r) => ({
       id: r.id,
       amount: r.amount,
-      reason: r.reason,
-      compliment: r.motif?.compliment ?? null,
-      motifLabel: r.motif?.label ?? null,
+      reason: r.motif?.compliment ?? '',
       createdAt: r.createdAt,
       managerName: `${r.manager.firstName ?? ''} ${r.manager.lastName ?? ''}`.trim(),
     })),

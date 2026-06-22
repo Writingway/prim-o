@@ -1,179 +1,113 @@
-import { useEffect, useState } from 'react';
-import {
-  getEmployeeBalance,
-  getEmployeeReceived,
-  getEmployeeSpent,
-  logout as apiLogout,
-} from '../services/api';
-import type { ReceivedToken, SpentToken } from '../types/types';
-import './EmployeeDashboard.css';
-import Layout from '../components/layout/Layout';
-import PrivacySection from '../components/privacy/PrivacySection';
-import EditProfile from '../components/privacy/EditProfile';
+import Layout from '@/components/layout/Layout';
+import BottomNav from '@/components/layout/BottomNav';
+import PrivacySection from '@/components/privacy/PrivacySection';
+import EditProfile from '@/components/privacy/EditProfile';
+import { useEmployeeDashboard } from '@/hooks/useEmployeeDashboard';
+import { formatDate } from '@/lib/format';
+import { HEADER_BTN_GHOST } from '@/components/layout/headerButtons';
 
+const WRAPPER = 'min-h-screen bg-[#f4f5f7] px-4 py-6 sm:px-5';
+const CONTAINER = 'mx-auto flex w-full max-w-[640px] flex-col';
+const SECTION = 'mb-3.5 rounded-xl border border-primo-border bg-primo-bg px-[18px] py-4';
+const SECTION_TITLE = 'mb-3 text-[15px] font-bold text-[#1f2937]';
+const NOTE = 'm-0 text-center text-[13px] text-primo-gray';
+const ERROR_NOTE = 'm-0 text-center text-[13px] text-primo-error';
+const MUTED = 'text-sm font-medium text-primo-gray-light';
+const CARD = 'rounded-xl border border-primo-border bg-primo-bg px-4 py-4';
+const CARD_ICON = 'mb-1.5 text-[22px]';
+const CARD_LABEL = 'mb-1 text-[13px] text-primo-gray';
+const CARD_VALUE = 'text-[22px] font-bold text-[#1f2937]';
+const TX_LIST = 'm-0 flex list-none flex-col gap-2 p-0';
+const TX_ROW =
+  'flex items-center justify-between gap-3 rounded-[10px] border border-[#ececf1] bg-[#fafafb] px-3 py-2.5';
+const TX_MAIN = 'min-w-0';
+const TX_REASON =
+  'text-sm font-semibold text-[#1f2937] overflow-hidden text-ellipsis whitespace-nowrap';
+const TX_SUB = 'text-xs text-primo-gray mt-0.5';
+const TX_AMOUNT = 'text-base font-bold flex-shrink-0';
+const MORE_BTN =
+  'mt-2.5 w-full border border-[#d1d5db] bg-primo-bg text-primo-teal px-3.5 py-[9px] rounded-lg text-sm font-semibold cursor-pointer hover:bg-primo-teal-soft';
+const ERROR_RETRY = 'ml-1 cursor-pointer border-0 bg-transparent p-0 font-semibold text-primo-teal hover:text-primo-teal-dark';
+const POSITIVE = 'text-primo-success';
+const NEGATIVE = 'text-primo-error';
+const RECEIVED = 'border-l-[3px] border-l-primo-success';
+const SPENT = 'border-l-[3px] border-l-primo-error';
 
 type EmployeeDashboardProps = {
   onLogout: () => void;
   onBack: () => void;
 };
 
-const PAGE_SIZE = 10;
-
-const formatDate = (iso: string) =>
-  new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-
 export default function EmployeeDashboard({ onLogout, onBack }: EmployeeDashboardProps) {
-  const [balance, setBalance] = useState<number | null>(null);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(true);
-
-  // Historiques : items accumulés + page courante + s'il reste des pages.
-  const [received, setReceived] = useState<ReceivedToken[]>([]);
-  const [receivedPage, setReceivedPage] = useState(1);
-  const [receivedHasMore, setReceivedHasMore] = useState(false);
-
-  const [spent, setSpent] = useState<SpentToken[]>([]);
-  const [spentPage, setSpentPage] = useState(1);
-  const [spentHasMore, setSpentHasMore] = useState(false);
-
-  // Chargement initial : solde + 1re page de chaque historique.
-  const loadInitial = async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const [balRes, recRes, spRes] = await Promise.all([
-        getEmployeeBalance(),
-        getEmployeeReceived(1, PAGE_SIZE),
-        getEmployeeSpent(1, PAGE_SIZE),
-      ]);
-
-      if (balRes.status === 401) {
-        setError('Session expirée, reconnecte-toi.');
-        return;
-      }
-      if (!balRes.ok || !balRes.data) {
-        setError('Impossible de charger ton espace.');
-        return;
-      }
-
-      setBalance(balRes.data.balance);
-      if (recRes.ok && recRes.data) {
-        setReceived(recRes.data.items);
-        setReceivedPage(1);
-        setReceivedHasMore(recRes.data.hasMore);
-      }
-      if (spRes.ok && spRes.data) {
-        setSpent(spRes.data.items);
-        setSpentPage(1);
-        setSpentHasMore(spRes.data.hasMore);
-      }
-    } catch {
-      setError('Impossible de joindre le serveur. Le backend est-il lancé ?');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadInitial();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // « Voir plus » : charge la page suivante et l'ajoute à la liste existante.
-  const loadMoreReceived = async () => {
-    const next = receivedPage + 1;
-    const res = await getEmployeeReceived(next, PAGE_SIZE);
-    if (res.ok && res.data) {
-      setReceived((prev) => [...prev, ...res.data!.items]);
-      setReceivedPage(next);
-      setReceivedHasMore(res.data.hasMore);
-    }
-  };
-
-  const loadMoreSpent = async () => {
-    const next = spentPage + 1;
-    const res = await getEmployeeSpent(next, PAGE_SIZE);
-    if (res.ok && res.data) {
-      setSpent((prev) => [...prev, ...res.data!.items]);
-      setSpentPage(next);
-      setSpentHasMore(res.data.hasMore);
-    }
-  };
-
-  const handleLogout = async () => {
-    try {
-      await apiLogout();
-    } catch {
-      // On déconnecte côté front même si l'appel réseau échoue.
-    }
-    onLogout();
-  };
+  const { balance, error, loading, reload, received, spent, handleLogout } =
+    useEmployeeDashboard(onLogout);
 
   return (
     <Layout
-      title="Prim'O — Mon espace"
+      title="Mon espace"
+      chrome="app"
+      bottomNav={
+        <BottomNav
+          items={[
+            { key: 'solde', label: 'Solde', icon: '🪙', targetId: 'nav-solde' },
+            { key: 'recus', label: 'Reçus', icon: '🎁', targetId: 'nav-recus' },
+            { key: 'depenses', label: 'Dépenses', icon: '🛒', targetId: 'nav-depenses' },
+            { key: 'profil', label: 'Profil', icon: '👤', targetId: 'nav-profil' },
+          ]}
+        />
+      }
       headerActions={
         <>
-          <button className="app-btn app-btn-ghost" type="button" onClick={onBack}>
-            ← Accueil
+          <button className={HEADER_BTN_GHOST} type="button" onClick={onBack}>
+            Accueil
           </button>
-          <button className="app-btn app-btn-ghost" type="button" onClick={handleLogout}>
+          <button className={HEADER_BTN_GHOST} type="button" onClick={handleLogout}>
             Se déconnecter
           </button>
         </>
       }
     >
-    <div className="emp-dash-wrapper">
-      <div className="emp-dash-container">
+    <div className={WRAPPER}>
+      <div className={CONTAINER}>
 
-        {loading && <p className="emp-dash-note">Chargement…</p>}
+        {loading && <p className={NOTE}>Chargement…</p>}
 
         {!loading && error && (
-          <div className="emp-dash-note emp-dash-error">
+          <div className={ERROR_NOTE}>
             {error}{' '}
-            <button type="button" className="emp-dash-retry" onClick={loadInitial}>Réessayer</button>
+            <button type="button" className={ERROR_RETRY} onClick={reload}>Réessayer</button>
           </div>
         )}
 
         {!loading && !error && balance !== null && (
           <>
-            <div className="emp-dash-cards">
-              <div className="emp-dash-card">
-                <div className="emp-dash-card-icon">🪙</div>
-                <div className="emp-dash-card-label">Mon solde</div>
-                <div className="emp-dash-card-value">{balance} tokens</div>
+            <div id="nav-solde" className="mb-4 grid grid-cols-1 gap-3 scroll-mt-20">
+              <div className={CARD}>
+                <div className={CARD_ICON}>🪙</div>
+                <div className={CARD_LABEL}>Mon solde</div>
+                <div className={CARD_VALUE}>{balance} tokens</div>
               </div>
             </div>
 
-            <section className="emp-dash-section">
-              <h2 className="emp-dash-section-title">Tokens reçus</h2>
-              {received.length === 0 ? (
-                <p className="emp-dash-muted">Aucun token reçu pour l'instant.</p>
+            <section id="nav-recus" className={`${SECTION} scroll-mt-20`}>
+              <h2 className={SECTION_TITLE}>Tokens reçus</h2>
+              {received.items.length === 0 ? (
+                <p className={MUTED}>Aucun token reçu pour l'instant.</p>
               ) : (
                 <>
-                  <ul className="emp-tx-list">
-                    {received.map((t) => (
-                      <li className="emp-tx-row received" key={t.id}>
-                        <div className="emp-tx-main">
-                          {t.compliment ? (
-                            <>
-                              <div className="emp-tx-compliment">{t.compliment}</div>
-                              {t.reason && <div className="emp-tx-note">« {t.reason} »</div>}
-                            </>
-                          ) : (
-                            <div className="emp-tx-reason">{t.reason}</div>
-                          )}
-                          <div className="emp-tx-sub">
-                            {t.motifLabel && <span className="emp-tx-motif">{t.motifLabel}</span>}
-                            de {t.managerName} · {formatDate(t.createdAt)}
-                          </div>
+                  <ul className={TX_LIST}>
+                    {received.items.map((t) => (
+                      <li className={`${TX_ROW} ${RECEIVED}`} key={t.id}>
+                        <div className={TX_MAIN}>
+                          <div className={TX_REASON}>{t.reason}</div>
+                          <div className={TX_SUB}>de {t.managerName} · {formatDate(t.createdAt)}</div>
                         </div>
-                        <div className="emp-tx-amount positive">+{t.amount}</div>
+                        <div className={`${TX_AMOUNT} ${POSITIVE}`}>+{t.amount}</div>
                       </li>
                     ))}
                   </ul>
-                  {receivedHasMore && (
-                    <button className="emp-dash-more" type="button" onClick={loadMoreReceived}>
+                  {received.hasMore && (
+                    <button className={MORE_BTN} type="button" onClick={received.loadMore}>
                       Voir plus
                     </button>
                   )}
@@ -181,25 +115,25 @@ export default function EmployeeDashboard({ onLogout, onBack }: EmployeeDashboar
               )}
             </section>
 
-            <section className="emp-dash-section">
-              <h2 className="emp-dash-section-title">Mes dépenses</h2>
-              {spent.length === 0 ? (
-                <p className="emp-dash-muted">Aucune dépense pour l'instant.</p>
+            <section id="nav-depenses" className={`${SECTION} scroll-mt-20`}>
+              <h2 className={SECTION_TITLE}>Mes dépenses</h2>
+              {spent.items.length === 0 ? (
+                <p className={MUTED}>Aucune dépense pour l'instant.</p>
               ) : (
                 <>
-                  <ul className="emp-tx-list">
-                    {spent.map((t) => (
-                      <li className="emp-tx-row spent" key={t.id}>
-                        <div className="emp-tx-main">
-                          <div className="emp-tx-reason">{t.offerName}</div>
-                          <div className="emp-tx-sub">code {t.promoCode} · {formatDate(t.createdAt)}</div>
+                  <ul className={TX_LIST}>
+                    {spent.items.map((t) => (
+                      <li className={`${TX_ROW} ${SPENT}`} key={t.id}>
+                        <div className={TX_MAIN}>
+                          <div className={TX_REASON}>{t.offerName}</div>
+                          <div className={TX_SUB}>code {t.promoCode} · {formatDate(t.createdAt)}</div>
                         </div>
-                        <div className="emp-tx-amount negative">−{t.amount}</div>
+                        <div className={`${TX_AMOUNT} ${NEGATIVE}`}>−{t.amount}</div>
                       </li>
                     ))}
                   </ul>
-                  {spentHasMore && (
-                    <button className="emp-dash-more" type="button" onClick={loadMoreSpent}>
+                  {spent.hasMore && (
+                    <button className={MORE_BTN} type="button" onClick={spent.loadMore}>
                       Voir plus
                     </button>
                   )}
@@ -208,7 +142,8 @@ export default function EmployeeDashboard({ onLogout, onBack }: EmployeeDashboar
             </section>
           </>
         )}
-        {!loading && <EditProfile />}        
+        {!loading && <EditProfile />}
+        <div id="nav-profil" className="scroll-mt-20" />
         {!loading && <PrivacySection onAccountDeleted={onLogout} />}
       </div>
     </div>

@@ -1,4 +1,4 @@
-# API client refactor — `api.ts` split
+# API client refactor - `api.ts` split
 
 Date: 2026-06-15
 
@@ -20,7 +20,7 @@ Split into `src/services/api/`:
 
 | File         | Contents                                                        |
 |--------------|----------------------------------------------------------------|
-| `client.ts`  | token, refresh singleton, `rawRequest`/`post`/`authRequest` — now generic `ApiResult<T>` |
+| `client.ts`  | token, refresh singleton, `rawRequest`/`post`/`authRequest` - now generic `ApiResult<T>` |
 | `auth.ts`    | login, logout, register×2, roleFromToken                        |
 | `offers.ts`  | offer CRUD                                                      |
 | `employees.ts` | employees + balances                                         |
@@ -43,9 +43,9 @@ The old `post`/`authRequest` returned `data: any`, so callsites read any
 field freely. Generic `ApiResult<T>` made `data` typed (`T | null`), which
 surfaced 3 real holes:
 
-- `auth.ts` — typed login (`{ accessToken; error? }`) and register
+- `auth.ts` - typed login (`{ accessToken; error? }`) and register
   (`ValidationErrorBody`) responses.
-- `LoginForm.tsx:31` — added null-guard on `res.data?.accessToken`.
+- `LoginForm.tsx:31` - added null-guard on `res.data?.accessToken`.
 
 ## Bug hit during refactor: Vite stale resolution
 
@@ -59,7 +59,7 @@ After deleting `api.ts` while the dev server was running, Vite threw:
 
 **Cause:** Vite cached the module-resolution result pointing at the old
 `api.ts`. The import in `App.tsx` is correct (`from './services/api'`, no
-`.ts` extension) — it resolves to `api/index.ts` once the cache is fresh.
+`.ts` extension) - it resolves to `api/index.ts` once the cache is fresh.
 
 **Fix:** restart the dev server (stop, `npm run dev`). No code change.
 

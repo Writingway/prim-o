@@ -8,7 +8,6 @@ export * from "./auth";
 export * from "./offers";
 export * from "./employees";
 export * from "./company";
-export * from "./motifs";
 export * from "./stats";
 export * from "./admin";
 export * from "./stripe";
@@ -17,4 +16,3 @@ export * from "./promoCodes";
 export * from "./redemption";
 
 export * from "./me";
-

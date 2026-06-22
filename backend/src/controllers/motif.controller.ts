@@ -1,9 +1,16 @@
-import type { Request, Response } from 'express';
-import { listMotifs } from '../services/motif.service';
+import type { Request, Response, NextFunction } from 'express';
+import { listActiveMotifs } from '../services/motif.service';
 
-// GET /api/motifs — liste officielle groupée par catégorie (§3.5).
-// requireAuth en amont, pas de body. Express 5 propage toute erreur async au middleware central.
-export async function listMotifsController(_req: Request, res: Response): Promise<void> {
-  const motifs = await listMotifs();
-  res.json(motifs);
+// GET /api/motifs — liste officielle des motifs actifs, groupés par catégorie.
+export async function listMotifsController(
+  _req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const data = await listActiveMotifs();
+    res.status(200).json(data);
+  } catch (err) {
+    next(err);
+  }
 }

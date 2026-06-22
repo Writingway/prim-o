@@ -3,7 +3,7 @@ import { AppError } from '../middleware/error.middleware';
 import { generateInviteSchema } from '../schemas/invite.schemas';
 import { generateInviteCode } from '../services/invite.service';
 
-// POST /api/invites/generate — un manager génère un code d'invitation.
+// POST /api/invites/generate - un manager génère un code d'invitation.
 // companyId + createdById viennent du token (req.user), jamais du body.
 export async function generateInviteController(
   req: Request,

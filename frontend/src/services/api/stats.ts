@@ -1,5 +1,6 @@
 import { authRequest } from "./client";
-import type { MotifCategory } from "./motifs";
+import type { MotifCategory } from "../../types/allocation";
+export type { MotifCategory };
 
 // Miroir des shapes backend (§3.2/§3.4) — manager.contracts.ts.
 export type MotifAggregateRow = {

@@ -3,7 +3,7 @@ import { AppError } from '../middleware/error.middleware';
 import { getCompany } from '../services/company.service';
 import { requireManagerOrOwner } from '../middleware/authz';
 
-// GET /api/company — infos de l'entreprise du manager/patron connecté (dont le pool de tokens).
+// GET /api/company - infos de l'entreprise du manager/patron connecté (dont le pool de tokens).
 export async function getCompanyController(
   req: Request,
   res: Response,

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ---------------------------------------------------------------------------
-# Prim'O — smoke test du back (onboarding account-first).
+# Prim'O - smoke test du back (onboarding account-first).
 # Prouve les règles métier avant de tester l'UI :
 #   register flottant -> create-company (PENDING) -> achat bloqué (403)
 #   -> admin approuve -> achat débloqué (200) ; + join-company via code.
@@ -100,7 +100,7 @@ else r "FAIL  register employé -> $REGE"; FAIL=$((FAIL+1)); fi
 JOIN=$(status_only POST /auth/join-company "{\"code\":\"$EMP_CODE\"}" "$EMP_TOKEN")
 check "join-company via code" 200 "$JOIN"
 
-# 10. SÉCURITÉ — rejoindre une 2e fois alors qu'on a déjà une entreprise -> 409.
+# 10. SÉCURITÉ - rejoindre une 2e fois alors qu'on a déjà une entreprise -> 409.
 #     (Le service relit l'utilisateur en DB : marche même avec un token périmé.)
 JOIN2=$(status_only POST /auth/join-company "{\"code\":\"$EMP_CODE\"}" "$EMP_TOKEN")
 check "join-company 2e fois refusé (déjà membre)" 409 "$JOIN2"

@@ -11,9 +11,9 @@ import { redeemOfferController } from '../controllers/redemption.controller';
 
 const router = Router();
 
-// GET /api/employees/list — protégé (manager connecté)
+// GET /api/employees/list - protégé (manager connecté)
 router.get('/list', requireAuth, listEmployeesController);
-// DELETE /api/employees/:id — soft delete (manager connecté)
+// DELETE /api/employees/:id - soft delete (manager connecté)
 router.delete('/:id', requireAuth, deleteEmployeeController);
 // Espace employé : solde + historiques paginés.
 router.get('/me', requireAuth, getEmployeeBalanceController);

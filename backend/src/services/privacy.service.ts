@@ -4,7 +4,7 @@ import { prisma } from '../lib/db';
 import type { UpdateProfileInput } from '../schemas/privacy.schemas';
 
 // ============================================================
-//  RGPD — droit d'accès/portabilité (art. 15 & 20) + droit à
+//  RGPD - droit d'accès/portabilité (art. 15 & 20) + droit à
 //  l'effacement (art. 17).
 //  L'effacement = ANONYMISATION, pas suppression physique :
 //  on conserve le registre comptable (Attribution / Redemption)
@@ -43,9 +43,9 @@ export async function exportUserData(userId: string) {
             orderBy: { createdAt: 'desc' },
             select: {
                 amount: true,
-                reason: true,
                 createdAt: true,
                 manager: { select: { firstName: true, lastName: true } },
+                motif: { select: { label: true } },
             },
         }),
         prisma.attribution.findMany({
@@ -53,9 +53,9 @@ export async function exportUserData(userId: string) {
             orderBy: { createdAt: 'desc'},
             select: {
                 amount: true,
-                reason: true,
                 createdAt: true,
                 employee: { select: { firstName: true, lastName: true } },
+                motif: { select: { label: true } },
             },
         }),
         prisma.redemption.findMany({
@@ -87,13 +87,13 @@ export async function exportUserData(userId: string) {
         },
         attributionsReceived: attributionReceived.map((a) => ({
             amount: a.amount,
-            reason: a.reason,
+            reason: a.motif?.label ?? '',
             createdAt: a.createdAt,
             managerName: `${a.manager.firstName ?? ''} ${a.manager.lastName ?? ''}`.trim(),
         })),
         attributionsSent: attributionSent.map((a) => ({
             amount: a.amount,
-            reason: a.reason,
+            reason: a.motif?.label ?? '',
             createdAt: a.createdAt,
             employeeName: `${a.employee.firstName ?? ''} ${a.employee.lastName ?? ''}`.trim(),
         })),

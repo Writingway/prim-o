@@ -9,11 +9,11 @@ import { errorHandler } from './middleware/error.middleware';
 import authRouter from './routes/auth.routes';
 import employeeRouter from './routes/employee.routes';
 import attributionRouter from './routes/attribution.routes';
+import motifRouter from './routes/motif.routes';
 import cookieParser from 'cookie-parser';
 import inviteRouter from './routes/invite.routes';
 import offerRouter from './routes/offer.routes';
 import companyRouter from './routes/company.routes';
-import motifRouter from './routes/motif.routes';
 import statsRouter from './routes/stats.routes';
 
 import adminRouter from './routes/admin.routes';
@@ -39,7 +39,7 @@ if (config.NODE_ENV === 'production') app.set('trust proxy', 1);
 app.use(helmet());
 // 2. CORS (avant rate limit)
 app.use(cors({origin: config.CLIENT_URL, credentials: true}));
-// 3. Rate limiting — garde-fou DoS GLOBAL et large. Les routes sensibles
+// 3. Rate limiting - garde-fou DoS GLOBAL et large. Les routes sensibles
 // (login, refresh, génération de codes) ont leurs propres budgets serrés
 // dans lib/rateLimit.ts. Ce plafond global ne doit PAS étrangler le trafic
 // normal d'une SPA : chaque navigation déclenche /me + /offers, et un 401
@@ -72,10 +72,10 @@ app.use('/api/auth', authRouter);
 app.use('/api/me', privacyRouter);
 app.use('/api/employees', employeeRouter);
 app.use('/api/attributions', attributionRouter);
+app.use('/api/motifs', motifRouter);
 app.use('/api/invites', inviteRouter);
 app.use('/api/company', companyRouter);
 app.use('/api/offers', offerRouter);
-app.use('/api/motifs', motifRouter);
 app.use('/api/stats', statsRouter);
 app.use('/api/admin', requireAuth, requireAdmin, adminRouter);
 

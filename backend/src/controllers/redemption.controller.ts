@@ -3,15 +3,17 @@ import { AppError } from '../middleware/error.middleware';
 import { redeemSchema } from '../schemas/redemption.schemas';
 import { redeemOffer } from '../services/redemption.service';
 
-// POST /api/employees/me/redeem — l'employé échange ses tokens contre un code.
+// POST /api/employees/me/redeem - l'employé échange ses tokens contre un code.
 export async function redeemOfferController(
   req: Request,
   res: Response,
   next: NextFunction,
 ): Promise<void> {
   try {
-    if (req.user?.role !== 'EMPLOYEE') {
-      next(new AppError(403, 'Accès réservé aux employés.'));
+    // Achat réservé aux employés ET managers (le manager dépense sa rétribution).
+    // L'owner et l'admin ne consomment pas d'offres.
+    if (req.user?.role !== 'EMPLOYEE' && req.user?.role !== 'MANAGER') {
+      next(new AppError(403, 'Achat réservé aux employés et aux managers.'));
       return;
     }
     const companyId = req.user.companyId;

@@ -1,11 +1,11 @@
-# Types refactor — `types.ts` split
+# Types refactor - `types.ts` split
 
 Date: 2026-06-15
 
 ## Problem
 
 `src/types/types.ts` (140 lines) held every type for the whole app in one
-file — same "everything in one place" pain as the old `api.ts`.
+file - same "everything in one place" pain as the old `api.ts`.
 
 ## What changed
 
@@ -18,7 +18,7 @@ Split into `src/types/` by domain, with `types.ts` kept as a barrel:
 | `employee.ts` | `Employee`, `ReceivedToken`, `SpentToken`                               |
 | `company.ts`  | `Company`, `AttributionHistory`                                         |
 | `admin.ts`    | `AdminStats`, `AdminRole`, `AdminStatus`, `AdminUser`, `AdminCompany`, `AdminAttribution`, `AdminRedemption` |
-| `types.ts`    | barrel — `export * from './shared'` … (re-exports everything)           |
+| `types.ts`    | barrel - `export * from './shared'` … (re-exports everything)           |
 
 ### Win
 

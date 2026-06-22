@@ -9,6 +9,7 @@ import type { Mode } from './types/types';
 import LandingPage from './pages/LandingPage';
 import AuthPage from './pages/AuthPage';
 import ManagerDashboard from './pages/ManagerDashboard';
+import OwnerDashboard from './pages/OwnerDashboard';
 import EmployeeDashboard from './pages/EmployeeDashboard';
 import StatsPage from './pages/StatsPage';
 import AdminPage from './pages/AdminPage';
@@ -57,6 +58,7 @@ const indexRoute = createRoute({
     return (
       <LandingPage
         isLoggedIn={!!identity}
+        role={normalizeRole(identity?.role ?? null) ?? undefined}
         onLogin={() => navigate({ to: '/auth', search: { mode: 'login' } })}
         onRegister={() => navigate({ to: '/auth', search: { mode: 'register' } })}
         onDashboard={() => navigate({ to: '/dashboard' })}
@@ -121,8 +123,8 @@ const dashboardRoute = createRoute({
     const role = normalizeRole(identity?.role ?? null);
     const onLogout = () => doLogout(navigate);
     const onBack = () => navigate({ to: '/' });
-    if (role === 'manager' || role === 'owner')
-      return <ManagerDashboard role={role} onLogout={onLogout} onBack={onBack} onStats={() => navigate({ to: '/stats' })} />;
+    if (role === 'owner') return <OwnerDashboard onLogout={onLogout} onBack={onBack} onStats={() => navigate({ to: '/stats' })} />;
+    if (role === 'manager') return <ManagerDashboard onLogout={onLogout} onBack={onBack} />;
     if (role === 'employee') return <EmployeeDashboard onLogout={onLogout} onBack={onBack} />;
     if (role === 'admin') return <AdminPage onLogout={onLogout} onBack={onBack} />;
     return <div className="app-loading">Chargement…</div>;   // Phase B : redirection /auth ou /onboarding
