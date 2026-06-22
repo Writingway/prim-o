@@ -17,7 +17,7 @@ function parsePaging(req: Request): { page: number; limit: number } {
   return { page, limit };
 }
 
-// GET /api/employees — liste les employés de l'employeur connecté.
+// GET /api/employees - liste les employés de l'employeur connecté.
 // L'employerId vient du token (req.user), jamais d'une entrée client.
 export async function listEmployeesController(
   req: Request,
@@ -35,7 +35,7 @@ export async function listEmployeesController(
   }
 }
 
-// DELETE /api/employees/:id — soft delete d'un employé de l'entreprise du manager.
+// DELETE /api/employees/:id - soft delete d'un employé de l'entreprise du manager.
 export async function deleteEmployeeController(
   req: Request,
   res: Response,
@@ -77,7 +77,7 @@ function requireEmployee(req: Request, next: NextFunction): string | null {
   return req.user.id;
 }
 
-// GET /api/employees/me — solde de l'employé connecté.
+// GET /api/employees/me - solde de l'employé connecté.
 export async function getEmployeeBalanceController(
   req: Request,
   res: Response,
@@ -99,7 +99,7 @@ export async function getEmployeeBalanceController(
 }
 
 
-// GET /api/employees/me/received — historique des tokens reçus, paginé.
+// GET /api/employees/me/received - historique des tokens reçus, paginé.
 export async function getEmployeeReceivedController(
   req: Request,
   res: Response,
@@ -117,7 +117,7 @@ export async function getEmployeeReceivedController(
   }
 }
 
-// GET /api/employees/me/spent — historique des dépenses, paginé.
+// GET /api/employees/me/spent - historique des dépenses, paginé.
 export async function getEmployeeSpentController(
   req: Request,
   res: Response,
@@ -135,5 +135,5 @@ export async function getEmployeeSpentController(
   }
 }
 
-// (Endpoint d'approbation manager supprimé — spec §4 : le code d'invitation
+// (Endpoint d'approbation manager supprimé - spec §4 : le code d'invitation
 //  vaut autorisation, l'employé est actif direct. Plus d'étape d'approbation.)

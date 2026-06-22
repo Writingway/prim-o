@@ -1,4 +1,4 @@
-// RGPD — données personnelles de l'utilisateur connecté (art. 15, 16, 17, 20).
+// RGPD - données personnelles de l'utilisateur connecté (art. 15, 16, 17, 20).
 // Réutilise le transport authentifié de client.ts (401 → refresh → retry).
 import { authRequest } from './client';
 

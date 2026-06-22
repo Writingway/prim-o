@@ -1,6 +1,19 @@
 import { useCallback, useEffect, useState } from 'react';
 import { listAdminAttributions, listAdminRedemptions, listAdminPurchases } from '../services/api';
 import type { AdminAttribution, AdminRedemption, AdminPurchase } from '../types/types';
+import {
+  ADMIN_BTN_GHOST,
+  ADMIN_MSG,
+  ADMIN_PAGE_INFO,
+  ADMIN_PAGINATION,
+  ADMIN_TAB,
+  ADMIN_TAB_ACTIVE,
+  ADMIN_TABLE,
+  ADMIN_TABLE_SCROLL,
+  ADMIN_TH,
+  ADMIN_TD,
+  ADMIN_TABS,
+} from './adminClasses';
 
 const PAGE_SIZE = 20;
 type Ledger = 'attributions' | 'redemptions' | 'purchases';
@@ -59,102 +72,102 @@ export default function AdminLedgers() {
   const rows = ledger === 'attributions' ? attributions : ledger === 'redemptions' ? redemptions : purchases;
 
   return (
-    <div className="admin-ledgers">
-      <div className="admin-subtabs">
-        <button type="button" className={`admin-tab ${ledger === 'attributions' ? 'active' : ''}`}
+    <div>
+      <div className={ADMIN_TABS}>
+        <button type="button" className={`${ADMIN_TAB} ${ledger === 'attributions' ? ADMIN_TAB_ACTIVE : ''}`}
           onClick={() => switchLedger('attributions')}>
           Attributions
         </button>
-        <button type="button" className={`admin-tab ${ledger === 'redemptions' ? 'active' : ''}`}
+        <button type="button" className={`${ADMIN_TAB} ${ledger === 'redemptions' ? ADMIN_TAB_ACTIVE : ''}`}
           onClick={() => switchLedger('redemptions')}>
           Redemptions
         </button>
-        <button type="button" className={`admin-tab ${ledger === 'purchases' ? 'active' : ''}`}
+        <button type="button" className={`${ADMIN_TAB} ${ledger === 'purchases' ? ADMIN_TAB_ACTIVE : ''}`}
           onClick={() => switchLedger('purchases')}>
           Transactions Stripe
         </button>
       </div>
 
-      {loading && <p className="admin-msg">Chargement…</p>}
-      {error && <p className="admin-msg admin-error">{error}</p>}
+      {loading && <p className={ADMIN_MSG}>Chargement…</p>}
+      {error && <p className={`${ADMIN_MSG} text-primo-error`}>{error}</p>}
 
       {!loading && rows && (
         rows.length === 0 ? (
-          <p className="admin-msg">Aucune entrée.</p>
+          <p className={ADMIN_MSG}>Aucune entrée.</p>
         ) : (
           <>
-            <div className="admin-table-scroll">
+            <div className={ADMIN_TABLE_SCROLL}>
               {ledger === 'attributions' ? (
-                <table className="admin-table">
+                <table className={ADMIN_TABLE}>
                   <thead>
                     <tr>
-                      <th>Date</th>
-                      <th>Entreprise</th>
-                      <th>Manager</th>
-                      <th>Employé</th>
-                      <th>Montant</th>
-                      <th>Motif</th>
+                      <th className={ADMIN_TH}>Date</th>
+                      <th className={ADMIN_TH}>Entreprise</th>
+                      <th className={ADMIN_TH}>Manager</th>
+                      <th className={ADMIN_TH}>Employé</th>
+                      <th className={ADMIN_TH}>Montant</th>
+                      <th className={ADMIN_TH}>Motif</th>
                     </tr>
                   </thead>
                   <tbody>
                     {attributions!.map((a) => (
                       <tr key={a.id}>
-                        <td data-label="Date">{fmtDate(a.createdAt)}</td>
-                        <td data-label="Entreprise">{a.company.name}</td>
-                        <td data-label="Manager">{fullName(a.manager)}</td>
-                        <td data-label="Employé">{fullName(a.employee)}</td>
-                        <td data-label="Montant">{a.amount}</td>
-                        <td data-label="Motif">{a.reason}</td>
+                        <td className={ADMIN_TD} data-label="Date">{fmtDate(a.createdAt)}</td>
+                        <td className={ADMIN_TD} data-label="Entreprise">{a.company.name}</td>
+                        <td className={ADMIN_TD} data-label="Manager">{fullName(a.manager)}</td>
+                        <td className={ADMIN_TD} data-label="Employé">{fullName(a.employee)}</td>
+                        <td className={ADMIN_TD} data-label="Montant">{a.amount}</td>
+                        <td className={ADMIN_TD} data-label="Motif">{a.reason}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               ) : ledger === 'redemptions' ? (
-                <table className="admin-table">
+                <table className={ADMIN_TABLE}>
                   <thead>
                     <tr>
-                      <th>Date</th>
-                      <th>Entreprise</th>
-                      <th>Employé</th>
-                      <th>Offre</th>
-                      <th>Code</th>
-                      <th>Montant</th>
+                      <th className={ADMIN_TH}>Date</th>
+                      <th className={ADMIN_TH}>Entreprise</th>
+                      <th className={ADMIN_TH}>Employé</th>
+                      <th className={ADMIN_TH}>Offre</th>
+                      <th className={ADMIN_TH}>Code</th>
+                      <th className={ADMIN_TH}>Montant</th>
                     </tr>
                   </thead>
                   <tbody>
                     {redemptions!.map((r) => (
                       <tr key={r.id}>
-                        <td data-label="Date">{fmtDate(r.createdAt)}</td>
-                        <td data-label="Entreprise">{r.company.name}</td>
-                        <td data-label="Employé">{fullName(r.employee)}</td>
-                        <td data-label="Offre">{r.offer.partnerName}</td>
-                        <td data-label="Code">{r.promoCode.code}</td>
-                        <td data-label="Montant">{r.amount}</td>
+                        <td className={ADMIN_TD} data-label="Date">{fmtDate(r.createdAt)}</td>
+                        <td className={ADMIN_TD} data-label="Entreprise">{r.company.name}</td>
+                        <td className={ADMIN_TD} data-label="Employé">{fullName(r.employee)}</td>
+                        <td className={ADMIN_TD} data-label="Offre">{r.offer.partnerName}</td>
+                        <td className={ADMIN_TD} data-label="Code">{r.promoCode.code}</td>
+                        <td className={ADMIN_TD} data-label="Montant">{r.amount}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               ) : (
-                <table className="admin-table">
+                <table className={ADMIN_TABLE}>
                   <thead>
                     <tr>
-                      <th>Date</th>
-                      <th>Entreprise</th>
-                      <th>Crédité par</th>
-                      <th>Montant</th>
-                      <th>Note</th>
-                      <th>Session Stripe</th>
+                      <th className={ADMIN_TH}>Date</th>
+                      <th className={ADMIN_TH}>Entreprise</th>
+                      <th className={ADMIN_TH}>Crédité par</th>
+                      <th className={ADMIN_TH}>Montant</th>
+                      <th className={ADMIN_TH}>Note</th>
+                      <th className={ADMIN_TH}>Session Stripe</th>
                     </tr>
                   </thead>
                   <tbody>
                     {purchases!.map((p) => (
                       <tr key={p.id}>
-                        <td data-label="Date">{fmtDate(p.createdAt)}</td>
-                        <td data-label="Entreprise">{p.company.name}</td>
-                        <td data-label="Crédité par">{fullName(p.createdBy)}</td>
-                        <td data-label="Montant">{p.amount}</td>
-                        <td data-label="Note">{p.note ?? '—'}</td>
-                        <td data-label="Session Stripe"><code>{p.stripeSessionId}</code></td>
+                        <td className={ADMIN_TD} data-label="Date">{fmtDate(p.createdAt)}</td>
+                        <td className={ADMIN_TD} data-label="Entreprise">{p.company.name}</td>
+                        <td className={ADMIN_TD} data-label="Crédité par">{fullName(p.createdBy)}</td>
+                        <td className={ADMIN_TD} data-label="Montant">{p.amount}</td>
+                        <td className={ADMIN_TD} data-label="Note">{p.note ?? '-'}</td>
+                        <td className={ADMIN_TD} data-label="Session Stripe"><code className="rounded-md bg-[#f3f4f6] px-2 py-0.5 font-mono text-xs">{p.stripeSessionId}</code></td>
                       </tr>
                     ))}
                   </tbody>
@@ -162,15 +175,15 @@ export default function AdminLedgers() {
               )}
             </div>
 
-            <div className="admin-pagination">
-              <button className="admin-btn-ghost" disabled={page <= 1 || loading}
+            <div className={ADMIN_PAGINATION}>
+              <button className={ADMIN_BTN_GHOST} disabled={page <= 1 || loading}
                 onClick={() => setPage((p) => Math.max(1, p - 1))}>
-                ← Précédent
+                 Précédent
               </button>
-              <span className="admin-page-info">
+              <span className={ADMIN_PAGE_INFO}>
                 Page {page} · {total} entrée{total > 1 ? 's' : ''}
               </span>
-              <button className="admin-btn-ghost" disabled={!hasMore || loading}
+              <button className={ADMIN_BTN_GHOST} disabled={!hasMore || loading}
                 onClick={() => setPage((p) => p + 1)}>
                 Suivant →
               </button>

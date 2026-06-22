@@ -4,7 +4,7 @@ import { prisma } from '../lib/db';
 import type { UpdateProfileInput } from '../schemas/privacy.schemas';
 
 // ============================================================
-//  RGPD — droit d'accès/portabilité (art. 15 & 20) + droit à
+//  RGPD - droit d'accès/portabilité (art. 15 & 20) + droit à
 //  l'effacement (art. 17).
 //  L'effacement = ANONYMISATION, pas suppression physique :
 //  on conserve le registre comptable (Attribution / Redemption)

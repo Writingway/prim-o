@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { ChangeEvent, SyntheticEvent } from 'react';
 import { createCompany, joinCompany } from '../services/api';
+import { WRAPPER, CARD, LOGO, TABS, tab, FORM, INPUT, SUBMIT, ERROR, HELP } from '../components/auth/authClasses';
 
 type ValidationErrorBody = { details?: Array<{ message: string }> };
 
@@ -15,7 +16,7 @@ function firstValidationMessage(data: ValidationErrorBody | null): string | null
 }
 
 export default function OnboardingPage({ onDone }: OnboardingPageProps) {
-  const [tab, setTab] = useState<'create' | 'join'>('create');
+  const [tabKey, setTab] = useState<'create' | 'join'>('create');
   const [companyName, setCompanyName] = useState('');
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
@@ -26,7 +27,7 @@ export default function OnboardingPage({ onDone }: OnboardingPageProps) {
     setError('');
     setLoading(true);
     try {
-      const res = tab === 'create'
+      const res = tabKey === 'create'
         ? await createCompany({ companyName })
         : await joinCompany({ code });
       if (res.ok && res.data?.accessToken) { onDone(res.data.accessToken); return; }
@@ -42,27 +43,27 @@ export default function OnboardingPage({ onDone }: OnboardingPageProps) {
   };
 
   return (
-    <div className="auth-wrapper">
-      <div className="auth-card">
-        <h1 className="auth-logo">Prim'O</h1>
-        <p className="onboarding-intro">Dernière étape : rejoignez ou créez votre entreprise.</p>
+    <div className={WRAPPER}>
+      <div className={CARD}>
+        <h1 className={LOGO}>Prim'O</h1>
+        <p className={`mb-5 text-center ${HELP}`}>Dernière étape : rejoignez ou créez votre entreprise.</p>
 
-        <div className="auth-tabs">
-          <button type="button" className={tab === 'create' ? 'active' : ''} onClick={() => { setTab('create'); setError(''); }}>Créer une entreprise</button>
-          <button type="button" className={tab === 'join' ? 'active' : ''} onClick={() => { setTab('join'); setError(''); }}>Rejoindre</button>
+        <div className={TABS}>
+          <button type="button" className={tab(tabKey === 'create')} onClick={() => { setTab('create'); setError(''); }}>Créer une entreprise</button>
+          <button type="button" className={tab(tabKey === 'join')} onClick={() => { setTab('join'); setError(''); }}>Rejoindre</button>
         </div>
 
-        <form className="auth-form" onSubmit={submit}>
-          {tab === 'create' ? (
-            <input name="companyName" placeholder="Nom de l'entreprise" value={companyName}
+        <form className={FORM} onSubmit={submit}>
+          {tabKey === 'create' ? (
+            <input className={INPUT} name="companyName" placeholder="Nom de l'entreprise" value={companyName}
               onChange={(e: ChangeEvent<HTMLInputElement>) => setCompanyName(e.target.value)} />
           ) : (
-            <input name="code" placeholder="Code d'invitation" value={code}
+            <input className={INPUT} name="code" placeholder="Code d'invitation" value={code}
               onChange={(e: ChangeEvent<HTMLInputElement>) => setCode(e.target.value)} />
           )}
-          {error && <p className="auth-error">{error}</p>}
-          <button type="submit" disabled={loading}>
-            {loading ? 'Chargement…' : tab === 'create' ? "Créer l'entreprise" : 'Rejoindre'}
+          {error && <p className={ERROR}>{error}</p>}
+          <button className={SUBMIT} type="submit" disabled={loading}>
+            {loading ? 'Chargement…' : tabKey === 'create' ? "Créer l'entreprise" : 'Rejoindre'}
           </button>
         </form>
       </div>

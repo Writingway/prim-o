@@ -516,7 +516,7 @@ Code Commit → Linting (ESLint) → Unit Tests (Vitest) → Integration Tests (
 **Why web app instead of native iOS/Android?**
 - **Rationale:** Single codebase for mobile + desktop; no app store process; faster MVP delivery.
 - **Trade-offs:** No native device features (push, biometrics, full offline).
-- **Future consideration:** API designed as a clean REST contract — React Native can consume it directly in V2.
+- **Future consideration:** API designed as a clean REST contract - React Native can consume it directly in V2.
 
 #### Atomic Transactions for Token Transfers
 

@@ -8,6 +8,26 @@ import {
 } from '../services/api';
 import type { AdminCompany } from '../types/types';
 import { useConfirm } from '../components/ui/ConfirmDialog';
+import {
+  ADMIN_ACTIONS,
+  ADMIN_BADGE_INACTIVE,
+  ADMIN_BTN_DANGER,
+  ADMIN_BTN_GHOST,
+  ADMIN_BTN_LINK,
+  ADMIN_BTN_PRIMARY,
+  ADMIN_ERROR,
+  ADMIN_FORM_ERROR,
+  ADMIN_INLINE_FORM,
+  ADMIN_INPUT,
+  ADMIN_MSG,
+  ADMIN_NOTICE,
+  ADMIN_PAGE_INFO,
+  ADMIN_PAGINATION,
+  ADMIN_TABLE,
+  ADMIN_TABLE_SCROLL,
+  ADMIN_TD,
+  ADMIN_TH,
+} from './adminClasses';
 
 const PAGE_SIZE = 20;
 
@@ -166,76 +186,79 @@ export default function AdminCompanies({ onFlash }: AdminCompaniesProps) {
   };
 
   return (
-    <div className="admin-companies">
-      <form className="admin-form admin-inline-form" onSubmit={create}>
+    <div>
+      <form className={ADMIN_INLINE_FORM} onSubmit={create}>
         <input
+          className={ADMIN_INPUT}
           type="text"
           placeholder="Nom de la nouvelle entreprise"
           value={name}
           onChange={(e) => setName(e.target.value)}
         />
-        <button type="submit" className="admin-btn-primary" disabled={creating}>
+        <button type="submit" className={ADMIN_BTN_PRIMARY} disabled={creating}>
           {creating ? 'Création…' : 'Créer'}
         </button>
       </form>
-      {formError && <p className="admin-form-error">{formError}</p>}
+      {formError && <p className={ADMIN_FORM_ERROR}>{formError}</p>}
 
       {lastDeleted && (
-        <p className="admin-notice">
+        <p className={ADMIN_NOTICE}>
           « {lastDeleted.name} » supprimée.
-          <button className="admin-btn-link" onClick={undoDelete}>Annuler</button>
+          <button className={ADMIN_BTN_LINK} onClick={undoDelete}>Annuler</button>
         </p>
       )}
 
-      {loading && <p className="admin-msg">Chargement…</p>}
-      {error && <p className="admin-msg admin-error">{error}</p>}
+      {loading && <p className={ADMIN_MSG}>Chargement…</p>}
+      {error && <p className={`${ADMIN_MSG} ${ADMIN_ERROR}`}>{error}</p>}
 
       {!loading && companies && (
         companies.length === 0 ? (
-          <p className="admin-msg">Aucune entreprise.</p>
+          <p className={ADMIN_MSG}>Aucune entreprise.</p>
         ) : (
           <>
-            <div className="admin-table-scroll">
-              <table className="admin-table">
+            <div className={ADMIN_TABLE_SCROLL}>
+              <table className={ADMIN_TABLE}>
                 <thead>
                   <tr>
-                    <th>Nom</th>
-                    <th>Statut</th>
-                    <th>Solde pool</th>
-                    <th>Utilisateurs</th>
-                    <th>Créée le</th>
-                    <th>Actions</th>
+                    <th className={ADMIN_TH}>Nom</th>
+                    <th className={ADMIN_TH}>Statut</th>
+                    <th className={ADMIN_TH}>Solde pool</th>
+                    <th className={ADMIN_TH}>Utilisateurs</th>
+                    <th className={ADMIN_TH}>Créée le</th>
+                    <th className={ADMIN_TH}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {companies.map((c) => (
                     <tr key={c.id}>
-                      <td data-label="Nom">{c.name}</td>
-                      <td data-label="Statut">
-                        <span className={`admin-badge ${c.status === 'APPROVED' ? 'active' : 'inactive'}`}>
+                      <td className={ADMIN_TD} data-label="Nom">{c.name}</td>
+                      <td className={ADMIN_TD} data-label="Statut">
+                        <span className={c.status === 'APPROVED' ? 'bg-primo-teal-soft text-primo-teal-dark inline-flex rounded-full px-2 py-0.5 text-xs font-semibold' : ADMIN_BADGE_INACTIVE}>
                           {c.status === 'APPROVED' ? 'Validée' : c.status === 'PENDING' ? 'En attente' : 'Rejetée'}
                         </span>
                       </td>
-                      <td data-label="Solde pool">{c.tokenBalance}</td>
-                      <td data-label="Utilisateurs">{c._count.users}</td>
-                      <td data-label="Créée le">{new Date(c.createdAt).toLocaleDateString('fr-FR')}</td>
-                      <td className="admin-actions" data-label="Actions">
+                      <td className={ADMIN_TD} data-label="Solde pool">{c.tokenBalance}</td>
+                      <td className={ADMIN_TD} data-label="Utilisateurs">{c._count.users}</td>
+                      <td className={ADMIN_TD} data-label="Créée le">{new Date(c.createdAt).toLocaleDateString('fr-FR')}</td>
+                      <td className={ADMIN_TD} data-label="Actions">
+                        <div className={ADMIN_ACTIONS}>
                         {c.status !== 'APPROVED' && (
-                          <button className="admin-btn-link" disabled={busyId === c.id}
+                          <button className={ADMIN_BTN_LINK} disabled={busyId === c.id}
                             onClick={() => changeStatus(c, 'APPROVED')}>
                             Valider
                           </button>
                         )}
                         {c.status === 'PENDING' && (
-                          <button className="admin-btn-link admin-btn-danger" disabled={busyId === c.id}
+                          <button className={ADMIN_BTN_DANGER} disabled={busyId === c.id}
                             onClick={() => changeStatus(c, 'REJECTED')}>
                             Rejeter
                           </button>
                         )}
-                        <button className="admin-btn-link admin-btn-danger" disabled={busyId === c.id}
+                        <button className={ADMIN_BTN_DANGER} disabled={busyId === c.id}
                           onClick={() => remove(c)}>
                           Supprimer
                         </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -243,15 +266,15 @@ export default function AdminCompanies({ onFlash }: AdminCompaniesProps) {
               </table>
             </div>
 
-            <div className="admin-pagination">
-              <button className="admin-btn-ghost" disabled={page <= 1 || loading}
+            <div className={ADMIN_PAGINATION}>
+              <button className={ADMIN_BTN_GHOST} disabled={page <= 1 || loading}
                 onClick={() => setPage((p) => Math.max(1, p - 1))}>
-                ← Précédent
+                 Précédent
               </button>
-              <span className="admin-page-info">
+              <span className={ADMIN_PAGE_INFO}>
                 Page {page} · {total} entreprise{total > 1 ? 's' : ''}
               </span>
-              <button className="admin-btn-ghost" disabled={!hasMore || loading}
+              <button className={ADMIN_BTN_GHOST} disabled={!hasMore || loading}
                 onClick={() => setPage((p) => p + 1)}>
                 Suivant →
               </button>

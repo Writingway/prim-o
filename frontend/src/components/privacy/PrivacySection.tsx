@@ -1,10 +1,18 @@
 import { useState } from 'react';
 import { exportMyData, deleteMyAccount } from '../../services/api';
-import './privacy.css';
+
+const SECTION = 'mb-3.5 rounded-xl border border-primo-border bg-primo-bg px-[18px] py-4';
+const SECTION_TITLE = 'mb-3 text-[15px] font-bold text-[#1f2937]';
+const BTN =
+  'rounded-lg border border-transparent px-4 py-[9px] text-sm font-semibold transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed';
+const BTN_PRIMARY = `${BTN} bg-primo-teal text-white hover:bg-primo-teal-dark`;
+const BTN_SECONDARY = `${BTN} border-[#d1d5db] bg-white text-[#4b5563] hover:bg-[#f9fafb]`;
+const BTN_DANGER = `${BTN} border-[#f0c9c9] bg-white text-primo-error hover:bg-[#fef2f2]`;
+const BTN_DANGER_SOLID = `${BTN} bg-primo-error text-white hover:bg-[#b91c1c]`;
 
 type PrivacySectionProps = {
   // Appelé après une suppression réussie : le parent doit clore la session
-  // (vider le token, revenir à l'accueil) — le compte n'existe plus.
+  // (vider le token, revenir à l'accueil) - le compte n'existe plus.
   onAccountDeleted: () => void;
 };
 
@@ -65,46 +73,46 @@ export default function PrivacySection({ onAccountDeleted }: PrivacySectionProps
   };
 
   return (
-    <section className="emp-dash-section">
-      <h2 className="emp-dash-section-title">Mes données personnelles</h2>
+    <section className={SECTION}>
+      <h2 className={SECTION_TITLE}>Mes données personnelles</h2>
 
       {/* Export (RGPD art. 15 & 20) */}
-      <p className="priv-help">
+      <p className="mb-3 text-[13px] text-primo-gray">
         Tu peux télécharger l'ensemble des données que nous détenons sur toi.
       </p>
-      <button className="priv-btn priv-btn-primary" type="button" onClick={handleExport} disabled={exporting}>
+      <button className={BTN_PRIMARY} type="button" onClick={handleExport} disabled={exporting}>
         {exporting ? 'Préparation…' : 'Télécharger mes données'}
       </button>
-      {exportError && <p className="priv-msg-error">{exportError}</p>}
+      {exportError && <p className="mt-1 text-[13px] text-primo-error">{exportError}</p>}
 
-      <hr className="priv-divider" />
+      <hr className="my-[18px] border-0 border-t border-[#ececf1]" />
 
       {/* Suppression (RGPD art. 17) */}
-      <p className="priv-help">
+      <p className="mb-3 text-[13px] text-primo-gray">
         La suppression de ton compte est <strong>définitive</strong> : tes informations
         personnelles seront effacées. Cette action est irréversible.
       </p>
 
       {!confirming ? (
-        <button className="priv-btn priv-btn-danger" type="button" onClick={() => setConfirming(true)}>
+        <button className={BTN_DANGER} type="button" onClick={() => setConfirming(true)}>
           Supprimer mon compte
         </button>
       ) : (
-        <div className="priv-form">
-          <div className="priv-field">
-            <label htmlFor="confirm-pwd">Confirme avec ton mot de passe</label>
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-[5px]">
+            <label className="text-xs font-semibold text-primo-gray" htmlFor="confirm-pwd">Confirme avec ton mot de passe</label>
             <input
               id="confirm-pwd"
-              className="priv-input"
+              className="w-full rounded-lg border border-[#d1d5db] px-3 py-[9px] text-sm text-[#1f2937] transition focus:border-primo-teal focus:shadow-[0_0_0_3px_rgba(0,161,154,0.15)] focus:outline-none"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               autoComplete="current-password"
             />
           </div>
-          <div className="priv-actions">
+          <div className="flex flex-wrap gap-2.5">
             <button
-              className="priv-btn priv-btn-danger-solid"
+              className={BTN_DANGER_SOLID}
               type="button"
               onClick={handleDelete}
               disabled={deleting || password.length === 0}
@@ -112,7 +120,7 @@ export default function PrivacySection({ onAccountDeleted }: PrivacySectionProps
               {deleting ? 'Suppression…' : 'Confirmer la suppression'}
             </button>
             <button
-              className="priv-btn priv-btn-secondary"
+              className={BTN_SECONDARY}
               type="button"
               onClick={() => {
                 setConfirming(false);
@@ -124,7 +132,7 @@ export default function PrivacySection({ onAccountDeleted }: PrivacySectionProps
               Annuler
             </button>
           </div>
-          {deleteError && <p className="priv-msg-error">{deleteError}</p>}
+          {deleteError && <p className="mt-1 text-[13px] text-primo-error">{deleteError}</p>}
         </div>
       )}
     </section>

@@ -29,7 +29,7 @@ export async function addPromoCodes(
   return { added: result.count, skipped: unique.length - result.count };
 }
 
-// Supprime un code promo — UNIQUEMENT s'il est encore disponible (non utilisé).
+// Supprime un code promo - UNIQUEMENT s'il est encore disponible (non utilisé).
 // Atomique : le deleteMany gardé (isUsed:false) ne touchera jamais un code
 // qui vient d'être réclamé par un employé (sinon on casserait sa redemption).
 export async function deletePromoCode(codeId: string): Promise<void> {

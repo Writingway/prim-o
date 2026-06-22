@@ -38,7 +38,7 @@ if (config.NODE_ENV === 'production') app.set('trust proxy', 1);
 app.use(helmet());
 // 2. CORS (avant rate limit)
 app.use(cors({origin: config.CLIENT_URL, credentials: true}));
-// 3. Rate limiting — garde-fou DoS GLOBAL et large. Les routes sensibles
+// 3. Rate limiting - garde-fou DoS GLOBAL et large. Les routes sensibles
 // (login, refresh, génération de codes) ont leurs propres budgets serrés
 // dans lib/rateLimit.ts. Ce plafond global ne doit PAS étrangler le trafic
 // normal d'une SPA : chaque navigation déclenche /me + /offers, et un 401

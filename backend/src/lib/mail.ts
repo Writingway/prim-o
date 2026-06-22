@@ -51,7 +51,7 @@ export async function sendVerificationEmail(to: string, rawToken: string): Promi
     <p><a href="${link}">Vérifier mon adresse email</a></p>
     <p>Ce lien expire dans 24 heures.</p>
   `;
-  await sendEmail({ to, subject: "Vérifie ton adresse email — Prim'O", html });
+  await sendEmail({ to, subject: "Vérifie ton adresse email - Prim'O", html });
 }
 
 // Construit + envoie l'email de réinitialisation. Le lien pointe vers le
@@ -64,5 +64,5 @@ export async function sendPasswordResetEmail(to: string, rawToken: string): Prom
     <p><a href="${link}">Réinitialiser mon mot de passe</a></p>
     <p>Ce lien expire dans 1 heure. Si tu n'es pas à l'origine de cette demande, ignore cet email.</p>
   `;
-  await sendEmail({ to, subject: "Réinitialise ton mot de passe — Prim'O", html });
+  await sendEmail({ to, subject: "Réinitialise ton mot de passe - Prim'O", html });
 }

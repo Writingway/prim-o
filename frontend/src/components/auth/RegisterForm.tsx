@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { ChangeEvent, SyntheticEvent } from 'react';
 import { register } from '../../services/api';
+import { FORM, INPUT, SUBMIT, ERROR, CONSENT, CONSENT_BOX, CONSENT_LINK } from './authClasses';
 
 type ValidationErrorBody = { details?: Array<{ message: string }> };
 
@@ -43,23 +44,23 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
   };
 
   return (
-    <form className="auth-form" onSubmit={handleSubmit}>
-      <input name="firstName" placeholder="Prénom" value={form.firstName} onChange={handleFieldChange} />
-      <input name="lastName" placeholder="Nom" value={form.lastName} onChange={handleFieldChange} />
-      <input name="email" type="email" placeholder="Email" value={form.email} onChange={handleFieldChange} />
-      <input name="password" type="password" placeholder="Mot de passe (8 caractères min.)" value={form.password} onChange={handleFieldChange} />
+    <form className={FORM} onSubmit={handleSubmit}>
+      <input className={INPUT} name="firstName" placeholder="Prénom" value={form.firstName} onChange={handleFieldChange} />
+      <input className={INPUT} name="lastName" placeholder="Nom" value={form.lastName} onChange={handleFieldChange} />
+      <input className={INPUT} name="email" type="email" placeholder="Email" value={form.email} onChange={handleFieldChange} />
+      <input className={INPUT} name="password" type="password" placeholder="Mot de passe (8 caractères min.)" value={form.password} onChange={handleFieldChange} />
 
-      <label className="auth-consent">
-        <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
+      <label className={CONSENT}>
+        <input className={CONSENT_BOX} type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
         <span>
           J'ai lu et j'accepte les{' '}
-          <a href="#cgu" target="_blank" rel="noopener noreferrer">CGU</a> et la{' '}
-          <a href="#privacy" target="_blank" rel="noopener noreferrer">politique de confidentialité</a>.
+          <a className={CONSENT_LINK} href="#cgu" target="_blank" rel="noopener noreferrer">CGU</a> et la{' '}
+          <a className={CONSENT_LINK} href="#privacy" target="_blank" rel="noopener noreferrer">politique de confidentialité</a>.
         </span>
       </label>
 
-      {error && <p className="auth-error">{error}</p>}
-      <button type="submit" disabled={loading || !consent}>{loading ? 'Chargement…' : 'Créer mon compte'}</button>
+      {error && <p className={ERROR}>{error}</p>}
+      <button className={SUBMIT} type="submit" disabled={loading || !consent}>{loading ? 'Chargement…' : 'Créer mon compte'}</button>
     </form>
   );
 }
