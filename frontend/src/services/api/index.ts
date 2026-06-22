@@ -15,8 +15,3 @@ export * from "./promoCodes";
 export * from "./redemption";
 
 export * from "./me";
-
-export * from "./managers";
-
-export * from "./motifs";
-
