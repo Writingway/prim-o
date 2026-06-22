@@ -5,53 +5,32 @@ import {
   listAttributions,
   deleteEmployee,
   generateInviteCode,
-  createAttribution,
   approveEmployee as apiApproveEmployee,
-  createCheckout,
-  listManagers,
-  allocateTokens,
   listMotifs,
   listEnvelopes,
   getManagerBalances,
-  listSentEnvelopes,
   logout as apiLogout,
 } from '../services/api';
-import type { CompanyManager } from '../services/api';
-import type { Employee, Company, AttributionHistory, Role } from '../types/types';
-import type {
-  RetributionMode,
-  MotifCategoryGroup,
-  ManagerEnvelope,
-  ManagerBalances,
-  SentEnvelope,
-} from '../types/types';
+import type { Employee, Company, AttributionHistory } from '../types/types';
+import type { MotifCategoryGroup, ManagerEnvelope, ManagerBalances } from '../types/types';
+import { formatDate } from '../lib/format';
 import './ManagerDashboard.css';
 import Layout from '../components/layout/Layout';
 import PrivacySection from '../components/privacy/PrivacySection';
 import EditProfile from '../components/privacy/EditProfile';
 import { useConfirm } from '../components/ui/ConfirmDialog';
-import ModeSelector from '../components/allocation/ModeSelector';
-import MotifSelect from '../components/allocation/MotifSelect';
 import EnvelopeTile from '../components/allocation/EnvelopeTile';
-import SentEnvelopeTile from '../components/allocation/SentEnvelopeTile';
 import RedistributionBlock from '../components/allocation/RedistributionBlock';
+import DashHistory from '../components/dashboard/DashHistory';
 
-type ManagerDashboardProps = {
-  role: Role;
-  onLogout: () => void;
-  onBack: () => void;
-};
+type Props = { onLogout: () => void; onBack: () => void };
 
 const initials = (e: Employee) =>
   `${e.firstName[0] ?? ''}${e.lastName[0] ?? ''}`.toUpperCase();
 
-const formatDate = (iso: string) =>
-  new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-
-// Dashboard employeur/manager. Onglets selon le rôle :
-//   owner   : « Mes managers » (allocation + mode) · « Mes employés » (envoi direct)
-//   manager : « Mes enveloppes » (ouvrir + redistribuer) · « Mes employés » (lecture)
-export default function ManagerDashboard({ role, onLogout, onBack }: ManagerDashboardProps) {
+// Dashboard manager : ouvre ses enveloppes reçues et redistribue à ses employés.
+// (Le manager ne distribue plus en direct : tout passe par les enveloppes.)
+export default function ManagerDashboard({ onLogout, onBack }: Props) {
   const { confirm, confirmDialog } = useConfirm();
   const [employees, setEmployees] = useState<Employee[] | null>(null);
   const [company, setCompany] = useState<Company | null>(null);
@@ -62,41 +41,11 @@ export default function ManagerDashboard({ role, onLogout, onBack }: ManagerDash
   const [inviteCode, setInviteCode] = useState<string | null>(null);
   const [inviteError, setInviteError] = useState('');
 
-  // Onglet actif (valeurs différentes selon le rôle).
-  const [activeTab, setActiveTab] = useState<'managers' | 'employes' | 'enveloppes' | 'envoyees'>(
-    role === 'owner' ? 'managers' : 'enveloppes',
-  );
-
-  // Motifs officiels (envoi direct owner + redistribution manager).
+  const [activeTab, setActiveTab] = useState<'enveloppes' | 'employes'>('enveloppes');
   const [motifGroups, setMotifGroups] = useState<MotifCategoryGroup[]>([]);
-
-  // Recharge du pool via Stripe.
-  const [rechargeAmount, setRechargeAmount] = useState('');
-  const [rechargeError, setRechargeError] = useState('');
-  const [recharging, setRecharging] = useState(false);
-  const [paymentNotice, setPaymentNotice] = useState<'success' | 'cancel' | null>(null);
-
-  // Manager : enveloppes reçues + doubles soldes.
   const [envelopes, setEnvelopes] = useState<ManagerEnvelope[]>([]);
   const [balances, setBalances] = useState<ManagerBalances | null>(null);
   const [openEnvelope, setOpenEnvelope] = useState<ManagerEnvelope | null>(null);
-
-  // Owner : allocation patron → manager (montant + mode) + enveloppes envoyées.
-  const [managers, setManagers] = useState<CompanyManager[]>([]);
-  const [sentEnvelopes, setSentEnvelopes] = useState<SentEnvelope[]>([]);
-  const [allocOpenId, setAllocOpenId] = useState<string | null>(null);
-  const [allocAmount, setAllocAmount] = useState('');
-  const [allocMode, setAllocMode] = useState<RetributionMode>('PART_EGALE');
-  const [allocPercentage, setAllocPercentage] = useState('');
-  const [allocError, setAllocError] = useState('');
-  const [allocSubmitting, setAllocSubmitting] = useState(false);
-
-  // Owner : envoi direct → employé (montant + motif, pas de mode).
-  const [attribOpenId, setAttribOpenId] = useState<string | null>(null);
-  const [attribAmount, setAttribAmount] = useState('');
-  const [attribMotif, setAttribMotif] = useState('');
-  const [attribError, setAttribError] = useState('');
-  const [attribSubmitting, setAttribSubmitting] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -123,21 +72,20 @@ export default function ManagerDashboard({ role, onLogout, onBack }: ManagerDash
       if (attrRes.ok && attrRes.data) setAttributions(attrRes.data.attributions);
       if (motifRes.ok && motifRes.data) setMotifGroups(motifRes.data.categories);
 
-      if (role === 'manager') {
-        const [envRes, balRes] = await Promise.all([listEnvelopes(), getManagerBalances()]);
-        if (envRes.ok && envRes.data) setEnvelopes(envRes.data.envelopes);
-        if (balRes.ok && balRes.data) setBalances(balRes.data);
-      } else if (role === 'owner') {
-        const [mgrRes, sentRes] = await Promise.all([listManagers(), listSentEnvelopes()]);
-        if (mgrRes.ok && mgrRes.data) setManagers(mgrRes.data.managers);
-        if (sentRes.ok && sentRes.data) setSentEnvelopes(sentRes.data.envelopes);
-      }
+      const [envRes, balRes] = await Promise.all([listEnvelopes(), getManagerBalances()]);
+      if (envRes.ok && envRes.data) setEnvelopes(envRes.data.envelopes);
+      if (balRes.ok && balRes.data) setBalances(balRes.data);
     } catch {
       setError('Impossible de joindre le serveur. Le backend est-il lancé ?');
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleDelete = async (e: Employee) => {
     const ok = await confirm({
@@ -150,11 +98,8 @@ export default function ManagerDashboard({ role, onLogout, onBack }: ManagerDash
     setDeletingId(e.id);
     try {
       const res = await deleteEmployee(e.id);
-      if (res.ok) {
-        await load();
-      } else {
-        setError("Impossible de supprimer cet employé.");
-      }
+      if (res.ok) await load();
+      else setError("Impossible de supprimer cet employé.");
     } catch {
       setError('Impossible de joindre le serveur.');
     } finally {
@@ -162,159 +107,35 @@ export default function ManagerDashboard({ role, onLogout, onBack }: ManagerDash
     }
   };
 
-  useEffect(() => {
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   const handleLogout = async () => {
     try {
       await apiLogout();
     } catch {
-      // On déconnecte côté front même si l'appel échoue.
+      // déconnexion front même si l'appel échoue
     }
     onLogout();
   };
 
-  const handleGenerateInvite = async (inviteRole: 'MANAGER' | 'EMPLOYEE' = 'EMPLOYEE') => {
+  const handleGenerateInvite = async () => {
     setInviteError('');
     try {
-      const res = await generateInviteCode(inviteRole);
-      if (res.ok && res.data?.invite) {
-        setInviteCode(res.data.invite.code);
-      } else if (res.status === 401) {
-        setInviteError('Session expirée, reconnecte-toi.');
-      } else {
-        setInviteError('Impossible de générer le code d\'invitation.');
-      }
+      const res = await generateInviteCode('EMPLOYEE');
+      if (res.ok && res.data?.invite) setInviteCode(res.data.invite.code);
+      else if (res.status === 401) setInviteError('Session expirée, reconnecte-toi.');
+      else setInviteError("Impossible de générer le code d'invitation.");
     } catch {
       setInviteError('Impossible de joindre le serveur.');
     }
   };
 
-  const handleRecharge = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setRechargeError('');
-    const amount = Number(rechargeAmount);
-    if (!Number.isInteger(amount) || amount <= 0) {
-      setRechargeError('Le montant doit être un entier positif.');
-      return;
-    }
-    setRecharging(true);
+  const approveEmployee = async (employeeId: string) => {
     try {
-      const res = await createCheckout(amount);
-      if (res.ok && res.data?.url) {
-        window.location.href = res.data.url;
-      } else if (res.status === 401) {
-        setRechargeError('Session expirée, reconnecte-toi.');
-      } else {
-        setRechargeError('Impossible de démarrer le paiement.');
-      }
+      const res = await apiApproveEmployee(employeeId);
+      if (res.ok) await load();
+      else if (res.status === 401) setError('Session expirée, reconnecte-toi.');
+      else setError("Impossible d'approuver cet employé.");
     } catch {
-      setRechargeError('Impossible de joindre le serveur.');
-    } finally {
-      setRecharging(false);
-    }
-  };
-
-  const openAlloc = (id: string) => {
-    setAllocOpenId(id);
-    setAllocAmount('');
-    setAllocMode('PART_EGALE');
-    setAllocPercentage('');
-    setAllocError('');
-  };
-
-  const submitAlloc = async (managerId: string) => {
-    setAllocError('');
-    const amount = Number(allocAmount);
-    if (!Number.isInteger(amount) || amount <= 0) {
-      setAllocError('Le montant doit être un entier positif.');
-      return;
-    }
-    let percentage: number | undefined;
-    if (allocMode === 'POURCENTAGE') {
-      percentage = Number(allocPercentage);
-      if (!Number.isInteger(percentage) || percentage < 1 || percentage > 100) {
-        setAllocError('Le pourcentage doit être un entier entre 1 et 100.');
-        return;
-      }
-    }
-    setAllocSubmitting(true);
-    try {
-      const res = await allocateTokens(managerId, amount, allocMode, percentage);
-      if (res.ok) {
-        setAllocOpenId(null);
-        await load();
-      } else if (res.status === 401) {
-        setAllocError('Session expirée, reconnecte-toi.');
-      } else {
-        const msg = res.data && 'error' in res.data ? res.data.error : "Échec de l'allocation.";
-        setAllocError(msg);
-      }
-    } catch {
-      setAllocError('Impossible de joindre le serveur.');
-    } finally {
-      setAllocSubmitting(false);
-    }
-  };
-
-  // Retour de Stripe : ?payment=success|cancel.
-  useEffect(() => {
-    const payment = new URLSearchParams(window.location.search).get('payment');
-    if (payment === 'success' || payment === 'cancel') {
-      setPaymentNotice(payment);
-      window.history.replaceState({}, '', window.location.pathname);
-      if (payment === 'success') {
-        setTimeout(() => { load(); }, 1500);
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const openAttrib = (id: string) => {
-    setAttribOpenId(id);
-    setAttribAmount('');
-    setAttribMotif('');
-    setAttribError('');
-  };
-
-  const closeAttrib = () => {
-    setAttribOpenId(null);
-    setAttribError('');
-  };
-
-  const submitAttrib = async (employeeId: string) => {
-    setAttribError('');
-    const amount = Number(attribAmount);
-    if (!Number.isInteger(amount) || amount <= 0) {
-      setAttribError('Le montant doit être un entier positif.');
-      return;
-    }
-    if (!attribMotif) {
-      setAttribError('Le motif est obligatoire.');
-      return;
-    }
-
-    setAttribSubmitting(true);
-    try {
-      const res = await createAttribution({ employeeId, amount, motifId: attribMotif });
-      if (res.ok) {
-        closeAttrib();
-        await load();
-      } else if (res.status === 409) {
-        const msg = res.data && 'error' in res.data ? res.data.error : 'Solde de tokens insuffisant.';
-        setAttribError(msg);
-      } else if (res.status === 401) {
-        setAttribError('Session expirée, reconnecte-toi.');
-      } else {
-        const msg = res.data && 'error' in res.data ? res.data.error : "Échec de l'attribution.";
-        setAttribError(msg);
-      }
-    } catch {
-      setAttribError('Impossible de joindre le serveur.');
-    } finally {
-      setAttribSubmitting(false);
+      setError('Impossible de joindre le serveur.');
     }
   };
 
@@ -325,40 +146,18 @@ export default function ManagerDashboard({ role, onLogout, onBack }: ManagerDash
 
   const totalDistributed = (employees ?? []).reduce((sum, e) => sum + e.balance, 0);
 
-  const approveEmployee = async (employeeId: string) => {
-    try {
-      const res = await apiApproveEmployee(employeeId);
-      if (res.ok) {
-        await load();
-      } else if (res.status === 401) {
-        setError('Session expirée, reconnecte-toi.');
-      } else {
-        setError("Impossible d'approuver cet employé.");
-      }
-    } catch {
-      setError('Impossible de joindre le serveur.');
-    }
-  };
-
-  const tabs: { key: typeof activeTab; label: string }[] = role === 'owner'
-    ? [
-        { key: 'managers', label: 'Mes managers' },
-        { key: 'envoyees', label: 'Mes enveloppes envoyées' },
-        { key: 'employes', label: 'Mes employés' },
-      ]
-    : [{ key: 'enveloppes', label: 'Mes enveloppes' }, { key: 'employes', label: 'Mes employés' }];
+  const tabs: { key: typeof activeTab; label: string }[] = [
+    { key: 'enveloppes', label: 'Mes enveloppes' },
+    { key: 'employes', label: 'Mes employés' },
+  ];
 
   return (
     <Layout
-      title="Prim'O — Espace entreprise"
+      title="Prim'O — Espace manager"
       headerActions={
         <>
-          <button className="app-btn app-btn-ghost" type="button" onClick={onBack}>
-            ← Accueil
-          </button>
-          <button className="app-btn app-btn-ghost" type="button" onClick={handleLogout}>
-            Se déconnecter
-          </button>
+          <button className="app-btn app-btn-ghost" type="button" onClick={onBack}>← Accueil</button>
+          <button className="app-btn app-btn-ghost" type="button" onClick={handleLogout}>Se déconnecter</button>
         </>
       }
     >
@@ -367,63 +166,21 @@ export default function ManagerDashboard({ role, onLogout, onBack }: ManagerDash
 
         <div className="dash-stats">
           <div className="dash-stat dash-stat-pool">🏦 <strong>{company?.tokenBalance ?? '—'}</strong>&nbsp;pool entreprise</div>
-          {role === 'manager' && (
-            <>
-              <div className="dash-stat">🪙 <strong>{balances?.personalBalance ?? '—'}</strong>&nbsp;mes tokens</div>
-              <div className="dash-stat">✉️ <strong>{balances?.envelopeRemaining ?? '—'}</strong>&nbsp;à distribuer</div>
-            </>
-          )}
+          <div className="dash-stat">🪙 <strong>{balances?.personalBalance ?? '—'}</strong>&nbsp;mes tokens</div>
+          <div className="dash-stat">✉️ <strong>{balances?.envelopeRemaining ?? '—'}</strong>&nbsp;à distribuer</div>
           <div className="dash-stat">👥 <strong>{employees?.length ?? 0}</strong>&nbsp;employés</div>
           <div className="dash-stat">🪙 <strong>{totalDistributed}</strong>&nbsp;tokens distribués</div>
-          {role === 'owner' && (
-            <button className="dash-invite" type="button" onClick={() => handleGenerateInvite('MANAGER')}>
-              Code manager
-            </button>
-          )}
-          <button className="dash-invite" type="button" onClick={() => handleGenerateInvite('EMPLOYEE')}>
-            Code employé
-          </button>
+          <button className="dash-invite" type="button" onClick={handleGenerateInvite}>Code employé</button>
         </div>
-
-        {paymentNotice === 'success' && (
-          <div className="dash-msg">✅ Paiement réussi ! Ton pool va être crédité dans un instant.</div>
-        )}
-        {paymentNotice === 'cancel' && (
-          <div className="dash-msg dash-error">Paiement annulé.</div>
-        )}
-
-        {role === 'owner' && (
-          <form className="dash-recharge" onSubmit={handleRecharge}>
-            <input
-              type="number"
-              min="1"
-              step="1"
-              placeholder="Nb de tokens"
-              value={rechargeAmount}
-              onChange={(e) => setRechargeAmount(e.target.value)}
-            />
-            <button className="dash-invite" type="submit" disabled={recharging}>
-              {recharging ? '…' : '💳 Recharger le pool'}
-            </button>
-            {rechargeError && <p className="dash-msg dash-error">{rechargeError}</p>}
-          </form>
-        )}
 
         {inviteCode && (
           <div className="dash-msg">
             Code d'invitation : <strong>{inviteCode}</strong>{' '}
-            <button
-              type="button"
-              className="dash-retry"
-              onClick={() => navigator.clipboard.writeText(inviteCode)}
-            >
-              Copier
-            </button>
+            <button type="button" className="dash-retry" onClick={() => navigator.clipboard.writeText(inviteCode)}>Copier</button>
           </div>
         )}
         {inviteError && <p className="dash-msg dash-error">{inviteError}</p>}
 
-        {/* Onglets */}
         <div className="dash-tabs">
           {tabs.map((t) => (
             <button
@@ -438,7 +195,6 @@ export default function ManagerDashboard({ role, onLogout, onBack }: ManagerDash
         </div>
 
         {loading && <p className="dash-msg">Chargement…</p>}
-
         {!loading && error && (
           <div className="dash-msg dash-error">
             {error}{' '}
@@ -446,17 +202,15 @@ export default function ManagerDashboard({ role, onLogout, onBack }: ManagerDash
           </div>
         )}
 
-        {/* ─── Onglet MANAGER : Mes enveloppes ─── */}
-        {!loading && !error && role === 'manager' && activeTab === 'enveloppes' && (
+        {/* Mes enveloppes reçues */}
+        {!loading && !error && activeTab === 'enveloppes' && (
           <section className="history">
             <h2 className="history-title">Mes enveloppes reçues</h2>
             {envelopes.length === 0 ? (
               <p className="dash-msg">Aucune enveloppe pour l'instant.</p>
             ) : (
               <div className="env-grid">
-                {envelopes.map((e) => (
-                  <EnvelopeTile key={e.allocationId} envelope={e} onOpen={setOpenEnvelope} />
-                ))}
+                {envelopes.map((e) => <EnvelopeTile key={e.allocationId} envelope={e} onOpen={setOpenEnvelope} />)}
               </div>
             )}
             {openEnvelope && (
@@ -471,87 +225,10 @@ export default function ManagerDashboard({ role, onLogout, onBack }: ManagerDash
           </section>
         )}
 
-        {/* ─── Onglet OWNER : Mes managers (allocation + mode) ─── */}
-        {!loading && !error && role === 'owner' && activeTab === 'managers' && (
-          <section className="history">
-            <h2 className="history-title">Allouer des tokens à un manager</h2>
-            {managers.length === 0 ? (
-              <p className="dash-msg">Aucun manager pour l'instant.</p>
-            ) : (
-              <ul className="emp-list">
-                {managers.map((m) => (
-                  <li className="emp-item" key={m.id}>
-                    <div className="emp-row">
-                      <div className="emp-avatar">
-                        {`${m.firstName?.[0] ?? ''}${m.lastName?.[0] ?? ''}`.toUpperCase()}
-                      </div>
-                      <div className="emp-main">
-                        <div className="emp-name">{m.firstName} {m.lastName}</div>
-                        <div className="emp-sub">{m.email}</div>
-                      </div>
-                      <button
-                        type="button"
-                        className="emp-attrib-btn"
-                        onClick={() => (allocOpenId === m.id ? setAllocOpenId(null) : openAlloc(m.id))}
-                      >
-                        {allocOpenId === m.id ? 'Annuler' : 'Attribuer'}
-                      </button>
-                    </div>
-                    {allocOpenId === m.id && (
-                      <form
-                        className="emp-attrib-form"
-                        onSubmit={(ev) => { ev.preventDefault(); submitAlloc(m.id); }}
-                      >
-                        <input
-                          className="alloc-input"
-                          type="number"
-                          min="1"
-                          step="1"
-                          placeholder="Montant de l'enveloppe"
-                          value={allocAmount}
-                          onChange={(ev) => setAllocAmount(ev.target.value)}
-                        />
-                        <ModeSelector
-                          mode={allocMode}
-                          percentage={allocPercentage}
-                          onModeChange={setAllocMode}
-                          onPercentageChange={setAllocPercentage}
-                        />
-                        <button type="submit" className="emp-attrib-submit" disabled={allocSubmitting}>
-                          {allocSubmitting ? '…' : 'Envoyer l\'enveloppe'}
-                        </button>
-                        {allocError && <p className="emp-attrib-error">{allocError}</p>}
-                      </form>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-        )}
-
-        {/* ─── Onglet OWNER : Mes enveloppes envoyées ─── */}
-        {!loading && !error && role === 'owner' && activeTab === 'envoyees' && (
-          <section className="history">
-            <h2 className="history-title">Mes enveloppes envoyées</h2>
-            {sentEnvelopes.length === 0 ? (
-              <p className="dash-msg">Aucune enveloppe envoyée pour l'instant.</p>
-            ) : (
-              <div className="env-grid">
-                {sentEnvelopes.map((e) => (
-                  <SentEnvelopeTile key={e.allocationId} envelope={e} />
-                ))}
-              </div>
-            )}
-          </section>
-        )}
-
-        {/* ─── Onglet EMPLOYÉS (owner + manager) ─── */}
+        {/* Mes employés (lecture + gestion d'équipe) + historique */}
         {!loading && !error && activeTab === 'employes' && (
           <>
-            {employees && employees.length === 0 && (
-              <p className="dash-msg">Aucun employé pour l'instant.</p>
-            )}
+            {employees && employees.length === 0 && <p className="dash-msg">Aucun employé pour l'instant.</p>}
             {employees && employees.length > 0 && (
               <ul className="emp-list">
                 {employees.map((e) => (
@@ -564,12 +241,7 @@ export default function ManagerDashboard({ role, onLogout, onBack }: ManagerDash
                           {e.isEmailVerified ? (
                             <span className="emp-badge verified">✓ vérifié</span>
                           ) : (
-                            <button
-                              type="button"
-                              className="emp-attrib-btn"
-                              onClick={() => approveEmployee(e.id)}>
-                              Approuver
-                            </button>
+                            <button type="button" className="emp-attrib-btn" onClick={() => approveEmployee(e.id)}>Approuver</button>
                           )}
                         </div>
                         <div className="emp-sub">{e.email} · inscrit le {formatDate(e.createdAt)}</div>
@@ -578,15 +250,6 @@ export default function ManagerDashboard({ role, onLogout, onBack }: ManagerDash
                         <div className="emp-balance-num">{e.balance}</div>
                         <div className="emp-balance-label">tokens</div>
                       </div>
-                      {role === 'owner' && (
-                        <button
-                          type="button"
-                          className="emp-attrib-btn"
-                          onClick={() => (attribOpenId === e.id ? closeAttrib() : openAttrib(e.id))}
-                        >
-                          {attribOpenId === e.id ? 'Annuler' : 'Envoyer'}
-                        </button>
-                      )}
                       <button
                         type="button"
                         className="emp-delete-btn"
@@ -597,56 +260,11 @@ export default function ManagerDashboard({ role, onLogout, onBack }: ManagerDash
                         {deletingId === e.id ? '…' : '🗑️'}
                       </button>
                     </div>
-
-                    {role === 'owner' && attribOpenId === e.id && (
-                      <form
-                        className="emp-attrib-form"
-                        onSubmit={(ev) => { ev.preventDefault(); submitAttrib(e.id); }}
-                      >
-                        <input
-                          className="alloc-input"
-                          type="number"
-                          min="1"
-                          step="1"
-                          placeholder="Montant"
-                          value={attribAmount}
-                          onChange={(ev) => setAttribAmount(ev.target.value)}
-                        />
-                        <MotifSelect
-                          groups={motifGroups}
-                          value={attribMotif}
-                          onChange={setAttribMotif}
-                        />
-                        <button type="submit" className="emp-attrib-submit" disabled={attribSubmitting}>
-                          {attribSubmitting ? '…' : 'Envoyer'}
-                        </button>
-                        {attribError && <p className="emp-attrib-error">{attribError}</p>}
-                      </form>
-                    )}
                   </li>
                 ))}
               </ul>
             )}
-
-            <section className="history">
-              <h2 className="history-title">Historique des transactions</h2>
-              {attributions.length === 0 ? (
-                <p className="dash-msg">Aucune transaction pour l'instant.</p>
-              ) : (
-                <ul className="history-list">
-                  {attributions.map((a) => (
-                    <li className="history-row" key={a.id}>
-                      <span className="history-emp">
-                        {a.employee.firstName} {a.employee.lastName}
-                      </span>
-                      <span className="history-reason">{a.reason}</span>
-                      <span className="history-date">{formatDate(a.createdAt)}</span>
-                      <span className="history-amount">+{a.amount}</span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </section>
+            <DashHistory attributions={attributions} />
           </>
         )}
 

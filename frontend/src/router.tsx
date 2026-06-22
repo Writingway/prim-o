@@ -9,6 +9,7 @@ import type { Mode } from './types/types';
 import LandingPage from './pages/LandingPage';
 import AuthPage from './pages/AuthPage';
 import ManagerDashboard from './pages/ManagerDashboard';
+import OwnerDashboard from './pages/OwnerDashboard';
 import EmployeeDashboard from './pages/EmployeeDashboard';
 import AdminPage from './pages/AdminPage';
 import OnboardingPage from './pages/OnboardingPage';
@@ -121,8 +122,8 @@ const dashboardRoute = createRoute({
     const role = normalizeRole(identity?.role ?? null);
     const onLogout = () => doLogout(navigate);
     const onBack = () => navigate({ to: '/' });
-    if (role === 'manager' || role === 'owner')
-      return <ManagerDashboard role={role} onLogout={onLogout} onBack={onBack} />;
+    if (role === 'owner') return <OwnerDashboard onLogout={onLogout} onBack={onBack} />;
+    if (role === 'manager') return <ManagerDashboard onLogout={onLogout} onBack={onBack} />;
     if (role === 'employee') return <EmployeeDashboard onLogout={onLogout} onBack={onBack} />;
     if (role === 'admin') return <AdminPage onLogout={onLogout} onBack={onBack} />;
     return <div className="app-loading">Chargement…</div>;   // Phase B : redirection /auth ou /onboarding
