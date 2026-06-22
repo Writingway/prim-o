@@ -16,12 +16,17 @@ import type { MotifCategoryGroup, ManagerEnvelope, ManagerBalances } from '../ty
 import { formatDate } from '../lib/format';
 import './ManagerDashboard.css';
 import Layout from '../components/layout/Layout';
+import BottomNav from '../components/layout/BottomNav';
+import { NAV_ITEMS } from '../hooks/useBottomNav';
 import PrivacySection from '../components/privacy/PrivacySection';
 import EditProfile from '../components/privacy/EditProfile';
 import { useConfirm } from '../components/ui/ConfirmDialog';
 import EnvelopeTile from '../components/allocation/EnvelopeTile';
 import RedistributionBlock from '../components/allocation/RedistributionBlock';
 import DashHistory from '../components/dashboard/DashHistory';
+import Icon from '../components/ui/Icon';
+import Coin from '../components/ui/Coin';
+import { HEADER_BTN_GHOST } from '../components/layout/headerButtons';
 
 type Props = { onLogout: () => void; onBack: () => void };
 
@@ -154,23 +159,80 @@ export default function ManagerDashboard({ onLogout, onBack }: Props) {
   return (
     <Layout
       title="Prim'O — Espace manager"
+      chrome="app"
+      bottomNav={
+        <BottomNav
+          items={NAV_ITEMS.manager}
+          active={activeTab}
+          onSelect={(it) =>
+            it.key === 'profil'
+              ? document.getElementById('nav-profil')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+              : setActiveTab(it.key as typeof activeTab)
+          }
+        />
+      }
       headerActions={
         <>
-          <button className="app-btn app-btn-ghost" type="button" onClick={onBack}>← Accueil</button>
-          <button className="app-btn app-btn-ghost" type="button" onClick={handleLogout}>Se déconnecter</button>
+          <button className={HEADER_BTN_GHOST} type="button" onClick={onBack}>Accueil</button>
+          <button className={HEADER_BTN_GHOST} type="button" onClick={handleLogout}>Se déconnecter</button>
         </>
       }
     >
     <div className="dash-wrapper">
       <div className="dash-container">
 
-        <div className="dash-stats">
-          <div className="dash-stat dash-stat-pool">🏦 <strong>{company?.tokenBalance ?? '—'}</strong>&nbsp;pool entreprise</div>
-          <div className="dash-stat">🪙 <strong>{balances?.personalBalance ?? '—'}</strong>&nbsp;mes tokens</div>
-          <div className="dash-stat">✉️ <strong>{balances?.envelopeRemaining ?? '—'}</strong>&nbsp;à distribuer</div>
-          <div className="dash-stat">👥 <strong>{employees?.length ?? 0}</strong>&nbsp;employés</div>
-          <div className="dash-stat">🪙 <strong>{totalDistributed}</strong>&nbsp;tokens distribués</div>
-          <button className="dash-invite" type="button" onClick={handleGenerateInvite}>Code employé</button>
+        {/* Hero : enveloppe à distribuer + soldes (cf. README D1) */}
+        <div className="mb-4 overflow-hidden rounded-3xl bg-gradient-to-b from-primo-hero-from to-primo-ink-900 px-5 pb-6 pt-5 text-white">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-[13px] text-white/65">Espace manager</div>
+              <div className="text-lg font-extrabold tracking-[-0.02em]">{company?.name ?? 'Mon équipe'}</div>
+            </div>
+            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white">
+              <Icon name="users" size={21} />
+            </span>
+          </div>
+
+          <div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.09] p-4">
+            <div className="mb-2 flex items-center gap-2 text-white/65">
+              <Icon name="envelope" size={18} />
+              <span className="text-[13px] font-semibold">Enveloppe à distribuer</span>
+            </div>
+            <div className="flex items-end gap-2.5">
+              <Coin size={36} />
+              <span className="text-[42px] font-extrabold leading-none tracking-[-0.03em]">
+                {balances?.envelopeRemaining ?? '—'}
+              </span>
+              <span className="mb-1.5 text-sm text-white/65">jetons</span>
+            </div>
+          </div>
+
+          <div className="mt-3 grid grid-cols-2 gap-3">
+            <div className="rounded-2xl bg-white/[0.06] p-3.5">
+              <div className="text-xs text-white/65">Mon solde perso</div>
+              <div className="mt-1.5 flex items-center gap-1.5">
+                <Coin size={18} />
+                <span className="text-xl font-extrabold">{balances?.personalBalance ?? '—'}</span>
+              </div>
+            </div>
+            <div className="rounded-2xl bg-white/[0.06] p-3.5">
+              <div className="text-xs text-white/65">Distribué</div>
+              <div className="mt-1.5 text-xl font-extrabold">{totalDistributed}</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Récap compact + invitation */}
+        <div className="mb-4 flex flex-wrap items-center gap-2.5">
+          <span className="rounded-[14px] border border-primo-line bg-white px-3.5 py-2.5 text-sm text-primo-slate">
+            <strong className="text-primo-ink">{employees?.length ?? 0}</strong>&nbsp;employés
+          </span>
+          <span className="rounded-[14px] border border-primo-line bg-white px-3.5 py-2.5 text-sm text-primo-slate">
+            <strong className="text-primo-ink">{company?.tokenBalance ?? '—'}</strong>&nbsp;pool entreprise
+          </span>
+          <button className="dash-invite inline-flex items-center gap-1.5" type="button" onClick={handleGenerateInvite}>
+            <Icon name="plus" size={16} /> Code employé
+          </button>
         </div>
 
         {inviteCode && (
@@ -239,7 +301,7 @@ export default function ManagerDashboard({ onLogout, onBack }: Props) {
                         <div className="emp-name">
                           {e.firstName} {e.lastName}
                           {e.isEmailVerified ? (
-                            <span className="emp-badge verified">✓ vérifié</span>
+                            <span className="emp-badge verified"><Icon name="check" size={13} strokeWidth={2.4} /> vérifié</span>
                           ) : (
                             <button type="button" className="emp-attrib-btn" onClick={() => approveEmployee(e.id)}>Approuver</button>
                           )}
@@ -257,7 +319,7 @@ export default function ManagerDashboard({ onLogout, onBack }: Props) {
                         disabled={deletingId === e.id}
                         onClick={() => handleDelete(e)}
                       >
-                        {deletingId === e.id ? '…' : '🗑️'}
+                        {deletingId === e.id ? '…' : <Icon name="trash" size={18} />}
                       </button>
                     </div>
                   </li>
@@ -268,8 +330,16 @@ export default function ManagerDashboard({ onLogout, onBack }: Props) {
           </>
         )}
 
+        <div id="nav-profil" className="scroll-mt-20" />
         {!loading && <EditProfile />}
         {!loading && <PrivacySection onAccountDeleted={onLogout} />}
+        <button
+          type="button"
+          className="mt-2.5 flex w-full items-center justify-center gap-2.5 rounded-[14px] border-[1.5px] border-[#f0c9c9] bg-white px-4 py-3.5 text-[15px] font-bold text-primo-error hover:bg-primo-error-soft lg:hidden"
+          onClick={handleLogout}
+        >
+          <Icon name="logout" size={19} /> Se déconnecter
+        </button>
       </div>
     </div>
     {confirmDialog}

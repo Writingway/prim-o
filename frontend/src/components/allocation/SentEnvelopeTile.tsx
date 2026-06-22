@@ -1,5 +1,6 @@
 import type { SentEnvelope } from '../../types/types';
 import { MODE_LABELS } from '../../types/types';
+import Icon from '../ui/Icon';
 
 type Props = { envelope: SentEnvelope };
 
@@ -10,13 +11,15 @@ export default function SentEnvelopeTile({ envelope: e }: Props) {
 
   return (
     <div className={`env-tile${distributed ? ' is-locked' : ''}`}>
-      <div className="env-icon">{distributed ? '📨' : '✉️'}</div>
+      <div className="env-icon"><Icon name="envelope" size={22} /></div>
       <div className="env-amount">{e.amount}</div>
       <div className="env-mode">{modeLabel}</div>
       <div className="env-part">→ {e.managerName || 'manager'}</div>
-      <div className={distributed ? 'env-state-done' : 'env-mode'}>
-        {distributed ? 'Distribuée ✓' : 'À distribuer'}
-      </div>
+      {distributed ? (
+        <div className="env-state-done"><Icon name="check" size={14} strokeWidth={2.4} /> Distribuée</div>
+      ) : (
+        <div className="env-mode">À distribuer</div>
+      )}
     </div>
   );
 }

@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import { exportMyData, deleteMyAccount } from '../../services/api';
 
-const SECTION = 'mb-3.5 rounded-xl border border-primo-border bg-primo-bg px-[18px] py-4';
-const SECTION_TITLE = 'mb-3 text-[15px] font-bold text-[#1f2937]';
+const SECTION = 'mb-3.5 rounded-2xl border border-primo-line bg-white px-[18px] py-5';
+const SECTION_TITLE = 'mb-3 text-base font-bold text-primo-ink';
 const BTN =
-  'rounded-lg border border-transparent px-4 py-[9px] text-sm font-semibold transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed';
-const BTN_PRIMARY = `${BTN} bg-primo-teal text-white hover:bg-primo-teal-dark`;
-const BTN_SECONDARY = `${BTN} border-[#d1d5db] bg-white text-[#4b5563] hover:bg-[#f9fafb]`;
-const BTN_DANGER = `${BTN} border-[#f0c9c9] bg-white text-primo-error hover:bg-[#fef2f2]`;
-const BTN_DANGER_SOLID = `${BTN} bg-primo-error text-white hover:bg-[#b91c1c]`;
+  'rounded-[13px] border border-transparent px-4 py-3 text-sm font-bold transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed';
+const BTN_PRIMARY = `${BTN} bg-primo-teal text-white hover:bg-primo-teal-strong`;
+const BTN_SECONDARY = `${BTN} border-[1.5px] border-primo-line bg-white text-primo-slate hover:bg-primo-surface`;
+const BTN_DANGER = `${BTN} border-[1.5px] border-[#f0c9c9] bg-white text-primo-error hover:bg-primo-error-soft`;
+const BTN_DANGER_SOLID = `${BTN} bg-primo-error text-white hover:brightness-95`;
 
 type PrivacySectionProps = {
   // Appelé après une suppression réussie : le parent doit clore la session
@@ -74,7 +74,7 @@ export default function PrivacySection({ onAccountDeleted }: PrivacySectionProps
 
   return (
     <section className={SECTION}>
-      <h2 className={SECTION_TITLE}>Mes données personnelles</h2>
+      <h2 className={SECTION_TITLE}>Confidentialité &amp; données</h2>
 
       {/* Export (RGPD art. 15 & 20) */}
       <p className="mb-3 text-[13px] text-primo-gray">
@@ -85,7 +85,7 @@ export default function PrivacySection({ onAccountDeleted }: PrivacySectionProps
       </button>
       {exportError && <p className="mt-1 text-[13px] text-primo-error">{exportError}</p>}
 
-      <hr className="my-[18px] border-0 border-t border-[#ececf1]" />
+      <hr className="my-[18px] border-0 border-t border-primo-line" />
 
       {/* Suppression (RGPD art. 17) */}
       <p className="mb-3 text-[13px] text-primo-gray">
@@ -100,10 +100,10 @@ export default function PrivacySection({ onAccountDeleted }: PrivacySectionProps
       ) : (
         <div className="flex flex-col gap-3">
           <div className="flex flex-col gap-[5px]">
-            <label className="text-xs font-semibold text-primo-gray" htmlFor="confirm-pwd">Confirme avec ton mot de passe</label>
+            <label className="text-[13px] font-semibold text-primo-slate" htmlFor="confirm-pwd">Confirme avec ton mot de passe</label>
             <input
               id="confirm-pwd"
-              className="w-full rounded-lg border border-[#d1d5db] px-3 py-[9px] text-sm text-[#1f2937] transition focus:border-primo-teal focus:shadow-[0_0_0_3px_rgba(0,161,154,0.15)] focus:outline-none"
+              className="w-full rounded-[13px] border-[1.5px] border-primo-line px-3.5 py-3 text-sm text-primo-ink transition focus:border-primo-teal focus:shadow-[0_0_0_3px_rgba(0,161,154,0.12)] focus:outline-none"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}

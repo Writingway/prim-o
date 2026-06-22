@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import type { ChangeEvent, SyntheticEvent } from 'react';
 import { createCompany, joinCompany } from '../services/api';
-import { WRAPPER, CARD, LOGO, TABS, tab, FORM, INPUT, SUBMIT, ERROR, HELP } from '../components/auth/authClasses';
+import { WRAPPER, CARD, TABS, tab, FORM, INPUT, SUBMIT, ERROR } from '../components/auth/authClasses';
+import AuthBrand from '../components/auth/AuthBrand';
 
 type ValidationErrorBody = { details?: Array<{ message: string }> };
 
@@ -45,8 +46,7 @@ export default function OnboardingPage({ onDone }: OnboardingPageProps) {
   return (
     <div className={WRAPPER}>
       <div className={CARD}>
-        <h1 className={LOGO}>Prim'O</h1>
-        <p className={`mb-5 text-center ${HELP}`}>Dernière étape : rejoignez ou créez votre entreprise.</p>
+        <AuthBrand subtitle="Dernière étape : rejoins ou crée ton entreprise." />
 
         <div className={TABS}>
           <button type="button" className={tab(tabKey === 'create')} onClick={() => { setTab('create'); setError(''); }}>Créer une entreprise</button>

@@ -62,7 +62,7 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
   const handleResend = async () => {
     setResendMsg('');
     const res = await resendVerification(form.email);
-    setResendMsg(res.ok ? 'Email renvoyé ✅ Vérifie ta boîte mail.' : 'Impossible de renvoyer pour le moment.');
+    setResendMsg(res.ok ? 'Email renvoyé. Vérifie ta boîte mail.' : 'Impossible de renvoyer pour le moment.');
   };
 
   const handleForgot = async (event: SyntheticEvent<HTMLFormElement>) => {
