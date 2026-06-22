@@ -56,7 +56,8 @@ export default function LandingPage({
   const [revealed, setRevealed] = useState<Revealed | null>(null);
   const [redeemError, setRedeemError] = useState('');
 
-  const isEmployee = isLoggedIn && role === 'employee';
+  // Achat réservé aux employés ET managers (le manager dépense sa rétribution).
+  const canRedeem = isLoggedIn && (role === 'employee' || role === 'manager');
 
   useEffect(() => {
     let alive = true;
@@ -192,7 +193,7 @@ export default function LandingPage({
           {redeemError && <p className="mb-3 text-center text-primo-error">{redeemError}</p>}
 
           <div className={MODAL_ACTIONS}>
-            {isEmployee && (
+            {canRedeem && (
               <button
                 className={HEADER_BTN_PRIMARY}
                 type="button"
@@ -206,8 +207,12 @@ export default function LandingPage({
               Fermer
             </button>
           </div>
-          {!isEmployee && (
-            <p className={MODAL_NOTE}>Connecte-toi en tant qu'employé pour acheter un code.</p>
+          {!canRedeem && (
+            <p className={MODAL_NOTE}>
+              {isLoggedIn
+                ? "Achat réservé aux employés et aux managers."
+                : "Connecte-toi en tant qu'employé ou manager pour acheter un code."}
+            </p>
           )}
         </div>
       </div>

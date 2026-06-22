@@ -10,8 +10,10 @@ export async function redeemOfferController(
   next: NextFunction,
 ): Promise<void> {
   try {
-    if (req.user?.role !== 'EMPLOYEE') {
-      next(new AppError(403, 'Accès réservé aux employés.'));
+    // Achat réservé aux employés ET managers (le manager dépense sa rétribution).
+    // L'owner et l'admin ne consomment pas d'offres.
+    if (req.user?.role !== 'EMPLOYEE' && req.user?.role !== 'MANAGER') {
+      next(new AppError(403, 'Achat réservé aux employés et aux managers.'));
       return;
     }
     const companyId = req.user.companyId;

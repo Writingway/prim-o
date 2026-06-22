@@ -56,6 +56,7 @@ const indexRoute = createRoute({
     return (
       <LandingPage
         isLoggedIn={!!identity}
+        role={normalizeRole(identity?.role ?? null) ?? undefined}
         onLogin={() => navigate({ to: '/auth', search: { mode: 'login' } })}
         onRegister={() => navigate({ to: '/auth', search: { mode: 'register' } })}
         onDashboard={() => navigate({ to: '/dashboard' })}
