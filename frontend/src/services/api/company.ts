@@ -20,7 +20,13 @@ export const generateInviteCode = (role: 'MANAGER' | 'EMPLOYEE' = 'EMPLOYEE') =>
 
 // Attribue des tokens à un employé (manager connecté).
 // Le backend débite le pool entreprise et crédite l'employé de façon atomique.
-export const createAttribution = (payload: { employeeId: string; amount: number; reason: string }) =>
+// motifId est OBLIGATOIRE (§3.5) ; reason = note libre optionnelle.
+export const createAttribution = (payload: {
+  employeeId: string;
+  amount: number;
+  motifId: string;
+  reason?: string;
+}) =>
   authRequest<
     { attribution: { id: string; amount: number; reason: string; createdAt: string } } | { error: string }
   >('POST', '/attributions', payload);

@@ -155,8 +155,18 @@ export default function EmployeeDashboard({ onLogout, onBack }: EmployeeDashboar
                     {received.map((t) => (
                       <li className="emp-tx-row received" key={t.id}>
                         <div className="emp-tx-main">
-                          <div className="emp-tx-reason">{t.reason}</div>
-                          <div className="emp-tx-sub">de {t.managerName} · {formatDate(t.createdAt)}</div>
+                          {t.compliment ? (
+                            <>
+                              <div className="emp-tx-compliment">{t.compliment}</div>
+                              {t.reason && <div className="emp-tx-note">« {t.reason} »</div>}
+                            </>
+                          ) : (
+                            <div className="emp-tx-reason">{t.reason}</div>
+                          )}
+                          <div className="emp-tx-sub">
+                            {t.motifLabel && <span className="emp-tx-motif">{t.motifLabel}</span>}
+                            de {t.managerName} · {formatDate(t.createdAt)}
+                          </div>
                         </div>
                         <div className="emp-tx-amount positive">+{t.amount}</div>
                       </li>

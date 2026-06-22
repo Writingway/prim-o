@@ -11,9 +11,10 @@ import {
   listManagers,
   getMyBalance,
   allocateTokens,
+  listMotifs,
   logout as apiLogout,
 } from '../services/api';
-import type { CompanyManager } from '../services/api';
+import type { CompanyManager, MotifCategoryGroup, MotifCategory } from '../services/api';
 import type { Employee, Company, AttributionHistory, Role } from '../types/types';
 import './ManagerDashboard.css';
 import Layout from '../components/layout/Layout';
@@ -25,6 +26,7 @@ type ManagerDashboardProps = {
   role: Role;
   onLogout: () => void;
   onBack: () => void;
+  onStats?: () => void;
 };
 
 const initials = (e: Employee) =>
@@ -33,8 +35,16 @@ const initials = (e: Employee) =>
 const formatDate = (iso: string) =>
   new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
+// Libellés FR des 4 catégories de motifs (§3.5) pour les <optgroup>.
+const CATEGORY_LABELS: Record<MotifCategory, string> = {
+  COMPORTEMENTS_INDIVIDUELS: 'Comportements individuels',
+  RELATION_CLIENT: 'Relation client',
+  ESPRIT_COLLECTIF: 'Esprit collectif',
+  ENGAGEMENT: 'Engagement',
+};
+
 // Dashboard employeur : liste des employés de son entreprise (lecture seule).
-export default function ManagerDashboard({ role, onLogout, onBack }: ManagerDashboardProps) {
+export default function ManagerDashboard({ role, onLogout, onBack, onStats }: ManagerDashboardProps) {
   const { confirm, confirmDialog } = useConfirm();
   const [employees, setEmployees] = useState<Employee[] | null>(null);
   const [company, setCompany] = useState<Company | null>(null);
@@ -63,8 +73,12 @@ export default function ManagerDashboard({ role, onLogout, onBack }: ManagerDash
   const [attribOpenId, setAttribOpenId] = useState<string | null>(null);
   const [attribAmount, setAttribAmount] = useState('');
   const [attribReason, setAttribReason] = useState('');
+  const [attribMotifId, setAttribMotifId] = useState('');
   const [attribError, setAttribError] = useState('');
   const [attribSubmitting, setAttribSubmitting] = useState(false);
+
+  // Liste officielle des motifs (§3.5), chargée une fois pour le sélecteur de distribution.
+  const [motifCategories, setMotifCategories] = useState<MotifCategoryGroup[]>([]);
 
   const load = async () => {
     setLoading(true);
@@ -130,6 +144,13 @@ export default function ManagerDashboard({ role, onLogout, onBack }: ManagerDash
   useEffect(() => {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Motifs officiels (§3.5) : référentiel statique, chargé une seule fois.
+  useEffect(() => {
+    listMotifs()
+      .then((res) => { if (res.ok && res.data) setMotifCategories(res.data.categories); })
+      .catch(() => { /* silencieux : le sélecteur restera vide */ });
   }, []);
 
   const handleLogout = async () => {
@@ -232,6 +253,7 @@ export default function ManagerDashboard({ role, onLogout, onBack }: ManagerDash
     setAttribOpenId(id);
     setAttribAmount('');
     setAttribReason('');
+    setAttribMotifId('');
     setAttribError('');
   };
 
@@ -247,14 +269,19 @@ export default function ManagerDashboard({ role, onLogout, onBack }: ManagerDash
       setAttribError('Le montant doit être un entier positif.');
       return;
     }
-    if (!attribReason.trim()) {
-      setAttribError('La raison est obligatoire.');
+    if (!attribMotifId) {
+      setAttribError('Le motif est obligatoire.');
       return;
     }
 
     setAttribSubmitting(true);
     try {
-      const res = await createAttribution({ employeeId, amount, reason: attribReason.trim() });
+      const res = await createAttribution({
+        employeeId,
+        amount,
+        motifId: attribMotifId,
+        ...(attribReason.trim() ? { reason: attribReason.trim() } : {}),
+      });
       if (res.ok) {
         closeAttrib();
         await load(); // recharge la liste → le solde de l'employé est à jour
@@ -262,7 +289,7 @@ export default function ManagerDashboard({ role, onLogout, onBack }: ManagerDash
         const msg = res.data && 'error' in res.data ? res.data.error : 'Solde de tokens insuffisant.';
         setAttribError(msg);
       } else if (res.status === 400) {
-        setAttribError('Montant et raison obligatoires.');
+        setAttribError('Montant et motif obligatoires.');
       } else if (res.status === 401) {
         setAttribError('Session expirée, reconnecte-toi.');
       } else {
@@ -301,6 +328,11 @@ export default function ManagerDashboard({ role, onLogout, onBack }: ManagerDash
       title="Prim'O — Mes employés"
       headerActions={
         <>
+          {role === 'owner' && onStats && (
+            <button className="app-btn app-btn-ghost" type="button" onClick={onStats}>
+              📊 Statistiques
+            </button>
+          )}
           <button className="app-btn app-btn-ghost" type="button" onClick={onBack}>
             ← Accueil
           </button>
@@ -492,9 +524,24 @@ export default function ManagerDashboard({ role, onLogout, onBack }: ManagerDash
                       value={attribAmount}
                       onChange={(ev) => setAttribAmount(ev.target.value)}
                     />
+                    <select
+                      className="emp-attrib-motif"
+                      value={attribMotifId}
+                      onChange={(ev) => setAttribMotifId(ev.target.value)}
+                      required
+                    >
+                      <option value="">— Motif (obligatoire) —</option>
+                      {motifCategories.map((cat) => (
+                        <optgroup key={cat.category} label={CATEGORY_LABELS[cat.category]}>
+                          {cat.motifs.map((m) => (
+                            <option key={m.id} value={m.id}>{m.label}</option>
+                          ))}
+                        </optgroup>
+                      ))}
+                    </select>
                     <input
                       type="text"
-                      placeholder="Raison (obligatoire)"
+                      placeholder="Note (optionnelle)"
                       value={attribReason}
                       onChange={(ev) => setAttribReason(ev.target.value)}
                     />

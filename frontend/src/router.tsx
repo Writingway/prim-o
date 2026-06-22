@@ -10,6 +10,7 @@ import LandingPage from './pages/LandingPage';
 import AuthPage from './pages/AuthPage';
 import ManagerDashboard from './pages/ManagerDashboard';
 import EmployeeDashboard from './pages/EmployeeDashboard';
+import StatsPage from './pages/StatsPage';
 import AdminPage from './pages/AdminPage';
 import OnboardingPage from './pages/OnboardingPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
@@ -121,10 +122,25 @@ const dashboardRoute = createRoute({
     const onLogout = () => doLogout(navigate);
     const onBack = () => navigate({ to: '/' });
     if (role === 'manager' || role === 'owner')
-      return <ManagerDashboard role={role} onLogout={onLogout} onBack={onBack} />;
+      return <ManagerDashboard role={role} onLogout={onLogout} onBack={onBack} onStats={() => navigate({ to: '/stats' })} />;
     if (role === 'employee') return <EmployeeDashboard onLogout={onLogout} onBack={onBack} />;
     if (role === 'admin') return <AdminPage onLogout={onLogout} onBack={onBack} />;
     return <div className="app-loading">Chargement…</div>;   // Phase B : redirection /auth ou /onboarding
+  },
+});
+
+// ── /stats : tableau de bord statistiques employeur (§3.2/§3.4) — OWNER only ──
+const statsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/stats',
+  beforeLoad: ({ context }) => {
+    const id = context.identity;
+    if (!id) throw redirect({ to: '/auth' });
+    if (id.role !== 'OWNER') throw redirect({ to: '/dashboard' });
+  },
+  component: function StatsRoute() {
+    const navigate = useNavigate();
+    return <StatsPage onLogout={() => doLogout(navigate)} onBack={() => navigate({ to: '/dashboard' })} />;
   },
 });
 
@@ -180,7 +196,7 @@ const billingReturnRoute = createRoute({
 });
 
 const routeTree = rootRoute.addChildren([
-  indexRoute, authRoute, dashboardRoute, adminRoute, onboardingRoute, billingReturnRoute,
+  indexRoute, authRoute, dashboardRoute, statsRoute, adminRoute, onboardingRoute, billingReturnRoute,
 ]);
 
 export const router = createRouter({

@@ -90,10 +90,37 @@ export interface EmployeeRankingRow {
   totalTokens: number;
   topMotifTag: string | null;
 }
+// BUMP v1.2 (Dev A, validé) — classement des meilleurs employés PAR motif
+// (« qui est le meilleur dans quoi »). Exposé dans StatsResponse → OWNER uniquement.
+export interface MotifLeaderboardRow {
+  motifTag: string;
+  category: MotifCategory;
+  top: Array<{ employeeId: string; tokens: number; count: number }>; // Top 3, trié tokens desc
+}
+// BUMP v1.3 (Dev A, validé) — angles morts PAR manager + courbe d'évolution dans le temps (§3.5).
+export interface ManagerBlindSpotsRow {
+  managerId: string;
+  tags: string[]; // motifs actifs que CE manager n'a jamais utilisés
+}
+export interface EvolutionPoint {
+  period: string;   // mois "YYYY-MM"
+  motifTag: string;
+  count: number;
+  totalTokens: number;
+}
+// BUMP v1.4 (Dev A) — l'équité expose AUSSI qui le manager priorise (bénéficiaires triés).
+export interface EquityRow {
+  managerId: string;
+  spread: number; // CV des totaux par employé (0 = équitable)
+  recipients: Array<{ employeeId: string; tokens: number; share: number }>; // qui reçoit quoi, trié desc ; share = part 0..1
+}
 export interface StatsResponse {
   motifAggregate: MotifAggregateRow[];        // répartition par motif/catégorie
   ranking: EmployeeRankingRow[];               // classement collaborateurs
-  blindSpots: string[];                        // tags de motifs jamais utilisés (angles morts)
-  equityByManager: Array<{ managerId: string; spread: number }>;            // équité de distribution
+  blindSpots: string[];                        // tags de motifs jamais utilisés (angles morts, entreprise)
+  blindSpotsByManager: ManagerBlindSpotsRow[]; // §3.5 — angles morts PAR manager
+  equityByManager: EquityRow[];                // équité + bénéficiaires priorisés par manager
   velocityByManager: Array<{ managerId: string; avgDelaySeconds: number | null }>; // allocation → 1ère distribution
+  leaderboardByMotif: MotifLeaderboardRow[];   // §3.5 — top employés par motif (OWNER only)
+  evolution: EvolutionPoint[];                 // §3.5 — évolution mensuelle par motif (filtrable par employeeId)
 }
