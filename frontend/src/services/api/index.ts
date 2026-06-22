@@ -8,6 +8,7 @@ export * from "./auth";
 export * from "./offers";
 export * from "./employees";
 export * from "./company";
+export * from "./stats";
 export * from "./admin";
 export * from "./stripe";
 

@@ -14,6 +14,8 @@ export type ReceivedToken = {
   id: string;
   amount: number;
   reason: string;
+  compliment: string | null; // §3.5 — message affiché au salarié à la réception (null si attribution legacy)
+  motifLabel: string | null;
   createdAt: string;
   managerName: string;
 };

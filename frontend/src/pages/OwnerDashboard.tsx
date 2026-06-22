@@ -28,14 +28,14 @@ import MotifSelect from '../components/allocation/MotifSelect';
 import SentEnvelopeTile from '../components/allocation/SentEnvelopeTile';
 import DashHistory from '../components/dashboard/DashHistory';
 
-type Props = { onLogout: () => void; onBack: () => void };
+type Props = { onLogout: () => void; onBack: () => void; onStats?: () => void };
 
 const initials = (e: Employee) =>
   `${e.firstName[0] ?? ''}${e.lastName[0] ?? ''}`.toUpperCase();
 
 // Dashboard patron : alloue des enveloppes aux managers (avec mode), suit les
 // enveloppes envoyées, et distribue en direct à ses employés (montant + motif).
-export default function OwnerDashboard({ onLogout, onBack }: Props) {
+export default function OwnerDashboard({ onLogout, onBack, onStats }: Props) {
   const { confirm, confirmDialog } = useConfirm();
   const [employees, setEmployees] = useState<Employee[] | null>(null);
   const [company, setCompany] = useState<Company | null>(null);
@@ -296,6 +296,9 @@ export default function OwnerDashboard({ onLogout, onBack }: Props) {
       title="Prim'O — Espace patron"
       headerActions={
         <>
+          {onStats && (
+            <button className="app-btn app-btn-ghost" type="button" onClick={onStats}>📊 Statistiques</button>
+          )}
           <button className="app-btn app-btn-ghost" type="button" onClick={onBack}>← Accueil</button>
           <button className="app-btn app-btn-ghost" type="button" onClick={handleLogout}>Se déconnecter</button>
         </>
