@@ -49,16 +49,18 @@ export async function listAttributions(q: PaginationQuery) {
       select: {
         id: true,
         amount: true,
-        reason: true,
         createdAt: true,
         company:  { select: { name: true } },                    // just the name
         manager:  { select: { firstName: true, lastName: true } }, // not the whole row
         employee: { select: { firstName: true, lastName: true } },
+        motif:    { select: { label: true } },
       },
     }),
     prisma.attribution.count({ where }),
   ]);
-  return { items, total, page: q.page, hasMore: q.page * q.limit < total };
+  // `reason` = libellé du motif (le texte libre n'existe plus), pour l'affichage du ledger.
+  const mapped = items.map(({ motif, ...a }) => ({ ...a, reason: motif?.label ?? '' }));
+  return { items: mapped, total, page: q.page, hasMore: q.page * q.limit < total };
 }
 
 

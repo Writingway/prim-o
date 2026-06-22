@@ -1,13 +1,11 @@
 import { z } from 'zod';
-import { safeText } from '../lib/validation';
 
 // Distribution manager → employé (§3.3/§3.5). Le motif est OBLIGATOIRE (tag
-// officiel) - fini le texte libre. `reason` = note libre optionnelle du manager.
+// officiel) — le texte libre `reason` a été retiré (le motif porte le sens).
 export const createAttributionSchema = z.object({
   employeeId: z.uuid(),
   amount:     z.number().int().positive(),
   motifId:    z.uuid(),
-  reason:     safeText(1).optional(),
 });
 
 export type CreateAttributionInput = z.infer<typeof createAttributionSchema>;
@@ -27,3 +25,24 @@ export const allocateSchema = z
   });
 
 export type AllocateInput = z.infer<typeof allocateSchema>;
+
+// Envoi groupé manager → employés depuis une enveloppe (§3.3). Redistribution COMPLÈTE
+// et atomique : chaque ligne a un motif obligatoire ; un employé n'apparaît qu'une fois.
+export const distributeEnvelopeSchema = z.object({
+  allocationId: z.uuid(),
+  lines: z
+    .array(
+      z.object({
+        employeeId: z.uuid(),
+        amount:     z.number().int().positive(),
+        motifId:    z.uuid(),
+      }),
+    )
+    .min(1)
+    .refine(
+      (lines) => new Set(lines.map((l) => l.employeeId)).size === lines.length,
+      { message: 'Un employé ne peut apparaître qu’une seule fois dans la répartition.' },
+    ),
+});
+
+export type DistributeEnvelopeInput = z.infer<typeof distributeEnvelopeSchema>;

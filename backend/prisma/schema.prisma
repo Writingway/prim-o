@@ -1,5 +1,5 @@
 // ============================================================
-//  Prim'O - schema.prisma
+//  Prim'O — schema.prisma
 //  User unifié + Company (multi-tenant). Corrige les règles
 //  métier violées + dette technique de l'ancienne version.
 //  ⚠️ Deux contraintes ne s'expriment pas en Prisma : voir le
@@ -40,7 +40,7 @@ enum OfferCategory {
   OTHER
 }
 
-// Addendum v1.1 §3.5 - 4 catégories officielles de motifs d'attribution.
+// Addendum v1.1 §3.5 — 4 catégories officielles de motifs d'attribution.
 enum MotifCategory {
   COMPORTEMENTS_INDIVIDUELS
   RELATION_CLIENT
@@ -48,11 +48,18 @@ enum MotifCategory {
   ENGAGEMENT
 }
 
-// Addendum v1.1 §3.4 - mode de rétribution choisi par l'employeur à chaque allocation.
+// Addendum v1.1 §3.4 — mode de rétribution choisi par l'employeur à chaque allocation.
 enum RetributionMode {
   PART_EGALE    // mode 1 : enveloppe ÷ (nbCollaborateurs + 1)
   POURCENTAGE   // mode 2 : % fixe de l'enveloppe
   AUCUNE        // mode 3 : pas de rétribution manager
+}
+
+// Cycle de vie d'une enveloppe (addendum v1.1, modèle "Mes enveloppes").
+// Valeurs ASCII (contrainte Prisma) ; libellé FR géré à l'affichage.
+enum AllocationStatus {
+  A_DISTRIBUER  // créée par l'employeur, en attente d'ouverture par le manager
+  DISTRIBUEE    // redistribuée et verrouillée (immuable)
 }
 
 // ─────────────────────────── ENTREPRISE ──────────────────────
@@ -86,7 +93,7 @@ model User {
   role            Role?                           // null = utilisateur flottant (inscrit, pas encore dans une entreprise)
   firstName       String?                         // null pour ADMIN
   lastName        String?
-  balance         Int        @default(0)          // PORTEFEUILLE EMPLOYÉ uniquement. Reste 0 pour MANAGER/ADMIN. CHECK >= 0 en SQL.
+  balance         Int        @default(0)          // Portefeuille EMPLOYÉ + solde perso MANAGER (rétribution cumulée, addendum v1.1). CHECK >= 0 en SQL.
   isEmailVerified Boolean    @default(false)
   companyId       String?    @db.Uuid             // null = ADMIN OU utilisateur flottant pas encore rattaché
   lastLoginAt     DateTime?                       // RGPD : dernière connexion ; sert au job d'anonymisation des comptes inactifs (3 ans). Null = jamais connecté → repli sur createdAt.
@@ -192,7 +199,7 @@ model CompanyTokenPurchase {
   companyId   String   @db.Uuid
   createdById String   @db.Uuid              // l'ADMIN qui a crédité
   createdAt   DateTime @default(now())
-  stripeSessionId String?  @unique   // id de la session Stripe (cs_...) - garantit l'idempotence
+  stripeSessionId String?  @unique   // id de la session Stripe (cs_...) — garantit l'idempotence
 
 
   company   Company @relation(fields: [companyId], references: [id])
@@ -210,23 +217,25 @@ model CompanyTokenPurchase {
 model Attribution {
   id               String   @id @default(uuid()) @db.Uuid
   amount           Int                            // tokens crédités à l'employé. > 0 (Zod + CHECK)
-  reason           String                         // LEGACY (texte libre) - remplacé par motifId (addendum v1.1 §3.5). Conservé pour les lignes existantes.
   motifId          String?  @db.Uuid              // motif officiel (§3.5). Nullable en DB pour les lignes legacy ; REQUIS côté Zod pour toute nouvelle attribution.
-  retributionAmount Int     @default(0)           // part rétribution manager prélevée sur l'enveloppe pour CETTE attribution (§3.4). 0 si mode AUCUNE.
+  retributionAmount Int     @default(0)           // OBSOLÈTE (addendum v1.1) : la rétribution est désormais portée par Allocation. Figé à 0 pour les nouvelles lignes.
   companyId        String   @db.Uuid              // dénormalisé pour filtre multi-tenant rapide
   managerId        String   @db.Uuid
   employeeId       String   @db.Uuid
+  allocationId     String?  @db.Uuid              // enveloppe d'origine (addendum v1.1). Null pour distribution directe OWNER / lignes legacy.
   createdAt        DateTime @default(now())
 
-  company  Company @relation(fields: [companyId], references: [id])
-  manager  User    @relation("AttribManager", fields: [managerId], references: [id])
-  employee User    @relation("AttribEmployee", fields: [employeeId], references: [id])
-  motif    Motif?  @relation(fields: [motifId], references: [id])
+  company    Company     @relation(fields: [companyId], references: [id])
+  manager    User        @relation("AttribManager", fields: [managerId], references: [id])
+  employee   User        @relation("AttribEmployee", fields: [employeeId], references: [id])
+  motif      Motif?      @relation(fields: [motifId], references: [id])
+  allocation Allocation? @relation(fields: [allocationId], references: [id])
 
   @@index([companyId])
   @@index([employeeId])
   @@index([managerId])
   @@index([motifId])
+  @@index([allocationId])
 }
 
 // ─────────────────────────── MOTIFS D'ATTRIBUTION (§3.5) ──────
@@ -251,18 +260,22 @@ model Motif {
 // de rétribution. L'enveloppe RESTANTE d'un manager se dérive du registre :
 //   restant = SUM(Allocation.amount) − SUM(Attribution.amount + retributionAmount)  [managerId]
 model Allocation {
-  id          String          @id @default(uuid()) @db.Uuid
+  id          String           @id @default(uuid()) @db.Uuid
   amount      Int                              // taille de l'enveloppe. > 0 (Zod + CHECK)
   mode        RetributionMode
   percentage  Int?                             // mode POURCENTAGE uniquement : 1..100. null sinon (CHECK cohérence).
-  companyId   String          @db.Uuid
-  managerId   String          @db.Uuid
-  createdById String          @db.Uuid         // employeur/owner qui alloue
-  createdAt   DateTime        @default(now())
+  status      AllocationStatus @default(A_DISTRIBUER) // cycle de vie de l'enveloppe
+  retributionAmount Int        @default(0)     // part R du manager, FIGÉE à l'envoi (0 tant que A_DISTRIBUER)
+  distributedAt DateTime?                      // horodatage de l'envoi validé (null tant que A_DISTRIBUER)
+  companyId   String           @db.Uuid
+  managerId   String           @db.Uuid
+  createdById String           @db.Uuid         // employeur/owner qui alloue
+  createdAt   DateTime         @default(now())
 
   company   Company @relation(fields: [companyId], references: [id])
   manager   User    @relation("AllocationManager", fields: [managerId], references: [id])
   createdBy User    @relation("AllocationCreatedBy", fields: [createdById], references: [id])
+  attributions Attribution[]                   // distributions issues de cette enveloppe
 
   @@index([companyId])
   @@index([managerId])
