@@ -12,8 +12,6 @@ import { HEADER_BTN_PRIMARY, HEADER_BTN_GHOST } from '../components/layout/heade
 // Charte « réimaginée » : teal + or, icônes linéaires (zéro emoji). Cf. README C1/C2/C3.
 const CTA_PRIMARY =
   'w-full rounded-2xl border-0 bg-primo-teal px-4 py-4 text-base font-bold text-white shadow-[0_12px_26px_-8px_rgba(0,161,154,0.6)] transition hover:bg-primo-teal-strong disabled:opacity-60';
-const CTA_OUTLINE_LIGHT =
-  'w-full rounded-2xl border-[1.5px] border-white/25 bg-white/[0.06] px-4 py-3.5 text-base font-bold text-white transition hover:bg-white/10';
 
 const categoryMeta: Record<Offer['category'], { icon: IconName; tile: string; label: string }> = {
   FOOD: { icon: 'coffee', tile: 'bg-primo-cat-food-soft text-primo-cat-food', label: 'Restauration' },
