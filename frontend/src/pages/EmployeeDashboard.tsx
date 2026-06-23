@@ -6,12 +6,9 @@ import PrivacySection from '@/components/privacy/PrivacySection';
 import EditProfile from '@/components/privacy/EditProfile';
 import Icon from '@/components/ui/Icon';
 import Coin from '@/components/ui/Coin';
-import ProfileAvatar from '@/components/ui/ProfileAvatar';
-import HeroThemeButton from '@/components/dashboard/HeroThemeButton';
-import HeroLogo from '@/components/dashboard/HeroLogo';
+import DashboardHero from '@/components/dashboard/DashboardHero';
 import OfferCatalog from '@/components/offers/OfferCatalog';
 import { useEmployeeDashboard } from '@/hooks/useEmployeeDashboard';
-import { useHeroTheme } from '@/hooks/useHeroTheme';
 import { formatDate } from '@/lib/format';
 import { HEADER_BTN_GHOST } from '@/components/layout/headerButtons';
 
@@ -52,7 +49,6 @@ export default function EmployeeDashboard({ onLogout, firstName, profilePhoto }:
   // Avatar du hero, maj en direct quand on l'enregistre dans le profil.
   const [heroPhoto, setHeroPhoto] = useState<string | null>(profilePhoto ?? null);
   const heroInitials = (firstName?.[0] ?? '?').toUpperCase();
-  const { theme, setTheme, gradient } = useHeroTheme();
 
   const loader = <p className={NOTE}>Chargement…</p>;
   const errorNote = (
@@ -88,27 +84,14 @@ export default function EmployeeDashboard({ onLogout, firstName, profilePhoto }:
             : error ? errorNote
             : balance !== null && (
               <>
-                {/* Hero compact : solde en tête, puis on pousse vers les offres.
-                    Plein cadre (flush), profondeur via halos teal + filigrane pièce. */}
-                <div className={`relative -mx-4 -mt-5 mb-6 overflow-hidden bg-gradient-to-br ${gradient} px-5 pb-7 pt-7 text-white sm:-mx-5`}>
-                  {/* Halos lumineux : matière sur le dégradé, sans gadget. */}
-                  <div className="pointer-events-none absolute -right-16 -top-16 h-52 w-52 rounded-full bg-primo-teal/30 blur-3xl" />
-                  <div className="pointer-events-none absolute -bottom-20 -left-10 h-48 w-48 rounded-full bg-primo-gold/10 blur-3xl" />
-
-                  {/* Logo centré en haut */}
-                  <HeroLogo className="relative mb-5" />
-
-                  <div className="relative flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <ProfileAvatar photo={heroPhoto} initials={heroInitials} size={40} className="ring-1 ring-white/15" />
-                      <div>
-                        <div className="text-[12px] uppercase tracking-[0.12em] text-white/55">Bonjour</div>
-                        <div className="text-[17px] font-bold leading-tight">{firstName ?? 'Mon espace'}</div>
-                      </div>
-                    </div>
-                    <HeroThemeButton theme={theme} onChange={setTheme} />
-                  </div>
-
+                {/* Hero : solde en tête (halos), puis on pousse vers les offres. */}
+                <DashboardHero
+                  halos
+                  eyebrow="Bonjour"
+                  title={firstName ?? 'Mon espace'}
+                  photo={heroPhoto}
+                  initials={heroInitials}
+                >
                   {/* Solde : carte vitrée discrète, jeton mis en valeur. */}
                   <div className="relative mt-6 flex items-end justify-between gap-4 rounded-[20px] bg-white/[0.08] px-4 py-4 ring-1 ring-white/10 backdrop-blur-sm">
                     <div className="min-w-0">
@@ -122,7 +105,7 @@ export default function EmployeeDashboard({ onLogout, firstName, profilePhoto }:
                     </div>
                     <Coin size={56} className="drop-shadow-[0_10px_24px_rgba(232,148,23,0.45)]" />
                   </div>
-                </div>
+                </DashboardHero>
 
                 {/* Catalogue : mis en avant dès l'arrivée sur l'espace */}
                 <OfferCatalog

@@ -26,10 +26,7 @@ import OfferCatalog from '../components/offers/OfferCatalog';
 import DashHistory from '../components/dashboard/DashHistory';
 import Icon from '../components/ui/Icon';
 import Coin from '../components/ui/Coin';
-import ProfileAvatar from '../components/ui/ProfileAvatar';
-import HeroThemeButton from '../components/dashboard/HeroThemeButton';
-import HeroLogo from '../components/dashboard/HeroLogo';
-import { useHeroTheme } from '../hooks/useHeroTheme';
+import DashboardHero from '../components/dashboard/DashboardHero';
 import { HEADER_BTN_GHOST } from '../components/layout/headerButtons';
 import Avatar from '../components/dashboard/Avatar';
 import {
@@ -51,7 +48,6 @@ export default function ManagerDashboard({ onLogout, firstName, profilePhoto }: 
   // Avatar du hero, maj en direct depuis le profil.
   const [heroPhoto, setHeroPhoto] = useState<string | null>(profilePhoto ?? null);
   const heroInitials = (firstName?.[0] ?? '?').toUpperCase();
-  const { theme, setTheme, gradient } = useHeroTheme();
   const [employees, setEmployees] = useState<Employee[] | null>(null);
   const [company, setCompany] = useState<Company | null>(null);
   const [attributions, setAttributions] = useState<AttributionHistory[]>([]);
@@ -197,21 +193,13 @@ export default function ManagerDashboard({ onLogout, firstName, profilePhoto }: 
         {activeTab === 'accueil' && (
           <>
             {/* Hero (cf. README D1) */}
-            <div className={`-mx-4 -mt-5 mb-4 overflow-hidden bg-gradient-to-br ${gradient} px-5 pb-6 pt-7 text-white`}>
-              {/* Logo centré en haut */}
-              <HeroLogo className="mb-5" />
-
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <ProfileAvatar photo={heroPhoto} initials={heroInitials} size={40} className="ring-1 ring-white/15" />
-                  <div>
-                    <div className="text-[13px] text-white/65">Espace manager</div>
-                    <div className="text-lg font-extrabold tracking-[-0.02em]">{company?.name ?? 'Mon équipe'}</div>
-                  </div>
-                </div>
-                <HeroThemeButton theme={theme} onChange={setTheme} />
-              </div>
-
+            <DashboardHero
+              bleed="-mx-4"
+              eyebrow="Espace manager"
+              title={company?.name ?? 'Mon équipe'}
+              photo={heroPhoto}
+              initials={heroInitials}
+            >
               <div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.09] p-4">
                 <div className="mb-2 flex items-center gap-2 text-white/65">
                   <Icon name="envelope" size={18} />
@@ -239,7 +227,7 @@ export default function ManagerDashboard({ onLogout, firstName, profilePhoto }: 
                   <div className="mt-1.5 text-xl font-extrabold">{totalDistributed}</div>
                 </div>
               </div>
-            </div>
+            </DashboardHero>
 
             {/* Récap compact + invitation */}
             <div className="mb-4 flex flex-wrap items-center gap-2.5">

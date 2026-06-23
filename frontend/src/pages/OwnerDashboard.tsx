@@ -30,10 +30,7 @@ import SentEnvelopeTile from '../components/allocation/SentEnvelopeTile';
 import DashHistory from '../components/dashboard/DashHistory';
 import Icon from '../components/ui/Icon';
 import Coin from '../components/ui/Coin';
-import ProfileAvatar from '../components/ui/ProfileAvatar';
-import HeroThemeButton from '../components/dashboard/HeroThemeButton';
-import HeroLogo from '../components/dashboard/HeroLogo';
-import { useHeroTheme } from '../hooks/useHeroTheme';
+import DashboardHero from '../components/dashboard/DashboardHero';
 import { HEADER_BTN_GHOST } from '../components/layout/headerButtons';
 import Avatar from '../components/dashboard/Avatar';
 import {
@@ -55,7 +52,6 @@ export default function OwnerDashboard({ onLogout, onStats, firstName, profilePh
   // Avatar du hero, maj en direct depuis le profil.
   const [heroPhoto, setHeroPhoto] = useState<string | null>(profilePhoto ?? null);
   const heroInitials = (firstName?.[0] ?? '?').toUpperCase();
-  const { theme, setTheme, gradient } = useHeroTheme();
   const { confirm, confirmDialog } = useConfirm();
   const [employees, setEmployees] = useState<Employee[] | null>(null);
   const [company, setCompany] = useState<Company | null>(null);
@@ -341,24 +337,18 @@ export default function OwnerDashboard({ onLogout, onStats, firstName, profilePh
         {activeTab === 'accueil' && (
           <>
         {/* Hero : pool entreprise (cf. README F1) */}
-        <div className={`-mx-4 -mt-5 mb-4 overflow-hidden bg-gradient-to-br ${gradient} px-5 pb-6 pt-7 text-white`}>
-          {/* Logo centré en haut */}
-          <HeroLogo className="mb-5" />
-
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <ProfileAvatar photo={heroPhoto} initials={heroInitials} size={40} className="ring-1 ring-white/15" />
-              <div>
-                <div className="text-[13px] text-white/65">Espace employeur</div>
-                <div className="flex items-center gap-2">
-                  <span className="text-lg font-extrabold tracking-[-0.02em]">{company?.name ?? 'Mon entreprise'}</span>
-                  <span className="rounded-[12px] bg-primo-gold px-2 py-0.5 text-[11px] font-extrabold text-primo-ink-900">OWNER</span>
-                </div>
-              </div>
-            </div>
-            <HeroThemeButton theme={theme} onChange={setTheme} />
-          </div>
-
+        <DashboardHero
+          bleed="-mx-4"
+          eyebrow="Espace employeur"
+          photo={heroPhoto}
+          initials={heroInitials}
+          title={
+            <span className="flex items-center gap-2">
+              {company?.name ?? 'Mon entreprise'}
+              <span className="rounded-[12px] bg-primo-gold px-2 py-0.5 text-[11px] font-extrabold text-primo-ink-900">OWNER</span>
+            </span>
+          }
+        >
           <div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.09] p-4">
             <div className="mb-2 flex items-center gap-2 text-white/65">
               <Icon name="envelope" size={18} />
@@ -385,7 +375,7 @@ export default function OwnerDashboard({ onLogout, onStats, firstName, profilePh
               <div className="text-[11px] text-white/65">distribués</div>
             </div>
           </div>
-        </div>
+        </DashboardHero>
 
         {paymentNotice === 'success' && (
           <div className="mb-4 flex items-center gap-2 rounded-xl bg-primo-success-soft px-4 py-3 text-[13px] font-semibold text-primo-success">
