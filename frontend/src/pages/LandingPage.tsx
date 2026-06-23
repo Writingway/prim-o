@@ -4,16 +4,6 @@ import BottomNav from '../components/layout/BottomNav';
 import OfferCatalog from '../components/offers/OfferCatalog';
 import { HEADER_BTN_PRIMARY, HEADER_BTN_GHOST } from '../components/layout/headerButtons';
 
-// Charte « réimaginée » : teal + or, icônes linéaires (zéro emoji). Cf. README C1/C2/C3.
-const categoryMeta: Record<Offer['category'], { icon: IconName; tile: string; label: string }> = {
-  FOOD: { icon: 'coffee', tile: 'bg-primo-cat-food-soft text-primo-cat-food', label: 'Restauration' },
-  SHOPPING: { icon: 'gift', tile: 'bg-primo-cat-shop-soft text-primo-cat-shop', label: 'Shopping' },
-  CULTURE: { icon: 'ticket', tile: 'bg-primo-cat-culture-soft text-primo-cat-culture', label: 'Culture' },
-  TRAVEL: { icon: 'plane', tile: 'bg-primo-cat-travel-soft text-primo-cat-travel', label: 'Voyage' },
-  WELLNESS: { icon: 'heart', tile: 'bg-primo-cat-wellness-soft text-primo-cat-wellness', label: 'Bien-être' },
-  OTHER: { icon: 'gift', tile: 'bg-primo-mint text-primo-teal-strong', label: 'Autre' },
-};
-
 type LandingPageProps = {
   isLoggedIn: boolean;
   role?: Role;
