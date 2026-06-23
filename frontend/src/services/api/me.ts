@@ -8,6 +8,7 @@ type MyProfile = {
   lastName: string | null;
   role: string;
   isEmailVerified: boolean;
+  profilePhoto: string | null;
 };
 
 // Export de toutes mes données (art. 15 & 20). Le backend renvoie un JSON ;
@@ -28,6 +29,11 @@ export function getMyProfile() {
 }
 
 // Rectification du profil (art. 16). N'envoie que les champs modifiés.
-export function updateMyProfile(payload: { firstName?: string; lastName?: string; email?: string }) {
+export function updateMyProfile(payload: {
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  profilePhoto?: string | null;
+}) {
   return authRequest<{ profile: MyProfile } | { error: string }>('PATCH', '/me', payload);
 }

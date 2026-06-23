@@ -15,6 +15,7 @@ export type Identity = {
   role: BackendRole | null;                                   // null = flottant
   companyId: string | null;
   company: { id: string; name: string; status: CompanyStatus } | null;
+  profilePhoto: string | null;                                // clé d'avatar (av_1…av_6) ou null
 };
 
 // Rôle backend (MAJ) → Role front (min). null si flottant.

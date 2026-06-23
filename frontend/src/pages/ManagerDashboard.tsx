@@ -26,6 +26,10 @@ import OfferCatalog from '../components/offers/OfferCatalog';
 import DashHistory from '../components/dashboard/DashHistory';
 import Icon from '../components/ui/Icon';
 import Coin from '../components/ui/Coin';
+import ProfileAvatar from '../components/ui/ProfileAvatar';
+import HeroThemeButton from '../components/dashboard/HeroThemeButton';
+import HeroLogo from '../components/dashboard/HeroLogo';
+import { useHeroTheme } from '../hooks/useHeroTheme';
 import { HEADER_BTN_GHOST } from '../components/layout/headerButtons';
 import Avatar from '../components/dashboard/Avatar';
 import {
@@ -35,15 +39,19 @@ import {
   EMP_ATTRIB_BTN, EMP_SUB, EMP_BALANCE, EMP_BALANCE_NUM, EMP_BALANCE_LABEL, EMP_DELETE_BTN,
 } from '../components/dashboard/dashStyles';
 
-type Props = { onLogout: () => void; onBack: () => void };
+type Props = { onLogout: () => void; onBack: () => void; firstName?: string | null; profilePhoto?: string | null };
 
 const initials = (e: Employee) =>
   `${e.firstName[0] ?? ''}${e.lastName[0] ?? ''}`.toUpperCase();
 
 // Dashboard manager : ouvre ses enveloppes reçues et redistribue à ses employés.
 // (Le manager ne distribue plus en direct : tout passe par les enveloppes.)
-export default function ManagerDashboard({ onLogout }: Props) {
+export default function ManagerDashboard({ onLogout, firstName, profilePhoto }: Props) {
   const { confirm, confirmDialog } = useConfirm();
+  // Avatar du hero, maj en direct depuis le profil.
+  const [heroPhoto, setHeroPhoto] = useState<string | null>(profilePhoto ?? null);
+  const heroInitials = (firstName?.[0] ?? '?').toUpperCase();
+  const { theme, setTheme, gradient } = useHeroTheme();
   const [employees, setEmployees] = useState<Employee[] | null>(null);
   const [company, setCompany] = useState<Company | null>(null);
   const [attributions, setAttributions] = useState<AttributionHistory[]>([]);
@@ -189,15 +197,19 @@ export default function ManagerDashboard({ onLogout }: Props) {
         {activeTab === 'accueil' && (
           <>
             {/* Hero (cf. README D1) */}
-            <div className="-mx-4 -mt-5 mb-4 overflow-hidden bg-gradient-to-b from-primo-hero-from to-primo-ink-900 px-5 pb-6 pt-8 text-white">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-[13px] text-white/65">Espace manager</div>
-                  <div className="text-lg font-extrabold tracking-[-0.02em]">{company?.name ?? 'Mon équipe'}</div>
+            <div className={`-mx-4 -mt-5 mb-4 overflow-hidden bg-gradient-to-br ${gradient} px-5 pb-6 pt-7 text-white`}>
+              {/* Logo centré en haut */}
+              <HeroLogo className="mb-5" />
+
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <ProfileAvatar photo={heroPhoto} initials={heroInitials} size={40} className="ring-1 ring-white/15" />
+                  <div>
+                    <div className="text-[13px] text-white/65">Espace manager</div>
+                    <div className="text-lg font-extrabold tracking-[-0.02em]">{company?.name ?? 'Mon équipe'}</div>
+                  </div>
                 </div>
-                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white">
-                  <Icon name="users" size={21} />
-                </span>
+                <HeroThemeButton theme={theme} onChange={setTheme} />
               </div>
 
               <div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.09] p-4">
@@ -339,7 +351,7 @@ export default function ManagerDashboard({ onLogout }: Props) {
         {/* ── Onglet Profil ── */}
         {activeTab === 'profil' && (
           <>
-            <EditProfile />
+            <EditProfile onPhotoChange={setHeroPhoto} />
             <PrivacySection onAccountDeleted={onLogout} />
             <button
               type="button"

@@ -6,8 +6,12 @@ import PrivacySection from '@/components/privacy/PrivacySection';
 import EditProfile from '@/components/privacy/EditProfile';
 import Icon from '@/components/ui/Icon';
 import Coin from '@/components/ui/Coin';
+import ProfileAvatar from '@/components/ui/ProfileAvatar';
+import HeroThemeButton from '@/components/dashboard/HeroThemeButton';
+import HeroLogo from '@/components/dashboard/HeroLogo';
 import OfferCatalog from '@/components/offers/OfferCatalog';
 import { useEmployeeDashboard } from '@/hooks/useEmployeeDashboard';
+import { useHeroTheme } from '@/hooks/useHeroTheme';
 import { formatDate } from '@/lib/format';
 import { HEADER_BTN_GHOST } from '@/components/layout/headerButtons';
 
@@ -30,20 +34,25 @@ const MORE_BTN =
 const MOBILE_LOGOUT =
   'mt-2.5 flex w-full items-center justify-center gap-2.5 rounded-[14px] border-[1.5px] border-primo-error-line bg-white px-4 py-3.5 text-[15px] font-bold text-primo-error hover:bg-primo-error-soft lg:hidden';
 
-type EmployeeTab = 'accueil' | 'historique' | 'profil';
+type EmployeeTab = 'offres' | 'historique' | 'profil';
 
 type EmployeeDashboardProps = {
   onLogout: () => void;
   onBack: () => void; // conservé pour la signature de route (non utilisé : `/` redirige)
   firstName?: string | null;
+  profilePhoto?: string | null;
 };
 
 // Espace employé : un shell unique à onglets-vues (barre du bas fixe, le contenu
 // est remplacé par onglet — modèle « app mobile », identique à manager/owner).
-export default function EmployeeDashboard({ onLogout, firstName }: EmployeeDashboardProps) {
+export default function EmployeeDashboard({ onLogout, firstName, profilePhoto }: EmployeeDashboardProps) {
   const { balance, error, loading, reload, received, spent, handleLogout } =
     useEmployeeDashboard(onLogout);
-  const [tab, setTab] = useState<EmployeeTab>('accueil');
+  const [tab, setTab] = useState<EmployeeTab>('offres');
+  // Avatar du hero, maj en direct quand on l'enregistre dans le profil.
+  const [heroPhoto, setHeroPhoto] = useState<string | null>(profilePhoto ?? null);
+  const heroInitials = (firstName?.[0] ?? '?').toUpperCase();
+  const { theme, setTheme, gradient } = useHeroTheme();
 
   const loader = <p className={NOTE}>Chargement…</p>;
   const errorNote = (
@@ -73,29 +82,31 @@ export default function EmployeeDashboard({ onLogout, firstName }: EmployeeDashb
       <div className={WRAPPER}>
         <div className={CONTAINER}>
 
-          {/* ── Onglet Accueil : solde compact + catalogue mis en avant ── */}
-          {tab === 'accueil' && (
+          {/* ── Onglet Offres : solde compact + catalogue mis en avant ── */}
+          {tab === 'offres' && (
             loading ? loader
             : error ? errorNote
             : balance !== null && (
               <>
                 {/* Hero compact : solde en tête, puis on pousse vers les offres.
                     Plein cadre (flush), profondeur via halos teal + filigrane pièce. */}
-                <div className="relative -mx-4 -mt-5 mb-6 overflow-hidden bg-gradient-to-br from-primo-hero-from via-primo-ink-900 to-primo-ink-950 px-5 pb-7 pt-8 text-white sm:-mx-5">
+                <div className={`relative -mx-4 -mt-5 mb-6 overflow-hidden bg-gradient-to-br ${gradient} px-5 pb-7 pt-7 text-white sm:-mx-5`}>
                   {/* Halos lumineux : matière sur le dégradé, sans gadget. */}
                   <div className="pointer-events-none absolute -right-16 -top-16 h-52 w-52 rounded-full bg-primo-teal/30 blur-3xl" />
                   <div className="pointer-events-none absolute -bottom-20 -left-10 h-48 w-48 rounded-full bg-primo-gold/10 blur-3xl" />
 
+                  {/* Logo centré en haut */}
+                  <HeroLogo className="relative mb-5" />
+
                   <div className="relative flex items-center justify-between gap-3">
                     <div className="flex items-center gap-3">
-                      <span className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-white/12 ring-1 ring-white/15">
-                        <Icon name="user" size={21} />
-                      </span>
+                      <ProfileAvatar photo={heroPhoto} initials={heroInitials} size={40} className="ring-1 ring-white/15" />
                       <div>
                         <div className="text-[12px] uppercase tracking-[0.12em] text-white/55">Bonjour</div>
                         <div className="text-[17px] font-bold leading-tight">{firstName ?? 'Mon espace'}</div>
                       </div>
                     </div>
+                    <HeroThemeButton theme={theme} onChange={setTheme} />
                   </div>
 
                   {/* Solde : carte vitrée discrète, jeton mis en valeur. */}
@@ -195,7 +206,7 @@ export default function EmployeeDashboard({ onLogout, firstName }: EmployeeDashb
           {/* ── Onglet Profil ── */}
           {tab === 'profil' && (
             <>
-              <EditProfile />
+              <EditProfile onPhotoChange={setHeroPhoto} />
               <PrivacySection onAccountDeleted={onLogout} />
               <button type="button" className={MOBILE_LOGOUT} onClick={handleLogout}>
                 <Icon name="logout" size={19} /> Se déconnecter

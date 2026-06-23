@@ -1,6 +1,6 @@
-import coinSrc from '@/assets/primo-tkn1.png';
+import coinSrc from '@/assets/primotoken/primo-tkn1.png';
 
-// Pièce-jeton Prim'O : rendu 3D officiel (src/assets/primo-tkn1.png, importé
+// Pièce-jeton Prim'O : rendu 3D officiel (src/assets/primotoken/primo-tkn1.png, importé
 // → vérifié au build + hashé par Vite). Élément signature, réservé au jeton /
 // récompense. `float` pour les écrans de célébration. L'image porte déjà ses
 // reflets et son ombre.

@@ -91,6 +91,15 @@
   background: radial-gradient(circle at 34% 28%, #ffdd7c, #ffb72e 56%, #e08c12);
 }
 
+/* Scroll horizontal sans barre grise visible (carrousels, filtres). */
+@utility no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 @keyframes primo-float {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-10px); }
@@ -155,10 +164,14 @@ html, body {
   overflow-x: hidden;
 }
 
-/* Médias ne dépassent jamais leur conteneur. */
-img, video, canvas, svg {
-  max-width: 100%;
-  height: auto;
+/* Médias ne dépassent jamais leur conteneur. Dans @layer base pour que les
+   utilitaires de taille (h-5, w-…) puissent l'emporter — sinon une règle
+   hors-layer gagne sur tout Tailwind et fige la hauteur. */
+@layer base {
+  img, video, canvas, svg {
+    max-width: 100%;
+    height: auto;
+  }
 }
 
 

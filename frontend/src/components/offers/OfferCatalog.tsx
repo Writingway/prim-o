@@ -159,17 +159,7 @@ export default function OfferCatalog({
 
   return (
     <>
-      <section className={className}>
-        {/* En-tête éditorial : eyebrow espacé + titre serré. */}
-        <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-primo-teal-strong">
-          Récompenses partenaires
-        </p>
-        <h2 className="mt-1.5 text-[27px] font-extrabold leading-[1.05] tracking-[-0.03em] text-primo-ink">
-          {heading}
-        </h2>
-        <p className="mt-1.5 text-sm text-primo-slate-soft">
-          Dépense tes jetons en codes promo, chez les enseignes qu'on a sélectionnées pour toi.
-        </p>
+      <section className={className} aria-label={heading}>
 
         {/* Recherche */}
         <div className="mt-4 flex items-center gap-2.5 rounded-[16px] border-[1.5px] border-primo-line bg-white px-3.5 py-3 transition focus-within:border-primo-teal focus-within:ring-2 focus-within:ring-primo-teal/15">
@@ -177,21 +167,36 @@ export default function OfferCatalog({
           <input
             className="w-full border-0 bg-transparent text-sm text-primo-ink placeholder:text-primo-muted focus:outline-none"
             type="search"
-            placeholder="Rechercher une enseigne…"
+            placeholder="Rechercher une réduction"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
         </div>
 
-        {/* Chips de catégorie (avec icône) */}
+        {/* Catégories : cercle icône + nom dessous (scroll horizontal sans barre) */}
         {presentCats.length > 0 && (
-          <div className="mt-3.5 flex gap-2 overflow-x-auto pb-1">
-            <Chip active={activeCat === 'ALL'} onClick={() => setActiveCat('ALL')}>Tout</Chip>
-            {presentCats.map((c) => (
-              <Chip key={c} icon={categoryMeta[c].icon} active={activeCat === c} onClick={() => setActiveCat(c)}>
-                {categoryMeta[c].label}
-              </Chip>
-            ))}
+          <div className="no-scrollbar mt-4 flex gap-3.5 overflow-x-auto pb-1">
+            <CategoryPill
+              active={activeCat === 'ALL'}
+              icon="star"
+              label="Tout"
+              circle={activeCat === 'ALL' ? 'bg-primo-teal text-white' : 'bg-primo-mint text-primo-teal-strong'}
+              onClick={() => setActiveCat('ALL')}
+            />
+            {presentCats.map((c) => {
+              const meta = categoryMeta[c];
+              const on = activeCat === c;
+              return (
+                <CategoryPill
+                  key={c}
+                  active={on}
+                  icon={meta.icon}
+                  label={meta.label}
+                  circle={on ? `${meta.band} text-white` : meta.tile}
+                  onClick={() => setActiveCat(c)}
+                />
+              );
+            })}
           </div>
         )}
 
@@ -555,30 +560,42 @@ function TokenPrice({ cost, size = 17, text = 'text-sm' }: { cost: number; size?
   );
 }
 
-// Chip de filtre catégorie (actif = teal plein), avec icône optionnelle.
-function Chip({
+// Filtre catégorie : cercle coloré (icône) + nom dessous. Actif = cercle vif,
+// nom en gras ; inactif = cercle teinté doux.
+function CategoryPill({
   active,
   icon,
+  label,
+  circle,
   onClick,
-  children,
 }: {
   active: boolean;
-  icon?: IconName;
+  icon: IconName;
+  label: string;
+  circle: string;
   onClick: () => void;
-  children: React.ReactNode;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`flex flex-none items-center gap-1.5 rounded-[20px] px-3.5 py-2 text-[13px] transition ${
-        active
-          ? 'bg-primo-teal font-bold text-white'
-          : 'border border-primo-line bg-white font-semibold text-primo-slate hover:bg-primo-mint'
-      }`}
+      aria-pressed={active}
+      className="flex flex-none flex-col items-center gap-1.5 outline-none"
     >
-      {icon && <Icon name={icon} size={15} />}
-      {children}
+      <span
+        className={`flex h-[58px] w-[58px] items-center justify-center rounded-full transition ${circle} ${
+          active ? 'shadow-[0_8px_18px_-8px_rgba(6,48,45,0.4)]' : ''
+        }`}
+      >
+        <Icon name={icon} size={24} />
+      </span>
+      <span
+        className={`max-w-[66px] truncate text-[11px] ${
+          active ? 'font-bold text-primo-ink' : 'font-semibold text-primo-slate'
+        }`}
+      >
+        {label}
+      </span>
     </button>
   );
 }

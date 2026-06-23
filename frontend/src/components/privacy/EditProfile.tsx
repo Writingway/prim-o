@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { getMyProfile, updateMyProfile, forgotPassword } from '../../services/api';
 import Icon from '../ui/Icon';
 import type { IconName } from '../ui/Icon';
+import ProfileAvatar from '../ui/ProfileAvatar';
+import { AVATARS, type AvatarKey } from '../../lib/avatars';
 
 // Profil employé (cf. README B4) : en-tête avatar + badges, puis lignes de réglages.
 const CARD = 'rounded-2xl border border-primo-line bg-white';
@@ -23,6 +25,7 @@ type Profile = {
   firstName: string | null;
   lastName: string | null;
   isEmailVerified: boolean;
+  profilePhoto: string | null;
 };
 
 function Row({ icon, label, onClick }: { icon: IconName; label: string; onClick: () => void }) {
@@ -37,10 +40,17 @@ function Row({ icon, label, onClick }: { icon: IconName; label: string; onClick:
   );
 }
 
-export default function EditProfile() {
+type EditProfileProps = {
+  // Rafraîchit l'avatar du hero du dashboard en direct après enregistrement.
+  onPhotoChange?: (photo: string | null) => void;
+};
+
+export default function EditProfile({ onPhotoChange }: EditProfileProps) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
+  // Avatar choisi dans le formulaire d'édition (enregistré avec « Enregistrer »).
+  const [editPhoto, setEditPhoto] = useState<AvatarKey | null>(null);
 
   // Champs du formulaire (pré-remplis à l'ouverture).
   const [firstName, setFirstName] = useState('');
@@ -68,6 +78,7 @@ export default function EditProfile() {
     setFirstName(profile.firstName ?? '');
     setLastName(profile.lastName ?? '');
     setEmail(profile.email);
+    setEditPhoto((profile.profilePhoto as AvatarKey | null) ?? null);
     setError('');
     setSuccess('');
     setEditing(true);
@@ -77,10 +88,11 @@ export default function EditProfile() {
     if (!profile) return;
 
     // On n'envoie QUE les champs réellement modifiés (mise à jour partielle).
-    const payload: { firstName?: string; lastName?: string; email?: string } = {};
+    const payload: { firstName?: string; lastName?: string; email?: string; profilePhoto?: string | null } = {};
     if (firstName !== (profile.firstName ?? '')) payload.firstName = firstName;
     if (lastName !== (profile.lastName ?? '')) payload.lastName = lastName;
     if (email !== profile.email) payload.email = email;
+    if (editPhoto !== (profile.profilePhoto ?? null)) payload.profilePhoto = editPhoto;
 
     if (Object.keys(payload).length === 0) {
       setEditing(false); // rien n'a changé → on referme simplement
@@ -94,6 +106,7 @@ export default function EditProfile() {
       if (res.ok && res.data && 'profile' in res.data) {
         setProfile(res.data.profile);
         setEditing(false);
+        onPhotoChange?.(res.data.profile.profilePhoto);
         setSuccess(
           payload.email
             ? 'Profil mis à jour. Ton nouvel email devra être vérifié.'
@@ -148,6 +161,43 @@ export default function EditProfile() {
             <label className={LABEL} htmlFor="edit-email">Email</label>
             <input id="edit-email" className={INPUT} type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
           </div>
+
+          {/* Photo de profil : avatars prédéfinis (ou initiales). */}
+          <div className={FIELD}>
+            <label className={LABEL}>Photo de profil</label>
+            <div className="grid grid-cols-4 gap-2.5 sm:grid-cols-7">
+              {AVATARS.map((a) => (
+                <button
+                  key={a.key}
+                  type="button"
+                  onClick={() => setEditPhoto(a.key)}
+                  className={`relative rounded-full transition ${
+                    editPhoto === a.key ? 'ring-2 ring-primo-teal ring-offset-2' : 'hover:opacity-90'
+                  }`}
+                  aria-label={`Avatar ${a.key}`}
+                >
+                  <ProfileAvatar photo={a.key} size={52} className="w-full" />
+                  {editPhoto === a.key && (
+                    <span className="absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-primo-teal text-white ring-2 ring-white">
+                      <Icon name="check" size={12} strokeWidth={2.6} />
+                    </span>
+                  )}
+                </button>
+              ))}
+              {/* Retour aux initiales */}
+              <button
+                type="button"
+                onClick={() => setEditPhoto(null)}
+                className={`rounded-full transition ${
+                  !editPhoto ? 'ring-2 ring-primo-teal ring-offset-2' : 'hover:opacity-90'
+                }`}
+                aria-label="Initiales (aucun avatar)"
+              >
+                <ProfileAvatar photo={null} initials={initials} size={52} className="w-full" />
+              </button>
+            </div>
+          </div>
+
           <div className="mt-1 flex flex-wrap gap-2.5">
             <button className={BTN_PRIMARY} type="button" onClick={handleSave} disabled={saving}>
               {saving ? 'Enregistrement…' : 'Enregistrer'}
@@ -166,12 +216,22 @@ export default function EditProfile() {
     <section className="mb-3.5">
       {/* En-tête profil */}
       <div className="mb-4 flex flex-col items-center text-center">
-        <span
-          className="flex h-[78px] w-[78px] items-center justify-center rounded-full bg-gradient-to-br from-primo-teal-100 to-primo-teal-strong text-[28px] font-extrabold text-white shadow-[0_14px_30px_-10px_rgba(0,130,124,0.6)]"
-          aria-hidden
+        <button
+          type="button"
+          onClick={startEdit}
+          className="relative rounded-full outline-none focus-visible:ring-2 focus-visible:ring-primo-teal focus-visible:ring-offset-2"
+          aria-label="Modifier mon profil"
         >
-          {initials}
-        </span>
+          <ProfileAvatar
+            photo={profile.profilePhoto}
+            initials={initials}
+            size={78}
+            className="shadow-[0_14px_30px_-10px_rgba(0,130,124,0.6)]"
+          />
+          <span className="absolute bottom-0 right-0 flex h-[26px] w-[26px] items-center justify-center rounded-full bg-primo-teal text-white ring-2 ring-white">
+            <Icon name="settings" size={13} />
+          </span>
+        </button>
         <div className="mt-3.5 text-[21px] font-extrabold text-primo-ink">{fullName}</div>
         <div className="break-all text-sm text-primo-slate-soft">{profile.email}</div>
         <div className="mt-3 flex flex-wrap justify-center gap-2">

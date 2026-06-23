@@ -180,7 +180,7 @@ export async function getMe(userId: string) {
     where: { id: userId, deletedAt: null },
     select: {
       id: true, email: true, firstName: true, lastName: true,
-      role: true, companyId: true,
+      role: true, companyId: true, profilePhoto: true,
       company: { select: { id: true, name: true, status: true } },
     },
   });

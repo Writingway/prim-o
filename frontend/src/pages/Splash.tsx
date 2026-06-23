@@ -1,5 +1,5 @@
 import Coin from '@/components/ui/Coin';
-import logo4 from "@/assets/logo_4.png";
+import logo4 from '@/assets/logos/logo_4.png';
 
 // Écran d'entrée mobile (visiteur non connecté). Plein écran, hors Layout :
 // hero teal, pièce or flottante (élément signature), 2 chemins d'accès.
