@@ -178,29 +178,6 @@ export default function LandingPage({
       }
     >
       <div className="min-h-screen bg-primo-surface">
-        {/* HERO / splash */}
-        <section className="bg-gradient-to-b from-primo-hero-from to-primo-ink-900 text-white">
-          <div className="mx-auto flex max-w-[640px] flex-col items-center px-6 pb-12 pt-12 text-center lg:max-w-[840px] lg:pb-16 lg:pt-16">
-            <Coin size={92} float />
-            <h1 className="mt-8 text-[34px] font-extrabold leading-[1.05] tracking-[-0.03em] sm:text-[46px]">
-              Tes efforts récompensés{' '}
-              <span className="text-primo-gold-bright">instantanément</span>
-            </h1>
-            <p className="mx-auto mt-4 max-w-[460px] text-[17px] font-medium text-white/70">
-              Échange tes jetons contre des offres exclusives chez nos partenaires.
-            </p>
-            {!isLoggedIn && (
-              <div className="mt-9 flex w-full max-w-[320px] flex-col gap-3">
-                <button className={CTA_PRIMARY} type="button" onClick={onRegister}>
-                  Créer mon compte
-                </button>
-                <button className={CTA_OUTLINE_LIGHT} type="button" onClick={onLogin}>
-                  J'ai déjà un compte
-                </button>
-              </div>
-            )}
-          </div>
-        </section>
 
         {/* CATALOGUE */}
         <section className="mx-auto max-w-[1000px] px-5 pb-24 pt-8 lg:pb-16">
