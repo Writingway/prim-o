@@ -36,6 +36,8 @@
   --color-primo-bg: #ffffff;
   --color-primo-surface: #f3f7f6;       /* fond écran */
   --color-primo-mint: #e3f4f2;          /* fond teinté teal */
+  --color-primo-mint-line: #8fcec8;     /* bordure pastille invite (mint) */
+  --color-primo-mint-line-hover: #d3ece8; /* hover pastille invite */
   --color-primo-line: #e3ecea;          /* bordures */
   --color-primo-border: #e3ecea;        /* alias rétro-compat */
   --color-primo-gray: #6b7280;
@@ -46,6 +48,7 @@
   --color-primo-success-soft: #e7f7f0;
   --color-primo-error: #e5484d;
   --color-primo-error-soft: #fdecec;
+  --color-primo-error-line: #f0c9c9;    /* bordure bouton danger */
   --color-primo-warn: #e08c12;
   --color-primo-warn-strong: #b8801c;
   --color-primo-warn-soft: #fff8ec;
