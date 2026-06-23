@@ -1,8 +1,13 @@
 import { useState } from 'react';
 import { exportMyData, deleteMyAccount } from '../../services/api';
+import Icon from '../ui/Icon';
 
-const SECTION = 'mb-3.5 rounded-2xl border border-primo-line bg-white px-[18px] py-5';
-const SECTION_TITLE = 'mb-3 text-base font-bold text-primo-ink';
+// Ligne-bouton dépliable (même style que les réglages du profil).
+const ROW =
+  'flex w-full items-center gap-3 rounded-2xl border border-primo-line bg-white px-4 py-3.5 text-left transition hover:bg-primo-surface';
+const ROW_ICON =
+  'flex h-9 w-9 flex-none items-center justify-center rounded-[10px] bg-primo-mint text-primo-teal-strong';
+const PANEL = 'mt-2.5 rounded-2xl border border-primo-line bg-white px-[18px] py-5';
 const BTN =
   'rounded-[13px] border border-transparent px-4 py-3 text-sm font-bold transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed';
 const BTN_PRIMARY = `${BTN} bg-primo-teal text-white hover:bg-primo-teal-strong`;
@@ -17,6 +22,7 @@ type PrivacySectionProps = {
 };
 
 export default function PrivacySection({ onAccountDeleted }: PrivacySectionProps) {
+  const [open, setOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState('');
 
@@ -73,8 +79,22 @@ export default function PrivacySection({ onAccountDeleted }: PrivacySectionProps
   };
 
   return (
-    <section className={SECTION}>
-      <h2 className={SECTION_TITLE}>Confidentialité &amp; données</h2>
+    <div className="mb-3.5">
+      {/* Bouton dépliable */}
+      <button type="button" className={ROW} onClick={() => setOpen((o) => !o)} aria-expanded={open}>
+        <span className={ROW_ICON}>
+          <Icon name="shield" size={19} />
+        </span>
+        <span className="flex-1 text-[15px] font-semibold text-primo-ink">Confidentialité &amp; données</span>
+        <Icon
+          name="chevron-down"
+          size={20}
+          className={`flex-none text-primo-muted transition-transform ${open ? 'rotate-180' : ''}`}
+        />
+      </button>
+
+      {open && (
+      <div className={PANEL}>
 
       {/* Export (RGPD art. 15 & 20) */}
       <p className="mb-3 text-[13px] text-primo-gray">
@@ -135,6 +155,8 @@ export default function PrivacySection({ onAccountDeleted }: PrivacySectionProps
           {deleteError && <p className="mt-1 text-[13px] text-primo-error">{deleteError}</p>}
         </div>
       )}
-    </section>
+      </div>
+      )}
+    </div>
   );
 }

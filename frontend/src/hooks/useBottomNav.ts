@@ -8,8 +8,7 @@ export type NavContext = 'employee' | 'manager' | 'owner';
 
 export const NAV_ITEMS: Record<NavContext, NavItem[]> = {
   employee: [
-    { key: 'solde', label: 'Solde', icon: 'home', targetId: 'nav-solde' },
-    { key: 'offres', label: 'Offres', icon: 'gift', targetId: 'nav-offres' },
+    { key: 'accueil', label: 'Accueil', icon: 'home', targetId: 'nav-accueil' },
     { key: 'historique', label: 'Historique', icon: 'clock', targetId: 'nav-historique' },
     { key: 'profil', label: 'Profil', icon: 'user', targetId: 'nav-profil' },
   ],

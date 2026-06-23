@@ -30,19 +30,20 @@ const MORE_BTN =
 const MOBILE_LOGOUT =
   'mt-2.5 flex w-full items-center justify-center gap-2.5 rounded-[14px] border-[1.5px] border-primo-error-line bg-white px-4 py-3.5 text-[15px] font-bold text-primo-error hover:bg-primo-error-soft lg:hidden';
 
-type EmployeeTab = 'solde' | 'offres' | 'historique' | 'profil';
+type EmployeeTab = 'accueil' | 'historique' | 'profil';
 
 type EmployeeDashboardProps = {
   onLogout: () => void;
   onBack: () => void; // conservé pour la signature de route (non utilisé : `/` redirige)
+  firstName?: string | null;
 };
 
 // Espace employé : un shell unique à onglets-vues (barre du bas fixe, le contenu
 // est remplacé par onglet — modèle « app mobile », identique à manager/owner).
-export default function EmployeeDashboard({ onLogout }: EmployeeDashboardProps) {
+export default function EmployeeDashboard({ onLogout, firstName }: EmployeeDashboardProps) {
   const { balance, error, loading, reload, received, spent, handleLogout } =
     useEmployeeDashboard(onLogout);
-  const [tab, setTab] = useState<EmployeeTab>('solde');
+  const [tab, setTab] = useState<EmployeeTab>('accueil');
 
   const loader = <p className={NOTE}>Chargement…</p>;
   const errorNote = (
@@ -72,74 +73,56 @@ export default function EmployeeDashboard({ onLogout }: EmployeeDashboardProps) 
       <div className={WRAPPER}>
         <div className={CONTAINER}>
 
-          {/* ── Onglet Solde : hero + stats rapides ── */}
-          {tab === 'solde' && (
+          {/* ── Onglet Accueil : solde compact + catalogue mis en avant ── */}
+          {tab === 'accueil' && (
             loading ? loader
             : error ? errorNote
             : balance !== null && (
               <>
-                <div className="-mx-4 -mt-5 mb-4 overflow-hidden bg-gradient-to-b from-primo-hero-from to-primo-ink-900 px-5 pb-7 pt-8 text-white sm:-mx-5">
-                  <div className="flex items-center justify-between">
+                {/* Hero compact : solde en tête, puis on pousse vers les offres.
+                    Plein cadre (flush), profondeur via halos teal + filigrane pièce. */}
+                <div className="relative -mx-4 -mt-5 mb-6 overflow-hidden bg-gradient-to-br from-primo-hero-from via-primo-ink-900 to-primo-ink-950 px-5 pb-7 pt-8 text-white sm:-mx-5">
+                  {/* Halos lumineux : matière sur le dégradé, sans gadget. */}
+                  <div className="pointer-events-none absolute -right-16 -top-16 h-52 w-52 rounded-full bg-primo-teal/30 blur-3xl" />
+                  <div className="pointer-events-none absolute -bottom-20 -left-10 h-48 w-48 rounded-full bg-primo-gold/10 blur-3xl" />
+
+                  <div className="relative flex items-center justify-between gap-3">
                     <div className="flex items-center gap-3">
-                      <span className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-white/12 text-white">
+                      <span className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-white/12 ring-1 ring-white/15">
                         <Icon name="user" size={21} />
                       </span>
                       <div>
-                        <div className="text-[13px] text-white/65">Bonjour</div>
-                        <div className="text-[17px] font-bold leading-tight">Mon espace</div>
+                        <div className="text-[12px] uppercase tracking-[0.12em] text-white/55">Bonjour</div>
+                        <div className="text-[17px] font-bold leading-tight">{firstName ?? 'Mon espace'}</div>
                       </div>
                     </div>
-                    <span className="relative flex h-10 w-10 items-center justify-center rounded-full bg-white/10">
-                      <Icon name="bell" size={21} />
-                    </span>
                   </div>
 
-                  <div className="mt-7 text-center">
-                    <div className="text-[13px] font-medium text-white/65">Mon solde de jetons</div>
-                    <div className="mt-2 flex items-center justify-center gap-3">
-                      <Coin size={44} />
-                      <span className="text-[56px] font-extrabold leading-none tracking-[-0.03em]">{balance}</span>
+                  {/* Solde : carte vitrée discrète, jeton mis en valeur. */}
+                  <div className="relative mt-6 flex items-end justify-between gap-4 rounded-[20px] bg-white/[0.08] px-4 py-4 ring-1 ring-white/10 backdrop-blur-sm">
+                    <div className="min-w-0">
+                      <div className="text-[12px] font-medium uppercase tracking-[0.12em] text-white/55">
+                        Mon solde
+                      </div>
+                      <div className="mt-1.5 flex items-baseline gap-1.5">
+                        <span className="text-[40px] font-extrabold leading-none tracking-[-0.03em] text-white">{balance}</span>
+                        <span className="text-[15px] font-semibold text-white/70">jetons</span>
+                      </div>
                     </div>
+                    <Coin size={56} className="drop-shadow-[0_10px_24px_rgba(232,148,23,0.45)]" />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setTab('historique')}
-                    className="rounded-2xl border border-primo-line bg-white p-4 text-left transition hover:border-primo-teal-100"
-                  >
-                    <span className="mb-2 flex h-8 w-8 items-center justify-center rounded-[10px] bg-primo-success-soft text-primo-success">
-                      <Icon name="arrow-up" size={17} />
-                    </span>
-                    <div className="text-[21px] font-extrabold text-primo-ink">{received.items.length}</div>
-                    <div className="text-xs text-primo-slate-soft">récompenses reçues</div>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setTab('offres')}
-                    className="rounded-2xl border border-primo-line bg-white p-4 text-left transition hover:border-primo-teal-100"
-                  >
-                    <span className="mb-2 flex h-8 w-8 items-center justify-center rounded-[10px] bg-primo-warn-soft text-primo-warn">
-                      <Icon name="gift" size={17} />
-                    </span>
-                    <div className="text-[21px] font-extrabold text-primo-ink">{spent.items.length}</div>
-                    <div className="text-xs text-primo-slate-soft">codes échangés</div>
-                  </button>
-                </div>
+                {/* Catalogue : mis en avant dès l'arrivée sur l'espace */}
+                <OfferCatalog
+                  isLoggedIn
+                  canRedeem
+                  heading="Offres partenaires"
+                  onRedeemed={reload}
+                  onSeeSpending={() => setTab('historique')}
+                />
               </>
             )
-          )}
-
-          {/* ── Onglet Offres : catalogue partagé (charge ses propres données) ── */}
-          {tab === 'offres' && (
-            <OfferCatalog
-              isLoggedIn
-              canRedeem
-              heading="Offres partenaires"
-              onRedeemed={reload}
-              onSeeSpending={() => setTab('historique')}
-            />
           )}
 
           {/* ── Onglet Historique : reçus + dépenses ── */}

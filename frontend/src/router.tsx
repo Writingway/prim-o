@@ -145,7 +145,7 @@ const dashboardRoute = createRoute({
     const onBack = () => navigate({ to: '/' });
     if (role === 'owner') return <OwnerDashboard onLogout={onLogout} onBack={onBack} onStats={() => navigate({ to: '/stats' })} />;
     if (role === 'manager') return <ManagerDashboard onLogout={onLogout} onBack={onBack} />;
-    if (role === 'employee') return <EmployeeDashboard onLogout={onLogout} onBack={onBack} />;
+    if (role === 'employee') return <EmployeeDashboard onLogout={onLogout} onBack={onBack} firstName={identity?.firstName ?? null} />;
     if (role === 'admin') return <AdminPage onLogout={onLogout} onBack={onBack} />;
     return <div className="app-loading">Chargement…</div>;   // Phase B : redirection /auth ou /onboarding
   },
