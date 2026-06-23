@@ -78,7 +78,7 @@ export default function EmployeeDashboard({ onLogout }: EmployeeDashboardProps) 
             : error ? errorNote
             : balance !== null && (
               <>
-                <div className="mb-4 overflow-hidden rounded-3xl bg-gradient-to-b from-primo-hero-from to-primo-ink-900 px-5 pb-7 pt-5 text-white">
+                <div className="-mx-4 -mt-5 mb-4 overflow-hidden bg-gradient-to-b from-primo-hero-from to-primo-ink-900 px-5 pb-7 pt-8 text-white sm:-mx-5">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <span className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-white/12 text-white">

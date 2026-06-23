@@ -333,7 +333,7 @@ export default function OwnerDashboard({ onLogout, onStats }: Props) {
         {activeTab === 'accueil' && (
           <>
         {/* Hero : pool entreprise (cf. README F1) */}
-        <div className="mb-4 overflow-hidden rounded-3xl bg-gradient-to-b from-primo-hero-from to-primo-ink-900 px-5 pb-6 pt-5 text-white">
+        <div className="-mx-4 -mt-5 mb-4 overflow-hidden bg-gradient-to-b from-primo-hero-from to-primo-ink-900 px-5 pb-6 pt-8 text-white">
           <div className="flex items-center justify-between">
             <div>
               <div className="text-[13px] text-white/65">Espace employeur</div>
