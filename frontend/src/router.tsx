@@ -45,6 +45,13 @@ const indexRoute = createRoute({
   validateSearch: (s: Record<string, unknown>): { 'reset-token'?: string } => ({
     'reset-token': typeof s['reset-token'] === 'string' ? (s['reset-token'] as string) : undefined,
   }),
+  // `/` est la page visiteur. Un utilisateur connecté n'a rien à y faire : son
+  // espace (avec le même catalogue d'offres) est sur /dashboard. On le redirige —
+  // sauf s'il suit un lien de reset (cas où on laisse le flux se dérouler).
+  beforeLoad: ({ context, search }) => {
+    if (search['reset-token']) return;
+    if (context.identity) throw redirect({ to: '/dashboard' });
+  },
   component: function IndexRoute() {
     const navigate = useNavigate();
     const { identity } = indexRoute.useRouteContext();
@@ -113,7 +120,7 @@ const authRoute = createRoute({
           setAccessToken(token);
           clearIdentityCache();
           await router.invalidate();
-          navigate({ to: '/' });                 // après login → accueil (comportement actuel)
+          navigate({ to: '/dashboard' });        // après login → son espace (le rôle est aiguillé par /dashboard)
         }}
       />
     );
