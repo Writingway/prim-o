@@ -18,7 +18,6 @@ import type { CompanyManager } from '../services/api';
 import type { Employee, Company, AttributionHistory } from '../types/types';
 import type { RetributionMode, MotifCategoryGroup, SentEnvelope } from '../types/types';
 import { formatDate } from '../lib/format';
-import './ManagerDashboard.css';
 import Layout from '../components/layout/Layout';
 import BottomNav from '../components/layout/BottomNav';
 import { NAV_ITEMS } from '../hooks/useBottomNav';
@@ -32,6 +31,15 @@ import DashHistory from '../components/dashboard/DashHistory';
 import Icon from '../components/ui/Icon';
 import Coin from '../components/ui/Coin';
 import { HEADER_BTN_GHOST } from '../components/layout/headerButtons';
+import Avatar from '../components/dashboard/Avatar';
+import DashTabs from '../components/dashboard/DashTabs';
+import {
+  DASH_WRAPPER, DASH_CONTAINER, DASH_INVITE, DASH_MSG, DASH_ERROR, DASH_RETRY,
+  HISTORY, HISTORY_TITLE, ENV_GRID, EMP_LIST, EMP_ITEM, EMP_ROW, EMP_MAIN, EMP_NAME,
+  EMP_SUB, EMP_BADGE, EMP_BADGE_VERIFIED, EMP_ATTRIB_BTN, EMP_ATTRIB_FORM,
+  EMP_ATTRIB_SUBMIT, EMP_ATTRIB_ERROR, EMP_BALANCE, EMP_BALANCE_NUM, EMP_BALANCE_LABEL,
+  EMP_DELETE_BTN, ALLOC_INPUT,
+} from '../components/dashboard/dashStyles';
 
 type Props = { onLogout: () => void; onBack: () => void; onStats?: () => void };
 
@@ -321,8 +329,8 @@ export default function OwnerDashboard({ onLogout, onBack, onStats }: Props) {
         </>
       }
     >
-    <div className="dash-wrapper">
-      <div className="dash-container">
+    <div className={DASH_WRAPPER}>
+      <div className={DASH_CONTAINER}>
 
         {/* Hero : pool entreprise (cf. README F1) */}
         <div className="mb-4 overflow-hidden rounded-3xl bg-gradient-to-b from-primo-hero-from to-primo-ink-900 px-5 pb-6 pt-5 text-white">
@@ -418,73 +426,60 @@ export default function OwnerDashboard({ onLogout, onBack, onStats }: Props) {
 
         {/* Invitations */}
         <div className="mb-2 flex flex-wrap gap-2.5">
-          <button className="dash-invite inline-flex items-center gap-1.5" style={{ marginLeft: 0 }} type="button" onClick={() => handleGenerateInvite('MANAGER')}>
+          <button className={DASH_INVITE} type="button" onClick={() => handleGenerateInvite('MANAGER')}>
             <Icon name="plus" size={16} /> Code manager
           </button>
-          <button className="dash-invite inline-flex items-center gap-1.5" style={{ marginLeft: 0 }} type="button" onClick={() => handleGenerateInvite('EMPLOYEE')}>
+          <button className={DASH_INVITE} type="button" onClick={() => handleGenerateInvite('EMPLOYEE')}>
             <Icon name="plus" size={16} /> Code employé
           </button>
         </div>
 
         {inviteCode && (
-          <div className="dash-msg">
+          <div className={DASH_MSG}>
             Code d'invitation : <strong>{inviteCode}</strong>{' '}
-            <button type="button" className="dash-retry" onClick={() => navigator.clipboard.writeText(inviteCode)}>Copier</button>
+            <button type="button" className={DASH_RETRY} onClick={() => navigator.clipboard.writeText(inviteCode)}>Copier</button>
           </div>
         )}
-        {inviteError && <p className="dash-msg dash-error">{inviteError}</p>}
+        {inviteError && <p className={`${DASH_MSG} ${DASH_ERROR}`}>{inviteError}</p>}
 
-        <div className="dash-tabs">
-          {tabs.map((t) => (
-            <button
-              key={t.key}
-              type="button"
-              className={`dash-tab${activeTab === t.key ? ' is-active' : ''}`}
-              onClick={() => setActiveTab(t.key)}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
+        <DashTabs tabs={tabs} active={activeTab} onSelect={setActiveTab} />
 
-        {loading && <p className="dash-msg">Chargement…</p>}
+        {loading && <p className={DASH_MSG}>Chargement…</p>}
         {!loading && error && (
-          <div className="dash-msg dash-error">
+          <div className={`${DASH_MSG} ${DASH_ERROR}`}>
             {error}{' '}
-            <button type="button" className="dash-retry" onClick={load}>Réessayer</button>
+            <button type="button" className={DASH_RETRY} onClick={load}>Réessayer</button>
           </div>
         )}
 
         {/* Mes managers : allocation + mode */}
         {!loading && !error && activeTab === 'managers' && (
-          <section className="history">
-            <h2 className="history-title">Allouer des tokens à un manager</h2>
+          <section className={HISTORY}>
+            <h2 className={HISTORY_TITLE}>Allouer des tokens à un manager</h2>
             {managers.length === 0 ? (
-              <p className="dash-msg">Aucun manager pour l'instant.</p>
+              <p className={DASH_MSG}>Aucun manager pour l'instant.</p>
             ) : (
-              <ul className="emp-list">
+              <ul className={EMP_LIST}>
                 {managers.map((m) => (
-                  <li className="emp-item" key={m.id}>
-                    <div className="emp-row">
-                      <div className="emp-avatar">
-                        {`${m.firstName?.[0] ?? ''}${m.lastName?.[0] ?? ''}`.toUpperCase()}
-                      </div>
-                      <div className="emp-main">
-                        <div className="emp-name">{m.firstName} {m.lastName}</div>
-                        <div className="emp-sub">{m.email}</div>
+                  <li className={EMP_ITEM} key={m.id}>
+                    <div className={EMP_ROW}>
+                      <Avatar initials={`${m.firstName?.[0] ?? ''}${m.lastName?.[0] ?? ''}`.toUpperCase()} />
+                      <div className={EMP_MAIN}>
+                        <div className={EMP_NAME}>{m.firstName} {m.lastName}</div>
+                        <div className={EMP_SUB}>{m.email}</div>
                       </div>
                       <button
                         type="button"
-                        className="emp-attrib-btn"
+                        className={EMP_ATTRIB_BTN}
                         onClick={() => (allocOpenId === m.id ? setAllocOpenId(null) : openAlloc(m.id))}
                       >
                         {allocOpenId === m.id ? 'Annuler' : 'Attribuer'}
                       </button>
                     </div>
                     {allocOpenId === m.id && (
-                      <form className="emp-attrib-form" onSubmit={(ev) => { ev.preventDefault(); submitAlloc(m.id); }}>
+                      <form className={EMP_ATTRIB_FORM} onSubmit={(ev) => { ev.preventDefault(); submitAlloc(m.id); }}>
                         <input
-                          className="alloc-input" type="number" min="1" step="1"
+                          className={ALLOC_INPUT} type="number" min="1" step="1"
                           placeholder="Montant de l'enveloppe"
                           value={allocAmount}
                           onChange={(ev) => setAllocAmount(ev.target.value)}
@@ -495,10 +490,10 @@ export default function OwnerDashboard({ onLogout, onBack, onStats }: Props) {
                           onModeChange={setAllocMode}
                           onPercentageChange={setAllocPercentage}
                         />
-                        <button type="submit" className="emp-attrib-submit" disabled={allocSubmitting}>
+                        <button type="submit" className={EMP_ATTRIB_SUBMIT} disabled={allocSubmitting}>
                           {allocSubmitting ? '…' : "Envoyer l'enveloppe"}
                         </button>
-                        {allocError && <p className="emp-attrib-error">{allocError}</p>}
+                        {allocError && <p className={EMP_ATTRIB_ERROR}>{allocError}</p>}
                       </form>
                     )}
                   </li>
@@ -510,12 +505,12 @@ export default function OwnerDashboard({ onLogout, onBack, onStats }: Props) {
 
         {/* Mes enveloppes envoyées */}
         {!loading && !error && activeTab === 'envoyees' && (
-          <section className="history">
-            <h2 className="history-title">Mes enveloppes envoyées</h2>
+          <section className={HISTORY}>
+            <h2 className={HISTORY_TITLE}>Mes enveloppes envoyées</h2>
             {sentEnvelopes.length === 0 ? (
-              <p className="dash-msg">Aucune enveloppe envoyée pour l'instant.</p>
+              <p className={DASH_MSG}>Aucune enveloppe envoyée pour l'instant.</p>
             ) : (
-              <div className="env-grid">
+              <div className={ENV_GRID}>
                 {sentEnvelopes.map((e) => <SentEnvelopeTile key={e.allocationId} envelope={e} />)}
               </div>
             )}
@@ -525,38 +520,38 @@ export default function OwnerDashboard({ onLogout, onBack, onStats }: Props) {
         {/* Mes employés : envoi direct (montant + motif) + historique */}
         {!loading && !error && activeTab === 'employes' && (
           <>
-            {employees && employees.length === 0 && <p className="dash-msg">Aucun employé pour l'instant.</p>}
+            {employees && employees.length === 0 && <p className={DASH_MSG}>Aucun employé pour l'instant.</p>}
             {employees && employees.length > 0 && (
-              <ul className="emp-list">
+              <ul className={EMP_LIST}>
                 {employees.map((e) => (
-                  <li className="emp-item" key={e.id}>
-                    <div className="emp-row">
-                      <div className="emp-avatar">{initials(e)}</div>
-                      <div className="emp-main">
-                        <div className="emp-name">
+                  <li className={EMP_ITEM} key={e.id}>
+                    <div className={EMP_ROW}>
+                      <Avatar initials={initials(e)} />
+                      <div className={EMP_MAIN}>
+                        <div className={EMP_NAME}>
                           {e.firstName} {e.lastName}
                           {e.isEmailVerified ? (
-                            <span className="emp-badge verified"><Icon name="check" size={13} strokeWidth={2.4} /> vérifié</span>
+                            <span className={`${EMP_BADGE} ${EMP_BADGE_VERIFIED}`}><Icon name="check" size={13} strokeWidth={2.4} /> vérifié</span>
                           ) : (
-                            <button type="button" className="emp-attrib-btn" onClick={() => approveEmployee(e.id)}>Approuver</button>
+                            <button type="button" className={EMP_ATTRIB_BTN} onClick={() => approveEmployee(e.id)}>Approuver</button>
                           )}
                         </div>
-                        <div className="emp-sub">{e.email} · inscrit le {formatDate(e.createdAt)}</div>
+                        <div className={EMP_SUB}>{e.email} · inscrit le {formatDate(e.createdAt)}</div>
                       </div>
-                      <div className="emp-balance">
-                        <div className="emp-balance-num">{e.balance}</div>
-                        <div className="emp-balance-label">tokens</div>
+                      <div className={EMP_BALANCE}>
+                        <div className={EMP_BALANCE_NUM}>{e.balance}</div>
+                        <div className={EMP_BALANCE_LABEL}>tokens</div>
                       </div>
                       <button
                         type="button"
-                        className="emp-attrib-btn"
+                        className={EMP_ATTRIB_BTN}
                         onClick={() => (attribOpenId === e.id ? closeAttrib() : openAttrib(e.id))}
                       >
                         {attribOpenId === e.id ? 'Annuler' : 'Envoyer'}
                       </button>
                       <button
                         type="button"
-                        className="emp-delete-btn"
+                        className={EMP_DELETE_BTN}
                         title="Supprimer cet employé"
                         disabled={deletingId === e.id}
                         onClick={() => handleDelete(e)}
@@ -566,17 +561,17 @@ export default function OwnerDashboard({ onLogout, onBack, onStats }: Props) {
                     </div>
 
                     {attribOpenId === e.id && (
-                      <form className="emp-attrib-form" onSubmit={(ev) => { ev.preventDefault(); submitAttrib(e.id); }}>
+                      <form className={EMP_ATTRIB_FORM} onSubmit={(ev) => { ev.preventDefault(); submitAttrib(e.id); }}>
                         <input
-                          className="alloc-input" type="number" min="1" step="1" placeholder="Montant"
+                          className={ALLOC_INPUT} type="number" min="1" step="1" placeholder="Montant"
                           value={attribAmount}
                           onChange={(ev) => setAttribAmount(ev.target.value)}
                         />
                         <MotifSelect groups={motifGroups} value={attribMotif} onChange={setAttribMotif} />
-                        <button type="submit" className="emp-attrib-submit" disabled={attribSubmitting}>
+                        <button type="submit" className={EMP_ATTRIB_SUBMIT} disabled={attribSubmitting}>
                           {attribSubmitting ? '…' : 'Envoyer'}
                         </button>
-                        {attribError && <p className="emp-attrib-error">{attribError}</p>}
+                        {attribError && <p className={EMP_ATTRIB_ERROR}>{attribError}</p>}
                       </form>
                     )}
                   </li>

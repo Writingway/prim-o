@@ -4,6 +4,7 @@ import { MODE_LABELS } from '../../types/types';
 import { distributeEnvelope } from '../../services/api';
 import MotifSelect from './MotifSelect';
 import Icon from '../ui/Icon';
+import { RB, RB_HEADER, RB_STATS, RB_STAT, RB_STAT_LABEL, RB_STAT_VALUE, RB_STAT_REST, RB_STAT_VALUE_OK, RB_LIST, RB_ROW, RB_NAME, RB_ACTIONS, EMP_LIST, EMP_AVATAR, EMP_ATTRIB_ERROR, EMP_ATTRIB_SUBMIT, ALLOC_INPUT, ALLOC_MODE_HINT } from '../dashboard/dashStyles';
 
 const CANCEL_BTN =
   'cursor-pointer rounded-[12px] border-[1.5px] border-primo-line bg-white px-4 py-2.5 text-sm font-bold text-primo-slate transition hover:bg-white disabled:opacity-55';
@@ -77,30 +78,30 @@ export default function RedistributionBlock({
     : MODE_LABELS[envelope.mode];
 
   return (
-    <div className="rb">
-      <div className="rb-header">
+    <div className={RB}>
+      <div className={RB_HEADER}>
         <Icon name="envelope" size={18} /> Enveloppe {envelope.amount} · {modeLabel}
       </div>
 
-      <div className="rb-stats">
-        <div className="rb-stat"><span>Ma part (auto)</span><strong>{envelope.retributionAmount}</strong></div>
-        <div className="rb-stat"><span>Budget équipe</span><strong>{budget}</strong></div>
-        <div className={`rb-stat rb-stat-rest${remaining === 0 ? ' is-ok' : ''}`}>
-          <span>Reste à distribuer</span><strong>{remaining}</strong>
+      <div className={RB_STATS}>
+        <div className={RB_STAT}><span className={RB_STAT_LABEL}>Ma part (auto)</span><strong className={RB_STAT_VALUE}>{envelope.retributionAmount}</strong></div>
+        <div className={RB_STAT}><span className={RB_STAT_LABEL}>Budget équipe</span><strong className={RB_STAT_VALUE}>{budget}</strong></div>
+        <div className={`${RB_STAT} ${RB_STAT_REST}`}>
+          <span className={RB_STAT_LABEL}>Reste à distribuer</span><strong className={`${RB_STAT_VALUE}${remaining === 0 ? ` ${RB_STAT_VALUE_OK}` : ''}`}>{remaining}</strong>
         </div>
       </div>
 
-      <div className="emp-attrib-error" style={{ minHeight: 0 }}>{error}</div>
+      <div className={`${EMP_ATTRIB_ERROR} min-h-0`}>{error}</div>
 
-      <ul className="emp-list rb-list">
+      <ul className={`${EMP_LIST} ${RB_LIST}`}>
         {employees.map((e) => (
-          <li className="emp-item rb-row" key={e.id}>
-            <div className="emp-avatar">
+          <li className={RB_ROW} key={e.id}>
+            <div className={EMP_AVATAR}>
               {`${e.firstName[0] ?? ''}${e.lastName[0] ?? ''}`.toUpperCase()}
             </div>
-            <div className="rb-name">{e.firstName} {e.lastName}</div>
+            <div className={RB_NAME}>{e.firstName} {e.lastName}</div>
             <input
-              className="alloc-input rb-amount"
+              className={`${ALLOC_INPUT} w-[96px]`}
               type="number"
               min="1"
               step="1"
@@ -118,16 +119,16 @@ export default function RedistributionBlock({
         ))}
       </ul>
 
-      <div className="rb-actions">
+      <div className={RB_ACTIONS}>
         <button type="button" className={CANCEL_BTN} onClick={onCancel} disabled={submitting}>
           Annuler
         </button>
-        <button type="button" className="emp-attrib-submit" onClick={submit} disabled={!canSend}>
+        <button type="button" className={EMP_ATTRIB_SUBMIT} onClick={submit} disabled={!canSend}>
           {submitting ? '…' : <><Icon name="send" size={16} /> Envoyer</>}
         </button>
       </div>
       {remaining !== 0 && (
-        <p className="alloc-mode-hint" style={{ textAlign: 'right' }}>
+        <p className={`${ALLOC_MODE_HINT} text-right`}>
           « Envoyer » s'active quand le reste = 0.
         </p>
       )}

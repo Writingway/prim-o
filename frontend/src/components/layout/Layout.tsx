@@ -1,6 +1,17 @@
 import type { ReactNode } from 'react';
 import Header from './Header';
 import Footer from './Footer';
+import Sidebar from './Sidebar';
+import Topbar from './Topbar';
+import type { NavItem } from '@/hooks/useBottomNav';
+
+// Description de navigation partagée : alimente la Sidebar (lg+) ET la BottomNav
+// (mobile) à partir du même objet — source unique, pas de duplication.
+type LayoutNav = {
+  items: NavItem[];
+  active: string;
+  onSelect: (item: NavItem) => void;
+};
 
 type LayoutProps = {
   title?: string;
@@ -9,8 +20,14 @@ type LayoutProps = {
   // 'public' (défaut) = pages vitrine/légales → footer affiché.
   // 'app' = coquille appli mobile connectée → pas de footer, barre d'onglets
   //         en bas (zone du pouce). Voir moodboard client.
-  chrome?: 'app' | 'public';
+  // 'console' = coquille adaptative : sidebar + topbar en desktop (lg+),
+  //             Header + BottomNav en mobile. Un seul arbre de contenu.
+  chrome?: 'app' | 'public' | 'console';
   bottomNav?: ReactNode;     // rendu fixe en bas si chrome='app'
+  // Champs console (ignorés par 'app'/'public').
+  nav?: LayoutNav;
+  subtitle?: string;
+  sidebarFooter?: ReactNode;
 };
 
 export default function Layout({
@@ -19,7 +36,31 @@ export default function Layout({
   children,
   chrome = 'public',
   bottomNav,
+  nav,
+  subtitle,
+  sidebarFooter,
 }: LayoutProps) {
+  if (chrome === 'console') {
+    return (
+      <div className="min-h-[100dvh] lg:flex">
+        {/* Desktop (lg+) : sidebar verticale à gauche. */}
+        {nav && (
+          <Sidebar items={nav.items} active={nav.active} onSelect={nav.onSelect} footer={sidebarFooter} />
+        )}
+        <div className="flex min-h-[100dvh] flex-1 flex-col">
+          {/* Mobile (<lg) : Header classique ; masqué en desktop. */}
+          <div className="lg:hidden">
+            <Header title={title}>{headerActions}</Header>
+          </div>
+          {/* Desktop (lg+) : topbar ; masquée en mobile. */}
+          <Topbar title={title} subtitle={subtitle} actions={headerActions} />
+          <main className="w-full flex-1 pb-24 lg:overflow-y-auto lg:pb-0">{children}</main>
+          {/* Mobile (<lg) : BottomNav depuis le MÊME objet nav que la Sidebar. */}
+          {nav && bottomNav}
+        </div>
+      </div>
+    );
+  }
   if (chrome === 'app') {
     return (
       <div className="flex min-h-[100dvh] flex-col">
