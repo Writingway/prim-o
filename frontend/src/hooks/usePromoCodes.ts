@@ -104,7 +104,7 @@ export function usePromoCodes({ confirm, flash, reload, setError, onAuthExpired 
     try {
       const res = await addPromoCodes(offer.id, codes);
       if (res.ok && res.data) {
-        flash(`✅ ${res.data.added} code(s) ajouté(s), ${res.data.skipped} ignoré(s).`);
+        flash(`${res.data.added} code(s) ajouté(s), ${res.data.skipped} ignoré(s).`);
         setText('');
         setOpenId(null);
         reload(); // rafraîchit le badge de stock

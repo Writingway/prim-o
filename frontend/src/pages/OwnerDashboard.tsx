@@ -32,7 +32,6 @@ import Icon from '../components/ui/Icon';
 import Coin from '../components/ui/Coin';
 import { HEADER_BTN_GHOST } from '../components/layout/headerButtons';
 import Avatar from '../components/dashboard/Avatar';
-import DashTabs from '../components/dashboard/DashTabs';
 import {
   DASH_WRAPPER, DASH_CONTAINER, DASH_INVITE, DASH_MSG, DASH_ERROR, DASH_RETRY,
   HISTORY, HISTORY_TITLE, ENV_GRID, EMP_LIST, EMP_ITEM, EMP_ROW, EMP_MAIN, EMP_NAME,
@@ -48,7 +47,7 @@ const initials = (e: Employee) =>
 
 // Dashboard patron : alloue des enveloppes aux managers (avec mode), suit les
 // enveloppes envoyées, et distribue en direct à ses employés (montant + motif).
-export default function OwnerDashboard({ onLogout, onBack, onStats }: Props) {
+export default function OwnerDashboard({ onLogout, onStats }: Props) {
   const { confirm, confirmDialog } = useConfirm();
   const [employees, setEmployees] = useState<Employee[] | null>(null);
   const [company, setCompany] = useState<Company | null>(null);
@@ -59,7 +58,8 @@ export default function OwnerDashboard({ onLogout, onBack, onStats }: Props) {
   const [inviteCode, setInviteCode] = useState<string | null>(null);
   const [inviteError, setInviteError] = useState('');
 
-  const [activeTab, setActiveTab] = useState<'managers' | 'envoyees' | 'employes'>('managers');
+  const [activeTab, setActiveTab] =
+    useState<'accueil' | 'managers' | 'envoyees' | 'employes' | 'profil'>('accueil');
   const [motifGroups, setMotifGroups] = useState<MotifCategoryGroup[]>([]);
 
   // Recharge du pool via Stripe.
@@ -298,11 +298,13 @@ export default function OwnerDashboard({ onLogout, onBack, onStats }: Props) {
 
   const totalDistributed = (employees ?? []).reduce((sum, e) => sum + e.balance, 0);
 
-  const tabs: { key: typeof activeTab; label: string }[] = [
-    { key: 'managers', label: 'Mes managers' },
-    { key: 'envoyees', label: 'Mes enveloppes envoyées' },
-    { key: 'employes', label: 'Mes employés' },
-  ];
+  const loader = <p className={DASH_MSG}>Chargement…</p>;
+  const errorNote = (
+    <div className={`${DASH_MSG} ${DASH_ERROR}`}>
+      {error}{' '}
+      <button type="button" className={DASH_RETRY} onClick={load}>Réessayer</button>
+    </div>
+  );
 
   return (
     <Layout
@@ -312,11 +314,7 @@ export default function OwnerDashboard({ onLogout, onBack, onStats }: Props) {
         <BottomNav
           items={NAV_ITEMS.owner}
           active={activeTab}
-          onSelect={(it) =>
-            it.key === 'profil'
-              ? document.getElementById('nav-profil')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-              : setActiveTab(it.key as typeof activeTab)
-          }
+          onSelect={(it) => setActiveTab(it.key as typeof activeTab)}
         />
       }
       headerActions={
@@ -324,7 +322,6 @@ export default function OwnerDashboard({ onLogout, onBack, onStats }: Props) {
           {onStats && (
             <button className={HEADER_BTN_GHOST} type="button" onClick={onStats}>Statistiques</button>
           )}
-          <button className={HEADER_BTN_GHOST} type="button" onClick={onBack}>Accueil</button>
           <button className={HEADER_BTN_GHOST} type="button" onClick={handleLogout}>Se déconnecter</button>
         </>
       }
@@ -332,6 +329,9 @@ export default function OwnerDashboard({ onLogout, onBack, onStats }: Props) {
     <div className={DASH_WRAPPER}>
       <div className={DASH_CONTAINER}>
 
+        {/* ── Onglet Accueil : hero pool + recharge + invitations ── */}
+        {activeTab === 'accueil' && (
+          <>
         {/* Hero : pool entreprise (cf. README F1) */}
         <div className="mb-4 overflow-hidden rounded-3xl bg-gradient-to-b from-primo-hero-from to-primo-ink-900 px-5 pb-6 pt-5 text-white">
           <div className="flex items-center justify-between">
@@ -441,19 +441,14 @@ export default function OwnerDashboard({ onLogout, onBack, onStats }: Props) {
           </div>
         )}
         {inviteError && <p className={`${DASH_MSG} ${DASH_ERROR}`}>{inviteError}</p>}
-
-        <DashTabs tabs={tabs} active={activeTab} onSelect={setActiveTab} />
-
-        {loading && <p className={DASH_MSG}>Chargement…</p>}
-        {!loading && error && (
-          <div className={`${DASH_MSG} ${DASH_ERROR}`}>
-            {error}{' '}
-            <button type="button" className={DASH_RETRY} onClick={load}>Réessayer</button>
-          </div>
+          </>
         )}
 
-        {/* Mes managers : allocation + mode */}
-        {!loading && !error && activeTab === 'managers' && (
+        {/* ── Onglet Managers : allocation + mode ── */}
+        {activeTab === 'managers' && (
+          loading ? loader
+          : error ? errorNote
+          : (
           <section className={HISTORY}>
             <h2 className={HISTORY_TITLE}>Allouer des tokens à un manager</h2>
             {managers.length === 0 ? (
@@ -501,10 +496,14 @@ export default function OwnerDashboard({ onLogout, onBack, onStats }: Props) {
               </ul>
             )}
           </section>
+          )
         )}
 
-        {/* Mes enveloppes envoyées */}
-        {!loading && !error && activeTab === 'envoyees' && (
+        {/* ── Onglet Envoyées ── */}
+        {activeTab === 'envoyees' && (
+          loading ? loader
+          : error ? errorNote
+          : (
           <section className={HISTORY}>
             <h2 className={HISTORY_TITLE}>Mes enveloppes envoyées</h2>
             {sentEnvelopes.length === 0 ? (
@@ -515,10 +514,14 @@ export default function OwnerDashboard({ onLogout, onBack, onStats }: Props) {
               </div>
             )}
           </section>
+          )
         )}
 
-        {/* Mes employés : envoi direct (montant + motif) + historique */}
-        {!loading && !error && activeTab === 'employes' && (
+        {/* ── Onglet Employés : envoi direct (montant + motif) + historique ── */}
+        {activeTab === 'employes' && (
+          loading ? loader
+          : error ? errorNote
+          : (
           <>
             {employees && employees.length === 0 && <p className={DASH_MSG}>Aucun employé pour l'instant.</p>}
             {employees && employees.length > 0 && (
@@ -580,18 +583,23 @@ export default function OwnerDashboard({ onLogout, onBack, onStats }: Props) {
             )}
             <DashHistory attributions={attributions} />
           </>
+          )
         )}
 
-        <div id="nav-profil" className="scroll-mt-20" />
-        {!loading && <EditProfile />}
-        {!loading && <PrivacySection onAccountDeleted={onLogout} />}
-        <button
-          type="button"
-          className="mt-2.5 flex w-full items-center justify-center gap-2.5 rounded-[14px] border-[1.5px] border-primo-error-line bg-white px-4 py-3.5 text-[15px] font-bold text-primo-error hover:bg-primo-error-soft lg:hidden"
-          onClick={handleLogout}
-        >
-          <Icon name="logout" size={19} /> Se déconnecter
-        </button>
+        {/* ── Onglet Profil ── */}
+        {activeTab === 'profil' && (
+          <>
+            <EditProfile />
+            <PrivacySection onAccountDeleted={onLogout} />
+            <button
+              type="button"
+              className="mt-2.5 flex w-full items-center justify-center gap-2.5 rounded-[14px] border-[1.5px] border-primo-error-line bg-white px-4 py-3.5 text-[15px] font-bold text-primo-error hover:bg-primo-error-soft lg:hidden"
+              onClick={handleLogout}
+            >
+              <Icon name="logout" size={19} /> Se déconnecter
+            </button>
+          </>
+        )}
       </div>
     </div>
     {confirmDialog}

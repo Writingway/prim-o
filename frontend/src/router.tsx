@@ -108,7 +108,7 @@ const authRoute = createRoute({
     const { mode, verified } = authRoute.useSearch();
     // Retour du lien de vérification email (GET backend → redirect ?verified=).
     const notice =
-      verified === '1' ? { type: 'success' as const, text: 'Email vérifié ✅ Tu peux te connecter.' }
+      verified === '1' ? { type: 'success' as const, text: 'Email vérifié. Tu peux te connecter.' }
       : verified === '0' ? { type: 'error' as const, text: 'Lien de vérification invalide ou expiré.' }
       : undefined;
     return (
