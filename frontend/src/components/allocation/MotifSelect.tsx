@@ -1,5 +1,6 @@
 import type { MotifCategoryGroup } from '../../types/types';
 import { MOTIF_CATEGORY_LABELS } from '../../types/types';
+import { ALLOC_INPUT } from '../dashboard/dashStyles';
 
 type Props = {
   groups: MotifCategoryGroup[];
@@ -12,7 +13,7 @@ type Props = {
 export default function MotifSelect({ groups, value, onChange, disabled }: Props) {
   return (
     <select
-      className="alloc-input motif-select"
+      className={`${ALLOC_INPUT} min-w-[190px]`}
       value={value}
       disabled={disabled}
       onChange={(e) => onChange(e.target.value)}

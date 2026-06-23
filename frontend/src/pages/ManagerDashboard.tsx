@@ -14,7 +14,6 @@ import {
 import type { Employee, Company, AttributionHistory } from '../types/types';
 import type { MotifCategoryGroup, ManagerEnvelope, ManagerBalances } from '../types/types';
 import { formatDate } from '../lib/format';
-import './ManagerDashboard.css';
 import Layout from '../components/layout/Layout';
 import BottomNav from '../components/layout/BottomNav';
 import { NAV_ITEMS } from '../hooks/useBottomNav';
@@ -27,6 +26,14 @@ import DashHistory from '../components/dashboard/DashHistory';
 import Icon from '../components/ui/Icon';
 import Coin from '../components/ui/Coin';
 import { HEADER_BTN_GHOST } from '../components/layout/headerButtons';
+import Avatar from '../components/dashboard/Avatar';
+import DashTabs from '../components/dashboard/DashTabs';
+import {
+  DASH_WRAPPER, DASH_CONTAINER, DASH_STAT, DASH_STAT_STRONG, DASH_INVITE,
+  DASH_MSG, DASH_ERROR, DASH_RETRY, HISTORY, HISTORY_TITLE, ENV_GRID,
+  EMP_LIST, EMP_ITEM, EMP_ROW, EMP_MAIN, EMP_NAME, EMP_BADGE, EMP_BADGE_VERIFIED,
+  EMP_ATTRIB_BTN, EMP_SUB, EMP_BALANCE, EMP_BALANCE_NUM, EMP_BALANCE_LABEL, EMP_DELETE_BTN,
+} from '../components/dashboard/dashStyles';
 
 type Props = { onLogout: () => void; onBack: () => void };
 
@@ -178,8 +185,8 @@ export default function ManagerDashboard({ onLogout, onBack }: Props) {
         </>
       }
     >
-    <div className="dash-wrapper">
-      <div className="dash-container">
+    <div className={DASH_WRAPPER}>
+      <div className={DASH_CONTAINER}>
 
         {/* Hero : enveloppe à distribuer + soldes (cf. README D1) */}
         <div className="mb-4 overflow-hidden rounded-3xl bg-gradient-to-b from-primo-hero-from to-primo-ink-900 px-5 pb-6 pt-5 text-white">
@@ -224,54 +231,43 @@ export default function ManagerDashboard({ onLogout, onBack }: Props) {
 
         {/* Récap compact + invitation */}
         <div className="mb-4 flex flex-wrap items-center gap-2.5">
-          <span className="rounded-[14px] border border-primo-line bg-white px-3.5 py-2.5 text-sm text-primo-slate">
-            <strong className="text-primo-ink">{employees?.length ?? 0}</strong>&nbsp;employés
+          <span className={DASH_STAT}>
+            <strong className={DASH_STAT_STRONG}>{employees?.length ?? 0}</strong>&nbsp;employés
           </span>
-          <span className="rounded-[14px] border border-primo-line bg-white px-3.5 py-2.5 text-sm text-primo-slate">
-            <strong className="text-primo-ink">{company?.tokenBalance ?? '—'}</strong>&nbsp;pool entreprise
+          <span className={DASH_STAT}>
+            <strong className={DASH_STAT_STRONG}>{company?.tokenBalance ?? '—'}</strong>&nbsp;pool entreprise
           </span>
-          <button className="dash-invite inline-flex items-center gap-1.5" type="button" onClick={handleGenerateInvite}>
+          <button className={`${DASH_INVITE} ml-auto max-[520px]:ml-0`} type="button" onClick={handleGenerateInvite}>
             <Icon name="plus" size={16} /> Code employé
           </button>
         </div>
 
         {inviteCode && (
-          <div className="dash-msg">
+          <div className={DASH_MSG}>
             Code d'invitation : <strong>{inviteCode}</strong>{' '}
-            <button type="button" className="dash-retry" onClick={() => navigator.clipboard.writeText(inviteCode)}>Copier</button>
+            <button type="button" className={DASH_RETRY} onClick={() => navigator.clipboard.writeText(inviteCode)}>Copier</button>
           </div>
         )}
-        {inviteError && <p className="dash-msg dash-error">{inviteError}</p>}
+        {inviteError && <p className={`${DASH_MSG} ${DASH_ERROR}`}>{inviteError}</p>}
 
-        <div className="dash-tabs">
-          {tabs.map((t) => (
-            <button
-              key={t.key}
-              type="button"
-              className={`dash-tab${activeTab === t.key ? ' is-active' : ''}`}
-              onClick={() => setActiveTab(t.key)}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
+        <DashTabs tabs={tabs} active={activeTab} onSelect={setActiveTab} />
 
-        {loading && <p className="dash-msg">Chargement…</p>}
+        {loading && <p className={DASH_MSG}>Chargement…</p>}
         {!loading && error && (
-          <div className="dash-msg dash-error">
+          <div className={`${DASH_MSG} ${DASH_ERROR}`}>
             {error}{' '}
-            <button type="button" className="dash-retry" onClick={load}>Réessayer</button>
+            <button type="button" className={DASH_RETRY} onClick={load}>Réessayer</button>
           </div>
         )}
 
         {/* Mes enveloppes reçues */}
         {!loading && !error && activeTab === 'enveloppes' && (
-          <section className="history">
-            <h2 className="history-title">Mes enveloppes reçues</h2>
+          <section className={HISTORY}>
+            <h2 className={HISTORY_TITLE}>Mes enveloppes reçues</h2>
             {envelopes.length === 0 ? (
-              <p className="dash-msg">Aucune enveloppe pour l'instant.</p>
+              <p className={DASH_MSG}>Aucune enveloppe pour l'instant.</p>
             ) : (
-              <div className="env-grid">
+              <div className={ENV_GRID}>
                 {envelopes.map((e) => <EnvelopeTile key={e.allocationId} envelope={e} onOpen={setOpenEnvelope} />)}
               </div>
             )}
@@ -290,31 +286,31 @@ export default function ManagerDashboard({ onLogout, onBack }: Props) {
         {/* Mes employés (lecture + gestion d'équipe) + historique */}
         {!loading && !error && activeTab === 'employes' && (
           <>
-            {employees && employees.length === 0 && <p className="dash-msg">Aucun employé pour l'instant.</p>}
+            {employees && employees.length === 0 && <p className={DASH_MSG}>Aucun employé pour l'instant.</p>}
             {employees && employees.length > 0 && (
-              <ul className="emp-list">
+              <ul className={EMP_LIST}>
                 {employees.map((e) => (
-                  <li className="emp-item" key={e.id}>
-                    <div className="emp-row">
-                      <div className="emp-avatar">{initials(e)}</div>
-                      <div className="emp-main">
-                        <div className="emp-name">
+                  <li className={EMP_ITEM} key={e.id}>
+                    <div className={EMP_ROW}>
+                      <Avatar initials={initials(e)} />
+                      <div className={EMP_MAIN}>
+                        <div className={EMP_NAME}>
                           {e.firstName} {e.lastName}
                           {e.isEmailVerified ? (
-                            <span className="emp-badge verified"><Icon name="check" size={13} strokeWidth={2.4} /> vérifié</span>
+                            <span className={`${EMP_BADGE} ${EMP_BADGE_VERIFIED}`}><Icon name="check" size={13} strokeWidth={2.4} /> vérifié</span>
                           ) : (
-                            <button type="button" className="emp-attrib-btn" onClick={() => approveEmployee(e.id)}>Approuver</button>
+                            <button type="button" className={EMP_ATTRIB_BTN} onClick={() => approveEmployee(e.id)}>Approuver</button>
                           )}
                         </div>
-                        <div className="emp-sub">{e.email} · inscrit le {formatDate(e.createdAt)}</div>
+                        <div className={EMP_SUB}>{e.email} · inscrit le {formatDate(e.createdAt)}</div>
                       </div>
-                      <div className="emp-balance">
-                        <div className="emp-balance-num">{e.balance}</div>
-                        <div className="emp-balance-label">tokens</div>
+                      <div className={EMP_BALANCE}>
+                        <div className={EMP_BALANCE_NUM}>{e.balance}</div>
+                        <div className={EMP_BALANCE_LABEL}>tokens</div>
                       </div>
                       <button
                         type="button"
-                        className="emp-delete-btn"
+                        className={EMP_DELETE_BTN}
                         title="Supprimer cet employé"
                         disabled={deletingId === e.id}
                         onClick={() => handleDelete(e)}

@@ -1,7 +1,10 @@
 import { useState, Fragment } from 'react';
 import type { Offer, OfferCategory } from '@/types/types';
 import Layout from '@/components/layout/Layout';
+import BottomNav from '@/components/layout/BottomNav';
+import type { NavItem } from '@/hooks/useBottomNav';
 import { useConfirm } from '@/components/ui/ConfirmDialog';
+import Icon from '@/components/ui/Icon';
 import AdminUsers from './AdminUsers';
 import AdminCompanies from './AdminCompanies';
 import AdminLedgers from './AdminLedgers';
@@ -49,13 +52,23 @@ import {
 } from './adminClasses';
 
 type AdminPageProps = { onLogout: () => void; onBack: () => void };
+type AdminTab = 'offers' | 'users' | 'companies' | 'ledgers';
 
 const CATEGORIES: OfferCategory[] = ['FOOD', 'SHOPPING', 'CULTURE', 'TRAVEL', 'WELLNESS', 'OTHER'];
+
+// Onglets admin → items de navigation (icônes linéaires valides uniquement).
+// `targetId` n'est pas utilisé ici (pas de scroll-spy), valeur neutre.
+const ADMIN_NAV: NavItem[] = [
+  { key: 'offers', label: 'Offres', icon: 'gift', targetId: 'nav-offers' },
+  { key: 'users', label: 'Utilisateurs', icon: 'users', targetId: 'nav-users' },
+  { key: 'companies', label: 'Entreprises', icon: 'building', targetId: 'nav-companies' },
+  { key: 'ledgers', label: 'Registres', icon: 'chart', targetId: 'nav-ledgers' },
+];
 
 export default function AdminPage({ onLogout, onBack }: AdminPageProps) {
   const { confirm, confirmDialog } = useConfirm();
   const { notice, flash } = useFlash();
-  const [tab, setTab] = useState<'offers' | 'users' | 'companies' | 'ledgers'>('offers');
+  const [tab, setTab] = useState<AdminTab>('offers');
 
   const offers = useAdminOffers({ confirm, flash, onAuthExpired: onLogout });
   const offerForm = useOfferForm({ reload: offers.reload, flash });
@@ -69,7 +82,13 @@ export default function AdminPage({ onLogout, onBack }: AdminPageProps) {
 
   return (
     <Layout
-      title="Admin"
+      chrome="console"
+      title="Administration"
+      subtitle="Console"
+      nav={{ items: ADMIN_NAV, active: tab, onSelect: (item) => setTab(item.key as AdminTab) }}
+      bottomNav={
+        <BottomNav items={ADMIN_NAV} active={tab} onSelect={(item) => setTab(item.key as AdminTab)} />
+      }
       headerActions={
         <>
           <button className={HEADER_BTN_GHOST} type="button" onClick={onBack}>
@@ -100,7 +119,7 @@ export default function AdminPage({ onLogout, onBack }: AdminPageProps) {
 
         {notice && <p className={ADMIN_MSG}>{notice}</p>}
 
-        <div className={ADMIN_TABS}>
+        <div className={`${ADMIN_TABS} lg:hidden`}>
           <button
             type="button"
             className={`${ADMIN_TAB} ${tab === 'offers' ? ADMIN_TAB_ACTIVE : ''}`}
@@ -231,7 +250,10 @@ export default function AdminPage({ onLogout, onBack }: AdminPageProps) {
                       </span>
                     </td>
                     <td className={ADMIN_TD} data-label="Codes">
-                      🎟️ {offer.availableCodes ?? 0} dispo · {offer.usedCodes ?? 0} utilisés
+                      <span className="inline-flex items-center gap-1.5">
+                        <Icon name="ticket" size={15} />
+                        {offer.availableCodes ?? 0} dispo · {offer.usedCodes ?? 0} utilisés
+                      </span>
                     </td>
                     <td className={ADMIN_TD} data-label="Actions">
                       <div className={ADMIN_ACTIONS}>
@@ -270,7 +292,7 @@ export default function AdminPage({ onLogout, onBack }: AdminPageProps) {
                               className={ADMIN_BTN_GHOST}
                               onClick={() => codes.csvInputRef.current?.click()}
                             >
-                              📄 Importer un CSV
+                              <Icon name="copy" size={16} /> Importer un CSV
                             </button>
                             <button
                               type="button"
@@ -301,9 +323,10 @@ export default function AdminPage({ onLogout, onBack }: AdminPageProps) {
                                           type="button"
                                           className={ADMIN_BTN_LINK}
                                           title="Supprimer ce code"
+                                          aria-label="Supprimer ce code"
                                           onClick={() => codes.deleteCode(c.id)}
                                         >
-                                          🗑️
+                                          <Icon name="trash" size={15} />
                                         </button>
                                       </>
                                     )}

@@ -1,23 +1,24 @@
 import type { AttributionHistory } from '../../types/types';
 import { formatDate } from '../../lib/format';
+import { HISTORY, HISTORY_TITLE, DASH_MSG, HISTORY_LIST, HISTORY_ROW, HISTORY_EMP, HISTORY_REASON, HISTORY_DATE, HISTORY_AMOUNT } from './dashStyles';
 
 type Props = { attributions: AttributionHistory[] };
 
 // Historique des transactions de l'entreprise (partagé patron/manager).
 export default function DashHistory({ attributions }: Props) {
   return (
-    <section className="history">
-      <h2 className="history-title">Historique des transactions</h2>
+    <section className={HISTORY}>
+      <h2 className={HISTORY_TITLE}>Historique des transactions</h2>
       {attributions.length === 0 ? (
-        <p className="dash-msg">Aucune transaction pour l'instant.</p>
+        <p className={DASH_MSG}>Aucune transaction pour l'instant.</p>
       ) : (
-        <ul className="history-list">
+        <ul className={HISTORY_LIST}>
           {attributions.map((a) => (
-            <li className="history-row" key={a.id}>
-              <span className="history-emp">{a.employee.firstName} {a.employee.lastName}</span>
-              <span className="history-reason">{a.reason}</span>
-              <span className="history-date">{formatDate(a.createdAt)}</span>
-              <span className="history-amount">+{a.amount}</span>
+            <li className={HISTORY_ROW} key={a.id}>
+              <span className={HISTORY_EMP}>{a.employee.firstName} {a.employee.lastName}</span>
+              <span className={HISTORY_REASON}>{a.reason}</span>
+              <span className={HISTORY_DATE}>{formatDate(a.createdAt)}</span>
+              <span className={HISTORY_AMOUNT}>+{a.amount}</span>
             </li>
           ))}
         </ul>

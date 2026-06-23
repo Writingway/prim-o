@@ -1,5 +1,6 @@
 import type { RetributionMode } from '../../types/types';
 import { MODE_LABELS } from '../../types/types';
+import { ALLOC_MODE, ALLOC_MODE_OPTIONS, ALLOC_MODE_OPT, ALLOC_MODE_OPT_ACTIVE, ALLOC_MODE_HINT, ALLOC_INPUT } from '../dashboard/dashStyles';
 
 type Props = {
   mode: RetributionMode;
@@ -19,10 +20,10 @@ const HINTS: Record<RetributionMode, string> = {
 // Choix du mode de rétribution (+ champ % conditionnel) pour l'allocation employeur.
 export default function ModeSelector({ mode, percentage, onModeChange, onPercentageChange }: Props) {
   return (
-    <div className="alloc-mode">
-      <div className="alloc-mode-options">
+    <div className={ALLOC_MODE}>
+      <div className={ALLOC_MODE_OPTIONS}>
         {MODES.map((m) => (
-          <label key={m} className={`alloc-mode-opt${mode === m ? ' is-active' : ''}`}>
+          <label key={m} className={`${ALLOC_MODE_OPT}${mode === m ? ` ${ALLOC_MODE_OPT_ACTIVE}` : ''}`}>
             <input
               type="radio"
               name="alloc-mode"
@@ -33,10 +34,10 @@ export default function ModeSelector({ mode, percentage, onModeChange, onPercent
           </label>
         ))}
       </div>
-      <p className="alloc-mode-hint">{HINTS[mode]}</p>
+      <p className={ALLOC_MODE_HINT}>{HINTS[mode]}</p>
       {mode === 'POURCENTAGE' && (
         <input
-          className="alloc-input"
+          className={`${ALLOC_INPUT} w-[120px]`}
           type="number"
           min="1"
           max="100"
