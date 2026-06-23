@@ -7,7 +7,9 @@ import { getIdentity, normalizeRole, clearIdentityCache, type Identity } from '.
 import { setAccessToken, logout as apiLogout, registerSessionExpired } from './services/api';
 import type { Mode } from './types/types';
 import LandingPage from './pages/LandingPage';
+import Splash from './pages/Splash';
 import AuthPage from './pages/AuthPage';
+import { useIsDesktop } from './hooks/useIsDesktop';
 import ManagerDashboard from './pages/ManagerDashboard';
 import OwnerDashboard from './pages/OwnerDashboard';
 import EmployeeDashboard from './pages/EmployeeDashboard';
@@ -47,11 +49,22 @@ const indexRoute = createRoute({
     const navigate = useNavigate();
     const { identity } = indexRoute.useRouteContext();
     const { 'reset-token': resetToken } = indexRoute.useSearch();
+    const isDesktop = useIsDesktop();
     if (resetToken) {
       return (
         <ResetPasswordPage
           token={resetToken}
           onDone={() => navigate({ to: '/auth', search: { mode: 'login' } })}
+        />
+      );
+    }
+    // Visiteur non connecté sur MOBILE → splash d'entrée. Sur desktop (ou une
+    // fois connecté), accès direct à la landing.
+    if (!identity && !isDesktop) {
+      return (
+        <Splash
+          onRegister={() => navigate({ to: '/auth', search: { mode: 'register' } })}
+          onLogin={() => navigate({ to: '/auth', search: { mode: 'login' } })}
         />
       );
     }

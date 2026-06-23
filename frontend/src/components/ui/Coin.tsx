@@ -1,7 +1,9 @@
-import Icon from './Icon';
+import coinSrc from '@/assets/primo-tkn1.png';
 
-// Pièce-jeton Prim'O : dégradé or radial + étoile centrale. Élément signature,
-// réservé au jeton / récompense. `float` pour les écrans de célébration.
+// Pièce-jeton Prim'O : rendu 3D officiel (src/assets/primo-tkn1.png, importé
+// → vérifié au build + hashé par Vite). Élément signature, réservé au jeton /
+// récompense. `float` pour les écrans de célébration. L'image porte déjà ses
+// reflets et son ombre.
 type Props = {
   size?: number;
   float?: boolean;
@@ -10,19 +12,15 @@ type Props = {
 
 export default function Coin({ size = 44, float = false, className = '' }: Props) {
   return (
-    <span
-      className={`primo-coin inline-flex flex-none items-center justify-center rounded-full text-primo-ink-900 ${
-        float ? 'animate-primo-float' : ''
-      } ${className}`}
-      style={{
-        width: size,
-        height: size,
-        boxShadow:
-          'inset 0 -6px 11px rgba(150,90,0,.4), inset 0 6px 9px rgba(255,255,255,.65), 0 8px 20px -6px rgba(232,148,23,.45)',
-      }}
+    <img
+      src={coinSrc}
+      alt=""
+      width={size}
+      height={size}
+      className={`inline-block flex-none select-none ${float ? 'animate-primo-float' : ''} ${className}`}
+      style={{ filter: 'drop-shadow(0 8px 18px rgba(232,148,23,0.35))' }}
+      draggable={false}
       aria-hidden
-    >
-      <Icon name="star" size={Math.round(size * 0.5)} />
-    </span>
+    />
   );
 }
