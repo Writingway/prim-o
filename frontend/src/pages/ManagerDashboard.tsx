@@ -331,7 +331,7 @@ export default function ManagerDashboard({ onLogout, onBack }: Props) {
         {!loading && <PrivacySection onAccountDeleted={onLogout} />}
         <button
           type="button"
-          className="mt-2.5 flex w-full items-center justify-center gap-2.5 rounded-[14px] border-[1.5px] border-[#f0c9c9] bg-white px-4 py-3.5 text-[15px] font-bold text-primo-error hover:bg-primo-error-soft lg:hidden"
+          className="mt-2.5 flex w-full items-center justify-center gap-2.5 rounded-[14px] border-[1.5px] border-primo-error-line bg-white px-4 py-3.5 text-[15px] font-bold text-primo-error hover:bg-primo-error-soft lg:hidden"
           onClick={handleLogout}
         >
           <Icon name="logout" size={19} /> Se déconnecter

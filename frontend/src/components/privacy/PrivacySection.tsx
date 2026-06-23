@@ -7,7 +7,7 @@ const BTN =
   'rounded-[13px] border border-transparent px-4 py-3 text-sm font-bold transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed';
 const BTN_PRIMARY = `${BTN} bg-primo-teal text-white hover:bg-primo-teal-strong`;
 const BTN_SECONDARY = `${BTN} border-[1.5px] border-primo-line bg-white text-primo-slate hover:bg-primo-surface`;
-const BTN_DANGER = `${BTN} border-[1.5px] border-[#f0c9c9] bg-white text-primo-error hover:bg-primo-error-soft`;
+const BTN_DANGER = `${BTN} border-[1.5px] border-primo-error-line bg-white text-primo-error hover:bg-primo-error-soft`;
 const BTN_DANGER_SOLID = `${BTN} bg-primo-error text-white hover:brightness-95`;
 
 type PrivacySectionProps = {

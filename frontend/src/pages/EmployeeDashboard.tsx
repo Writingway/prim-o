@@ -26,7 +26,7 @@ const MORE_BTN =
   'mt-3 w-full rounded-xl border border-primo-line bg-white px-3.5 py-2.5 text-sm font-bold text-primo-teal-strong hover:bg-primo-mint';
 // Déconnexion rapatriée dans le profil en mobile (header masqué < lg).
 const MOBILE_LOGOUT =
-  'mt-2.5 flex w-full items-center justify-center gap-2.5 rounded-[14px] border-[1.5px] border-[#f0c9c9] bg-white px-4 py-3.5 text-[15px] font-bold text-primo-error hover:bg-primo-error-soft lg:hidden';
+  'mt-2.5 flex w-full items-center justify-center gap-2.5 rounded-[14px] border-[1.5px] border-primo-error-line bg-white px-4 py-3.5 text-[15px] font-bold text-primo-error hover:bg-primo-error-soft lg:hidden';
 
 type EmployeeDashboardProps = {
   onLogout: () => void;

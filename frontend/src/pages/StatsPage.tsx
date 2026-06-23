@@ -120,7 +120,7 @@ const C = {
   kvVal: 'font-extrabold tabular-nums text-primo-ink',
   // Messages + boutons filtres
   msg: 'rounded-xl border border-primo-line bg-white px-4 py-3.5 text-center text-primo-muted',
-  msgError: 'rounded-xl border border-[#f0c9c9] bg-primo-error-soft px-4 py-3.5 text-center text-primo-error',
+  msgError: 'rounded-xl border border-primo-error-line bg-primo-error-soft px-4 py-3.5 text-center text-primo-error',
   apply:
     'rounded-xl border-0 bg-primo-teal px-3.5 py-2.5 font-bold text-white shadow-[0_10px_22px_-8px_rgba(0,161,154,0.55)] hover:bg-primo-teal-strong',
   reset: 'ml-1.5 rounded-[11px] border-[1.5px] border-primo-line bg-white px-3 py-1.5 font-bold text-primo-slate',

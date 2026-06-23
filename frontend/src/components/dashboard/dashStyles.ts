@@ -14,8 +14,8 @@ export const DASH_STAT_STRONG = 'text-primo-ink';
 /* ── Bouton invitation (pill pointillé) ── */
 export const DASH_INVITE =
   'inline-flex cursor-pointer items-center gap-1.5 rounded-[12px] border-[1.5px] border-dashed ' +
-  'border-[#8fcec8] bg-primo-mint px-3.5 py-2.5 text-[13px] font-bold text-primo-teal-strong ' +
-  'transition hover:bg-[#d3ece8]';
+  'border-primo-mint-line bg-primo-mint px-3.5 py-2.5 text-[13px] font-bold text-primo-teal-strong ' +
+  'transition hover:bg-primo-mint-line-hover';
 
 /* ── Messages d'état ── */
 export const DASH_MSG = 'py-7 text-center text-primo-muted';
@@ -62,7 +62,7 @@ export const EMP_ATTRIB_SUBMIT =
 export const EMP_ATTRIB_ERROR = 'm-0 w-full text-[13px] text-primo-error';
 export const EMP_DELETE_BTN =
   'inline-flex flex-shrink-0 cursor-pointer items-center justify-center rounded-[11px] ' +
-  'border-[1.5px] border-[#f0c9c9] bg-white px-2.5 py-[9px] text-primo-error transition ' +
+  'border-[1.5px] border-primo-error-line bg-white px-2.5 py-[9px] text-primo-error transition ' +
   'hover:bg-primo-error-soft disabled:cursor-not-allowed disabled:opacity-50';
 
 /* ── Historique des transactions ── */
