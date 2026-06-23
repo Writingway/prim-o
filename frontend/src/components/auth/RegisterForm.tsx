@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { ChangeEvent, SyntheticEvent } from 'react';
 import { register } from '../../services/api';
 import { FORM, INPUT, SUBMIT, ERROR, CONSENT, CONSENT_BOX, CONSENT_LINK } from './authClasses';
+import PasswordStrength from './PasswordStrength';
 
 type ValidationErrorBody = { details?: Array<{ message: string }> };
 
@@ -49,6 +50,7 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
       <input className={INPUT} name="lastName" placeholder="Nom" value={form.lastName} onChange={handleFieldChange} />
       <input className={INPUT} name="email" type="email" placeholder="Email" value={form.email} onChange={handleFieldChange} />
       <input className={INPUT} name="password" type="password" placeholder="Mot de passe (8 caractères min.)" value={form.password} onChange={handleFieldChange} />
+      <PasswordStrength value={form.password} />
 
       <label className={CONSENT}>
         <input className={CONSENT_BOX} type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} />

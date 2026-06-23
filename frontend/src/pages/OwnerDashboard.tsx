@@ -20,6 +20,8 @@ import type { RetributionMode, MotifCategoryGroup, SentEnvelope } from '../types
 import { formatDate } from '../lib/format';
 import './ManagerDashboard.css';
 import Layout from '../components/layout/Layout';
+import BottomNav from '../components/layout/BottomNav';
+import { NAV_ITEMS } from '../hooks/useBottomNav';
 import PrivacySection from '../components/privacy/PrivacySection';
 import EditProfile from '../components/privacy/EditProfile';
 import { useConfirm } from '../components/ui/ConfirmDialog';
@@ -27,6 +29,9 @@ import ModeSelector from '../components/allocation/ModeSelector';
 import MotifSelect from '../components/allocation/MotifSelect';
 import SentEnvelopeTile from '../components/allocation/SentEnvelopeTile';
 import DashHistory from '../components/dashboard/DashHistory';
+import Icon from '../components/ui/Icon';
+import Coin from '../components/ui/Coin';
+import { HEADER_BTN_GHOST } from '../components/layout/headerButtons';
 
 type Props = { onLogout: () => void; onBack: () => void; onStats?: () => void };
 
@@ -294,43 +299,132 @@ export default function OwnerDashboard({ onLogout, onBack, onStats }: Props) {
   return (
     <Layout
       title="Prim'O — Espace patron"
+      chrome="app"
+      bottomNav={
+        <BottomNav
+          items={NAV_ITEMS.owner}
+          active={activeTab}
+          onSelect={(it) =>
+            it.key === 'profil'
+              ? document.getElementById('nav-profil')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+              : setActiveTab(it.key as typeof activeTab)
+          }
+        />
+      }
       headerActions={
         <>
           {onStats && (
-            <button className="app-btn app-btn-ghost" type="button" onClick={onStats}>📊 Statistiques</button>
+            <button className={HEADER_BTN_GHOST} type="button" onClick={onStats}>Statistiques</button>
           )}
-          <button className="app-btn app-btn-ghost" type="button" onClick={onBack}>← Accueil</button>
-          <button className="app-btn app-btn-ghost" type="button" onClick={handleLogout}>Se déconnecter</button>
+          <button className={HEADER_BTN_GHOST} type="button" onClick={onBack}>Accueil</button>
+          <button className={HEADER_BTN_GHOST} type="button" onClick={handleLogout}>Se déconnecter</button>
         </>
       }
     >
     <div className="dash-wrapper">
       <div className="dash-container">
 
-        <div className="dash-stats">
-          <div className="dash-stat dash-stat-pool">🏦 <strong>{company?.tokenBalance ?? '—'}</strong>&nbsp;pool entreprise</div>
-          <div className="dash-stat">👥 <strong>{employees?.length ?? 0}</strong>&nbsp;employés</div>
-          <div className="dash-stat">🪙 <strong>{totalDistributed}</strong>&nbsp;tokens distribués</div>
-          <button className="dash-invite" type="button" onClick={() => handleGenerateInvite('MANAGER')}>Code manager</button>
-          <button className="dash-invite" type="button" onClick={() => handleGenerateInvite('EMPLOYEE')}>Code employé</button>
+        {/* Hero : pool entreprise (cf. README F1) */}
+        <div className="mb-4 overflow-hidden rounded-3xl bg-gradient-to-b from-primo-hero-from to-primo-ink-900 px-5 pb-6 pt-5 text-white">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-[13px] text-white/65">Espace employeur</div>
+              <div className="flex items-center gap-2">
+                <span className="text-lg font-extrabold tracking-[-0.02em]">{company?.name ?? 'Mon entreprise'}</span>
+                <span className="rounded-[12px] bg-primo-gold px-2 py-0.5 text-[11px] font-extrabold text-primo-ink-900">OWNER</span>
+              </div>
+            </div>
+            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white">
+              <Icon name="users" size={21} />
+            </span>
+          </div>
+
+          <div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.09] p-4">
+            <div className="mb-2 flex items-center gap-2 text-white/65">
+              <Icon name="envelope" size={18} />
+              <span className="text-[13px] font-semibold">Pool entreprise</span>
+            </div>
+            <div className="flex items-end gap-2.5">
+              <Coin size={40} />
+              <span className="text-[44px] font-extrabold leading-none tracking-[-0.03em]">{company?.tokenBalance ?? '—'}</span>
+            </div>
+            <div className="mt-1.5 text-[13px] text-white/65">jetons disponibles à allouer</div>
+          </div>
+
+          <div className="mt-3 grid grid-cols-3 gap-3">
+            <div className="rounded-2xl bg-white/[0.06] p-3.5 text-center">
+              <div className="text-xl font-extrabold">{managers.length}</div>
+              <div className="text-[11px] text-white/65">managers</div>
+            </div>
+            <div className="rounded-2xl bg-white/[0.06] p-3.5 text-center">
+              <div className="text-xl font-extrabold">{employees?.length ?? 0}</div>
+              <div className="text-[11px] text-white/65">employés</div>
+            </div>
+            <div className="rounded-2xl bg-white/[0.06] p-3.5 text-center">
+              <div className="text-xl font-extrabold">{totalDistributed}</div>
+              <div className="text-[11px] text-white/65">distribués</div>
+            </div>
+          </div>
         </div>
 
         {paymentNotice === 'success' && (
-          <div className="dash-msg">✅ Paiement réussi ! Ton pool va être crédité dans un instant.</div>
+          <div className="mb-4 flex items-center gap-2 rounded-xl bg-primo-success-soft px-4 py-3 text-[13px] font-semibold text-primo-success">
+            <Icon name="check" size={16} strokeWidth={2.2} /> Paiement réussi — ton pool sera crédité dans un instant.
+          </div>
         )}
-        {paymentNotice === 'cancel' && <div className="dash-msg dash-error">Paiement annulé.</div>}
+        {paymentNotice === 'cancel' && (
+          <div className="mb-4 rounded-xl bg-primo-error-soft px-4 py-3 text-[13px] font-semibold text-primo-error">Paiement annulé.</div>
+        )}
 
-        <form className="dash-recharge" onSubmit={handleRecharge}>
-          <input
-            type="number" min="1" step="1" placeholder="Nb de tokens"
-            value={rechargeAmount}
-            onChange={(e) => setRechargeAmount(e.target.value)}
-          />
-          <button className="dash-invite" type="submit" disabled={recharging}>
-            {recharging ? '…' : '💳 Recharger le pool'}
+        {/* Recharge du pool (Stripe) */}
+        <div className="mb-4 rounded-2xl border border-primo-line bg-white p-4">
+          <div className="mb-3 text-sm font-bold text-primo-ink">Recharger le pool</div>
+          <form className="flex flex-wrap items-center gap-2.5" onSubmit={handleRecharge}>
+            <input
+              className="w-[150px] flex-1 rounded-[13px] border-[1.5px] border-primo-line bg-primo-surface px-3.5 py-3 text-[15px] font-bold text-primo-ink focus:border-primo-teal focus:shadow-[0_0_0_3px_rgba(0,161,154,0.12)] focus:outline-none"
+              type="number" min="1" step="1" placeholder="Nb de jetons"
+              value={rechargeAmount}
+              onChange={(e) => setRechargeAmount(e.target.value)}
+            />
+            <button
+              className="inline-flex items-center gap-2 rounded-[13px] border-0 bg-primo-teal px-4 py-3 text-sm font-bold text-white shadow-[0_10px_22px_-8px_rgba(0,161,154,0.55)] transition hover:bg-primo-teal-strong disabled:opacity-60"
+              type="submit" disabled={recharging}
+            >
+              <Icon name="card" size={18} /> {recharging ? '…' : 'Payer'}
+            </button>
+          </form>
+          <div className="mt-2.5 flex gap-2">
+            {['1000', '5000', '10000'].map((p) => (
+              <button
+                key={p}
+                type="button"
+                onClick={() => setRechargeAmount(p)}
+                className={`flex-1 rounded-[10px] px-2 py-2 text-xs font-bold transition ${
+                  rechargeAmount === p
+                    ? 'bg-primo-teal text-white'
+                    : 'border border-primo-line bg-primo-surface text-primo-slate hover:bg-primo-mint'
+                }`}
+              >
+                +{Number(p).toLocaleString('fr-FR')}
+              </button>
+            ))}
+          </div>
+          <div className="mt-3 flex items-center gap-1.5 text-primo-muted">
+            <Icon name="lock" size={14} />
+            <span className="text-[11.5px]">Paiement sécurisé par Stripe</span>
+          </div>
+          {rechargeError && <p className="mt-2 text-[13px] text-primo-error">{rechargeError}</p>}
+        </div>
+
+        {/* Invitations */}
+        <div className="mb-2 flex flex-wrap gap-2.5">
+          <button className="dash-invite inline-flex items-center gap-1.5" style={{ marginLeft: 0 }} type="button" onClick={() => handleGenerateInvite('MANAGER')}>
+            <Icon name="plus" size={16} /> Code manager
           </button>
-          {rechargeError && <p className="dash-msg dash-error">{rechargeError}</p>}
-        </form>
+          <button className="dash-invite inline-flex items-center gap-1.5" style={{ marginLeft: 0 }} type="button" onClick={() => handleGenerateInvite('EMPLOYEE')}>
+            <Icon name="plus" size={16} /> Code employé
+          </button>
+        </div>
 
         {inviteCode && (
           <div className="dash-msg">
@@ -442,7 +536,7 @@ export default function OwnerDashboard({ onLogout, onBack, onStats }: Props) {
                         <div className="emp-name">
                           {e.firstName} {e.lastName}
                           {e.isEmailVerified ? (
-                            <span className="emp-badge verified">✓ vérifié</span>
+                            <span className="emp-badge verified"><Icon name="check" size={13} strokeWidth={2.4} /> vérifié</span>
                           ) : (
                             <button type="button" className="emp-attrib-btn" onClick={() => approveEmployee(e.id)}>Approuver</button>
                           )}
@@ -467,7 +561,7 @@ export default function OwnerDashboard({ onLogout, onBack, onStats }: Props) {
                         disabled={deletingId === e.id}
                         onClick={() => handleDelete(e)}
                       >
-                        {deletingId === e.id ? '…' : '🗑️'}
+                        {deletingId === e.id ? '…' : <Icon name="trash" size={18} />}
                       </button>
                     </div>
 
@@ -493,8 +587,16 @@ export default function OwnerDashboard({ onLogout, onBack, onStats }: Props) {
           </>
         )}
 
+        <div id="nav-profil" className="scroll-mt-20" />
         {!loading && <EditProfile />}
         {!loading && <PrivacySection onAccountDeleted={onLogout} />}
+        <button
+          type="button"
+          className="mt-2.5 flex w-full items-center justify-center gap-2.5 rounded-[14px] border-[1.5px] border-[#f0c9c9] bg-white px-4 py-3.5 text-[15px] font-bold text-primo-error hover:bg-primo-error-soft lg:hidden"
+          onClick={handleLogout}
+        >
+          <Icon name="logout" size={19} /> Se déconnecter
+        </button>
       </div>
     </div>
     {confirmDialog}

@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import AuthTabs from '../components/auth/AuthTabs';
+import AuthBrand from '../components/auth/AuthBrand';
 import LoginForm from '../components/auth/LoginForm';
 import RegisterForm from '../components/auth/RegisterForm';
+import Icon from '../components/ui/Icon';
 import type { Mode } from '../types/types';
-import { WRAPPER, CARD, BACK, LOGO, SUCCESS, ERROR } from '../components/auth/authClasses';
+import { WRAPPER, CARD, BACK, SUCCESS, ERROR } from '../components/auth/authClasses';
 
 type AuthPageProps = {
   onLoginSuccess: (accessToken: string) => void;
@@ -19,15 +21,19 @@ export default function AuthPage({ onLoginSuccess, initialMode = 'login', onBack
 
   // Inscription sans auto-login : on confirme + bascule sur l'onglet connexion.
   const handleRegisterSuccess = () => {
-    setSuccessMessage('Compte créé ✅ Vérifie ton email pour activer ton compte.');
+    setSuccessMessage('Compte créé. Vérifie ton email pour activer ton compte.');
     setMode('login');
   };
 
   return (
     <div className={WRAPPER}>
       <div className={CARD}>
-        {onBack && <button type="button" className={BACK} onClick={onBack}> Retour</button>}
-        <h1 className={LOGO}>Prim'O</h1>
+        {onBack && (
+          <button type="button" className={BACK} onClick={onBack}>
+            <Icon name="arrow-left" size={18} /> Retour
+          </button>
+        )}
+        <AuthBrand subtitle={mode === 'login' ? 'Connecte-toi pour retrouver tes jetons.' : 'Crée ton compte en moins d’une minute.'} />
 
         <AuthTabs mode={mode} onChange={setMode} />
 

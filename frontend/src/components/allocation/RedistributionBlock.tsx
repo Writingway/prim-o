@@ -3,6 +3,10 @@ import type { ManagerEnvelope, MotifCategoryGroup, Employee, DistributeLine } fr
 import { MODE_LABELS } from '../../types/types';
 import { distributeEnvelope } from '../../services/api';
 import MotifSelect from './MotifSelect';
+import Icon from '../ui/Icon';
+
+const CANCEL_BTN =
+  'cursor-pointer rounded-[12px] border-[1.5px] border-primo-line bg-white px-4 py-2.5 text-sm font-bold text-primo-slate transition hover:bg-white disabled:opacity-55';
 
 type Props = {
   envelope: ManagerEnvelope;
@@ -75,7 +79,7 @@ export default function RedistributionBlock({
   return (
     <div className="rb">
       <div className="rb-header">
-        ✉️ Enveloppe {envelope.amount} · {modeLabel}
+        <Icon name="envelope" size={18} /> Enveloppe {envelope.amount} · {modeLabel}
       </div>
 
       <div className="rb-stats">
@@ -115,11 +119,11 @@ export default function RedistributionBlock({
       </ul>
 
       <div className="rb-actions">
-        <button type="button" className="app-btn app-btn-ghost" onClick={onCancel} disabled={submitting}>
+        <button type="button" className={CANCEL_BTN} onClick={onCancel} disabled={submitting}>
           Annuler
         </button>
         <button type="button" className="emp-attrib-submit" onClick={submit} disabled={!canSend}>
-          {submitting ? '…' : 'Envoyer ✓'}
+          {submitting ? '…' : <><Icon name="send" size={16} /> Envoyer</>}
         </button>
       </div>
       {remaining !== 0 && (

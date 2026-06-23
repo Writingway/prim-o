@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import type { SyntheticEvent } from 'react';
 import { resetPassword } from '../services/api';
-import { WRAPPER, CARD, LOGO, FORM, INPUT, SUBMIT, ERROR, SUCCESS } from '../components/auth/authClasses';
+import { WRAPPER, CARD, FORM, INPUT, SUBMIT, ERROR, SUCCESS } from '../components/auth/authClasses';
+import AuthBrand from '../components/auth/AuthBrand';
+import PasswordStrength from '../components/auth/PasswordStrength';
 
 type ResetPasswordPageProps = {
   token: string;
@@ -50,11 +52,11 @@ export default function ResetPasswordPage({ token, onDone }: ResetPasswordPagePr
   return (
     <div className={WRAPPER}>
       <div className={CARD}>
-        <h1 className={LOGO}>Prim'O</h1>
+        <AuthBrand subtitle="Choisis un nouveau mot de passe." />
 
         {success ? (
           <>
-            <p className={SUCCESS}>Mot de passe réinitialisé ✅ Tu peux te connecter.</p>
+            <p className={SUCCESS}>Mot de passe réinitialisé. Tu peux te connecter.</p>
             <button className={SUBMIT} type="button" onClick={onDone}>Aller à la connexion</button>
           </>
         ) : (
@@ -67,6 +69,7 @@ export default function ResetPasswordPage({ token, onDone }: ResetPasswordPagePr
               onChange={(e) => setPassword(e.target.value)}
               autoComplete="new-password"
             />
+            <PasswordStrength value={password} />
             <input
               className={INPUT}
               type="password"

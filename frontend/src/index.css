@@ -1,29 +1,95 @@
 /* Charte graphique PRIM'O appliquée globalement.
    Principale : #00A19A (teal). Secondaire : #000000. Fond : #FFFFFF.
    Police principale : Poppins. Mobile-first. */
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500&display=swap');
 @import 'tailwindcss';
 
-/* Tailwind v4 @theme : expose les tokens charte comme utilitaires
-   (bg-primo-teal, text-primo-ink, border-primo-border…).
-   Migration incrémentale : coexiste avec les CSS par page existants. */
+/* Tailwind v4 @theme : palette charte « réimaginée » v1.1 (teal + or, Poppins).
+   Référence : README handoff / maquette Prim'O Mobile. Tokens exposés comme
+   utilitaires (bg-primo-*, text-primo-*, border-primo-*). Migration incrémentale :
+   coexiste avec les CSS par page restants. */
 @theme {
-  --color-primo-teal: #00a19a;
-  --color-primo-teal-dark: #00827c;
-  --color-primo-teal-soft: #e6f6f5;
-  --color-primo-ink: #000000;
+  /* Teal — primaire */
+  --color-primo-teal: #00a19a;          /* CTA, actif */
+  --color-primo-teal-strong: #00827c;   /* texte teal, hover */
+  --color-primo-teal-dark: #00827c;     /* alias rétro-compat */
+  --color-primo-teal-100: #16ada5;      /* dégradés hero */
+  --color-primo-teal-soft: #e3f4f2;     /* fond teinté teal (= mint) */
+
+  /* Encres sombres — surfaces & afficheurs */
+  --color-primo-ink-900: #063b38;       /* sidebar, afficheurs, badges */
+  --color-primo-ink-950: #06302d;       /* fond le plus sombre */
+  --color-primo-hero-from: #0a4b46;     /* début dégradé hero */
+
+  /* Or — jeton / récompense (réservé) */
+  --color-primo-gold: #ffb72e;
+  --color-primo-gold-bright: #ffc54d;   /* accent or sur fond sombre */
+  --color-primo-gold-soft: #fff4e0;
+
+  /* Texte */
+  --color-primo-ink: #0b2422;           /* texte principal */
+  --color-primo-slate: #3c5450;         /* texte secondaire */
+  --color-primo-slate-soft: #5c7370;
+  --color-primo-muted: #90a5a2;         /* tertiaire / placeholders */
+
+  /* Surfaces & lignes */
   --color-primo-bg: #ffffff;
+  --color-primo-surface: #f3f7f6;       /* fond écran */
+  --color-primo-mint: #e3f4f2;          /* fond teinté teal */
+  --color-primo-line: #e3ecea;          /* bordures */
+  --color-primo-border: #e3ecea;        /* alias rétro-compat */
   --color-primo-gray: #6b7280;
-  --color-primo-gray-light: #9ca3af;
-  --color-primo-border: #e3e3e8;
-  --color-primo-error: #dc2626;
-  --color-primo-success: #059669;
+  --color-primo-gray-light: #90a5a2;
+
+  /* États */
+  --color-primo-success: #0e9f6e;
+  --color-primo-success-soft: #e7f7f0;
+  --color-primo-error: #e5484d;
+  --color-primo-error-soft: #fdecec;
+  --color-primo-warn: #e08c12;
+  --color-primo-warn-strong: #b8801c;
+  --color-primo-warn-soft: #fff8ec;
+  --color-primo-warn-soft2: #fbefd2;
+
+  /* Catégories d'offres (icône + fond teinté) */
+  --color-primo-cat-food: #e5784a;
+  --color-primo-cat-food-soft: #fff1ec;
+  --color-primo-cat-shop: #3f7fcb;
+  --color-primo-cat-shop-soft: #e8f0fb;
+  --color-primo-cat-culture: #7c5cd0;
+  --color-primo-cat-culture-soft: #efe9fb;
+  --color-primo-cat-travel: #2e84c8;
+  --color-primo-cat-travel-soft: #e5f2fb;
+  --color-primo-cat-wellness: #d24e86;
+  --color-primo-cat-wellness-soft: #fde8f0;
 
   --font-sans: 'Poppins', system-ui, 'Segoe UI', Roboto, sans-serif;
 
-  /* Animations partagées (ex. ConfirmDialog) → utilitaires animate-confirm-*. */
+  /* Animations partagées. */
   --animate-confirm-fade: confirm-fade 0.12s ease;
   --animate-confirm-pop: confirm-pop 0.14s ease;
+  --animate-primo-float: primo-float 4s ease-in-out infinite;
+  --animate-sheet-up: sheet-up 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Logo « pièce » or — dégradé radial réutilisable. */
+@utility primo-coin {
+  background: radial-gradient(circle at 34% 28%, #ffdd7c, #ffb72e 56%, #e08c12);
+}
+
+@keyframes primo-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes sheet-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-primo-float,
+  .animate-sheet-up { animation: none; }
 }
 
 @keyframes confirm-fade {
@@ -37,19 +103,20 @@
 }
 
 :root {
-  /* Tokens charte */
+  /* Tokens charte « réimaginée » v1.1 (alignés sur @theme). */
   --primo-teal: #00a19a;
   --primo-teal-dark: #00827c;
-  --primo-teal-soft: #e6f6f5;
-  --primo-ink: #000000;
+  --primo-teal-soft: #e3f4f2;
+  --primo-ink: #0b2422;
   --primo-bg: #ffffff;
+  --primo-surface: #f3f7f6;
 
-  /* Neutres / état (hors charte mais nécessaires UI) */
-  --primo-gray: #6b7280;
-  --primo-gray-light: #9ca3af;
-  --primo-border: #e3e3e8;
-  --primo-error: #dc2626;
-  --primo-success: #059669;
+  /* Neutres / état. */
+  --primo-gray: #5c7370;
+  --primo-gray-light: #90a5a2;
+  --primo-border: #e3ecea;
+  --primo-error: #e5484d;
+  --primo-success: #0e9f6e;
 
   font-family: 'Poppins', system-ui, 'Segoe UI', Roboto, sans-serif;
   color: var(--primo-ink);
