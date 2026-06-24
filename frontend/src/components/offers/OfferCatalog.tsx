@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { listOffers, redeemOffer } from '@/services/api';
-import type { Offer } from '@/types/types';
+import { listCategories } from '@/services/api/categories';
+import type { Offer, Category } from '@/types/types';
 import Icon from '@/components/ui/Icon';
 import type { IconName } from '@/components/ui/Icon';
 import Coin from '@/components/ui/Coin';
@@ -15,22 +16,6 @@ const CTA_PRIMARY =
 
 // Pagination de la grille : on rend par paquets, « Voir plus » étend la fenêtre.
 const PAGE_SIZE = 8;
-
-// Identité visuelle d'une catégorie (pas de logo de marque dans les données) :
-// - `icon` : glyph linéaire, utilisé en avatar ET en filigrane géant sur la vignette
-// - `tile`/`band` : fonds plats historiques (conservés pour le bottom-sheet)
-// - `grad` : dégradé diagonal vif → teinte « deep », signature des vignettes
-export const categoryMeta: Record<
-  Offer['category'],
-  { icon: IconName; tile: string; band: string; grad: string; label: string }
-> = {
-  FOOD: { icon: 'coffee', tile: 'bg-primo-cat-food-soft text-primo-cat-food', band: 'bg-primo-cat-food', grad: 'from-primo-cat-food to-primo-cat-food-deep', label: 'Restauration' },
-  SHOPPING: { icon: 'gift', tile: 'bg-primo-cat-shop-soft text-primo-cat-shop', band: 'bg-primo-cat-shop', grad: 'from-primo-cat-shop to-primo-cat-shop-deep', label: 'Shopping' },
-  CULTURE: { icon: 'ticket', tile: 'bg-primo-cat-culture-soft text-primo-cat-culture', band: 'bg-primo-cat-culture', grad: 'from-primo-cat-culture to-primo-cat-culture-deep', label: 'Culture' },
-  TRAVEL: { icon: 'plane', tile: 'bg-primo-cat-travel-soft text-primo-cat-travel', band: 'bg-primo-cat-travel', grad: 'from-primo-cat-travel to-primo-cat-travel-deep', label: 'Voyage' },
-  WELLNESS: { icon: 'heart', tile: 'bg-primo-cat-wellness-soft text-primo-cat-wellness', band: 'bg-primo-cat-wellness', grad: 'from-primo-cat-wellness to-primo-cat-wellness-deep', label: 'Bien-être' },
-  OTHER: { icon: 'gift', tile: 'bg-primo-mint text-primo-teal-strong', band: 'bg-primo-teal', grad: 'from-primo-teal to-primo-cat-other-deep', label: 'Autre' },
-};
 
 type Revealed = { code: string; offerName: string; amount: number };
 
@@ -53,10 +38,11 @@ export default function OfferCatalog({
 }: OfferCatalogProps) {
   const { confirm, confirmDialog } = useConfirm();
   const [offers, setOffers] = useState<Offer[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [query, setQuery] = useState('');
-  const [activeCat, setActiveCat] = useState<Offer['category'] | 'ALL'>('ALL');
+  const [activeCat, setActiveCat] = useState<string | 'ALL'>('ALL');
 
   const [selected, setSelected] = useState<Offer | null>(null);
   const [redeeming, setRedeeming] = useState(false);
@@ -80,19 +66,17 @@ export default function OfferCatalog({
     };
   }, []);
 
-  const presentCats = useMemo(() => {
-    const set = new Set<Offer['category']>();
-    offers.forEach((o) => set.add(o.category));
-    return (['FOOD', 'SHOPPING', 'CULTURE', 'TRAVEL', 'WELLNESS', 'OTHER'] as const).filter((c) =>
-      set.has(c),
-    );
-  }, [offers]);
+  useEffect(() => {
+    listCategories().then((res) => {
+      if (res.ok && res.data) setCategories(res.data.categories);
+    }).catch(() => {});
+  }, []);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return offers.filter(
       (o) =>
-        (activeCat === 'ALL' || o.category === activeCat) &&
+        (activeCat === 'ALL' || o.category?.id === activeCat) &&
         (q === '' || o.partnerName.toLowerCase().includes(q)),
     );
   }, [offers, query, activeCat]);
@@ -155,7 +139,7 @@ export default function OfferCatalog({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const selectedMeta = selected ? (categoryMeta[selected.category] ?? categoryMeta.OTHER) : null;
+  const selectedMeta = selected?.category ?? null;
 
   return (
     <>
@@ -174,26 +158,25 @@ export default function OfferCatalog({
         </div>
 
         {/* Catégories : cercle icône + nom dessous (scroll horizontal sans barre) */}
-        {presentCats.length > 0 && (
+        {categories.length > 0 && (
           <div className="no-scrollbar mt-4 flex gap-3.5 overflow-x-auto pb-1">
             <CategoryPill
               active={activeCat === 'ALL'}
               icon="star"
               label="Tout"
-              circle={activeCat === 'ALL' ? 'bg-primo-teal text-white' : 'bg-primo-mint text-primo-teal-strong'}
+              color="#00a19a"
               onClick={() => setActiveCat('ALL')}
             />
-            {presentCats.map((c) => {
-              const meta = categoryMeta[c];
-              const on = activeCat === c;
+            {categories.map((c) => {
+              const on = activeCat === c.id;
               return (
                 <CategoryPill
-                  key={c}
+                  key={c.id}
                   active={on}
-                  icon={meta.icon}
-                  label={meta.label}
-                  circle={on ? `${meta.band} text-white` : meta.tile}
-                  onClick={() => setActiveCat(c)}
+                  icon={c.icon as IconName}
+                  label={c.label}
+                  color={c.color}
+                  onClick={() => setActiveCat(c.id)}
                 />
               );
             })}
@@ -244,7 +227,7 @@ export default function OfferCatalog({
           <>
             {/* À la une : le meilleur bon plan du moment, en carte plein-cadre. */}
             {showFeatured && featured && (() => {
-              const meta = categoryMeta[featured.category] ?? categoryMeta.OTHER;
+              const meta = featured.category ?? { icon: 'gift', color: '#00a19a', label: '' };
               return (
                 <button
                   type="button"
@@ -281,7 +264,7 @@ export default function OfferCatalog({
             {/* Toutes les offres (paginées par paquets de PAGE_SIZE) */}
             <div className="mt-6 grid grid-cols-1 gap-3.5">
               {gridOffers.slice(0, visible).map((o, i) => {
-                const meta = categoryMeta[o.category] ?? categoryMeta.OTHER;
+                const meta = o.category ?? { icon: 'gift', color: '#00a19a', label: '' };
                 return (
                   <article
                     key={o.id}
@@ -357,7 +340,7 @@ export default function OfferCatalog({
             </h3>
             <div className="mt-2 flex items-center gap-2">
               <span className="rounded-[20px] bg-primo-mint px-3 py-[5px] text-xs font-semibold text-primo-teal-strong">
-                {selectedMeta.label}
+                {selectedMeta?.label}
               </span>
               {selected.discountPercent > 0 && (
                 <span className="rounded-[20px] bg-primo-warn px-3 py-[5px] text-xs font-bold text-white">
@@ -503,26 +486,31 @@ export default function OfferCatalog({
 // ── Briques de présentation ─────────────────────────────────────────────────
 
 // Vignette de catégorie : dégradé diagonal + glyph filigrane géant débordant +
-// liseré lumineux en haut. C'est la signature visuelle qui remplace le logo de
-// marque absent. `size` pilote l'avatar net au premier plan.
+// liseré lumineux en haut. `size` pilote l'avatar net au premier plan.
+// Accepte soit une couleur dynamique (inline style) soit un grad Tailwind (legacy).
 function CategoryVisual({
   meta,
   className = '',
   watermark = 84,
   avatar = 0,
 }: {
-  meta: { icon: IconName; grad: string };
+  meta: { icon: string; grad?: string; color?: string };
   className?: string;
   watermark?: number;
   avatar?: number;
 }) {
+  const bgStyle = meta.color
+    ? { background: `linear-gradient(135deg, ${meta.color}dd 0%, ${meta.color}88 100%)` }
+    : undefined;
+  const bgClass = meta.grad ? `bg-gradient-to-br ${meta.grad}` : '';
+
   return (
-    <div className={`relative overflow-hidden bg-gradient-to-br ${meta.grad} ${className}`}>
+    <div className={`relative overflow-hidden ${bgClass} ${className}`} style={bgStyle}>
       {/* Voile lumineux en haut à gauche : donne de la matière au dégradé. */}
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_90%_at_15%_0%,rgba(255,255,255,0.28),transparent_55%)]" />
       {/* Filigrane : l'icône de catégorie en très grand, débordant du cadre. */}
       <Icon
-        name={meta.icon}
+        name={meta.icon as IconName}
         size={watermark}
         strokeWidth={1.4}
         className="pointer-events-none absolute -bottom-5 -right-4 text-white/15"
@@ -530,7 +518,7 @@ function CategoryVisual({
       {avatar > 0 && (
         <span className="absolute inset-0 flex items-center justify-center">
           <span className="flex items-center justify-center rounded-2xl bg-white/18 p-2.5 ring-1 ring-white/25 backdrop-blur-[2px]">
-            <Icon name={meta.icon} size={avatar} strokeWidth={1.7} className="text-white" />
+            <Icon name={meta.icon as IconName} size={avatar} strokeWidth={1.7} className="text-white" />
           </span>
         </span>
       )}
@@ -561,18 +549,18 @@ function TokenPrice({ cost, size = 17, text = 'text-sm' }: { cost: number; size?
 }
 
 // Filtre catégorie : cercle coloré (icône) + nom dessous. Actif = cercle vif,
-// nom en gras ; inactif = cercle teinté doux.
+// nom en gras ; inactif = cercle teinté doux. Couleur appliquée via inline style.
 function CategoryPill({
   active,
   icon,
   label,
-  circle,
+  color,
   onClick,
 }: {
   active: boolean;
   icon: IconName;
   label: string;
-  circle: string;
+  color: string;
   onClick: () => void;
 }) {
   return (
@@ -583,7 +571,8 @@ function CategoryPill({
       className="flex flex-none flex-col items-center gap-1.5 outline-none"
     >
       <span
-        className={`flex h-[58px] w-[58px] items-center justify-center rounded-full transition ${circle} ${
+        style={{ backgroundColor: active ? color : color + '22', color: active ? 'white' : color }}
+        className={`flex h-[58px] w-[58px] items-center justify-center rounded-full transition ${
           active ? 'shadow-[0_8px_18px_-8px_rgba(6,48,45,0.4)]' : ''
         }`}
       >

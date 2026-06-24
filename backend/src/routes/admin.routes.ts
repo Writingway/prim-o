@@ -4,6 +4,10 @@ import {
   updateOfferController,
   deactivateOfferController,
 } from '../controllers/offer.controller';
+import {
+  listAllCategoriesController, createCategoryController,
+  updateCategoryController, deactivateCategoryController,
+} from '../controllers/category.controller';
 import { addPromoCodesController, listPromoCodesController, deletePromoCodeController } from '../controllers/promoCode.controller';
 import {
   softDeleteCompanyController, 
@@ -49,5 +53,11 @@ router.post('/companies', createCompanyController);
 router.get('/attributions', listAttributionsController);
 router.get('/redemptions', listRedemptionsController);
 router.get('/purchases', listPurchasesController);
+
+// Category CRUD (admin)
+router.get('/categories', listAllCategoriesController);
+router.post('/categories', createCategoryController);
+router.patch('/categories/:id', updateCategoryController);
+router.delete('/categories/:id', deactivateCategoryController);
 
 export default router;

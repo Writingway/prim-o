@@ -5,7 +5,10 @@ import type { CreateOfferInput, UpdateOfferInput } from '../schemas/offer.schema
 // Liste admin : chaque offre est enrichie du stock de codes promo
 // (availableCodes = non utilisés, usedCodes = déjà distribués).
 export const listOffers = async () => {
-  const offers = await prisma.partnerOffer.findMany({ orderBy: { createdAt: 'desc' } })
+  const offers = await prisma.partnerOffer.findMany({
+    orderBy: { createdAt: 'desc' },
+    include: { category: { select: { id: true, slug: true, label: true, icon: true, color: true } } },
+  })
 
   // Comptage des codes par offre et par statut, en une seule requête.
   const grouped = await prisma.promoCode.groupBy({
@@ -48,7 +51,7 @@ export const deactivateOffer = async (id: string) => {
 export async function getActiveOffer(id: string) {
   const offer = await prisma.partnerOffer.findFirst({
     where: { id, isActive: true },
-    select: { id: true, partnerName: true, cost: true, discountPercent: true, category: true },
+    select: { id: true, partnerName: true, cost: true, discountPercent: true, category: { select: { id: true, slug: true, label: true, icon: true, color: true } } },
   });
   if (!offer) return null;
   const stock = await prisma.promoCode.count({ where: { offerId: id, isUsed: false } });
@@ -66,7 +69,7 @@ export async function listActiveOffers() {
       partnerName: true,
       cost: true,
       discountPercent: true,
-      category: true,
+      category: { select: { id: true, slug: true, label: true, icon: true, color: true } },
     },
   });
 
