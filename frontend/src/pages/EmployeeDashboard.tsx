@@ -46,7 +46,7 @@ type EmployeeDashboardProps = {
 export default function EmployeeDashboard({ onLogout, firstName, profilePhoto }: EmployeeDashboardProps) {
   const { balance, error, loading, reload, received, spent, handleLogout } =
     useEmployeeDashboard(onLogout);
-  const [tab, setTab] = useState<EmployeeTab>('offres');
+  const [tab, setTab] = useState<EmployeeTab>('historique');
   // Avatar du hero, maj en direct quand on l'enregistre dans le profil.
   const [heroPhoto, setHeroPhoto] = useState<string | null>(profilePhoto ?? null);
   const heroInitials = (firstName?.[0] ?? '?').toUpperCase();
@@ -111,27 +111,17 @@ export default function EmployeeDashboard({ onLogout, firstName, profilePhoto }:
               l'achat, `onRedeemed` rerend en loading → OfferCatalog se démonte et
               la célébration « Code débloqué » disparaît avant de s'afficher. ── */}
           {tab === 'offres' && (
-            <>
-              {hero}
-
-              {/* Catalogue : mis en avant dès l'arrivée sur l'espace */}
-              <OfferCatalog
-                isLoggedIn
-                canRedeem
-                heading="Offres partenaires"
-                onRedeemed={reload}
-                onSeeSpending={() => setTab('codes')}
-              />
-            </>
+            <OfferCatalog
+              isLoggedIn
+              canRedeem
+              heading="Offres partenaires"
+              onRedeemed={reload}
+              onSeeSpending={() => setTab('codes')}
+            />
           )}
 
           {/* ── Onglet Mes codes : codes promo achetés (copiables) ── */}
-          {tab === 'codes' && (
-            <>
-              {hero}
-              <MyPromoCodes />
-            </>
-          )}
+          {tab === 'codes' && <MyPromoCodes />}
 
           {/* ── Onglet Historique : reçus + dépenses ── */}
           {tab === 'historique' && (

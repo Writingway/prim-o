@@ -67,16 +67,6 @@ export default function MyPromoCodes() {
         <p className="mt-8 text-center text-sm font-medium text-primo-muted">Chargement…</p>
       ) : error ? (
         <p className="mt-6 rounded-xl bg-primo-error-soft px-4 py-3 text-center text-[13px] text-primo-error">{error}</p>
-      ) : items.length === 0 ? (
-        <div className="mt-6 flex flex-col items-center rounded-[24px] border border-dashed border-primo-line bg-white px-6 py-12 text-center">
-          <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primo-mint text-primo-teal-strong">
-            <Icon name="ticket" size={26} />
-          </span>
-          <p className="mt-4 text-[15px] font-bold text-primo-ink">Aucun code pour l'instant</p>
-          <p className="mt-1 max-w-[260px] text-[13px] text-primo-slate-soft">
-            Échange tes tokens dans les Offres : tes codes apparaîtront ici.
-          </p>
-        </div>
       ) : (
         <>
           {/* Switch de catégorie Disponible / Utilisé */}
@@ -105,7 +95,7 @@ export default function MyPromoCodes() {
 
           {shown.length === 0 ? (
             <p className="mt-8 text-center text-sm font-medium text-primo-muted">
-              {view === 'available' ? 'Aucun code disponible — ils ont tous été utilisés.' : 'Aucun code utilisé pour l\'instant.'}
+              {view === 'available' ? "Aucun code pour l'instant. Échange tes jetons dans les Offres." : 'Aucun code utilisé pour l\'instant.'}
             </p>
           ) : (
             <ul className="m-0 flex list-none flex-col gap-3 p-0">

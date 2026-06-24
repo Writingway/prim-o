@@ -192,7 +192,7 @@ export default function ManagerDashboard({ onLogout, firstName, profilePhoto }: 
       <div className={DASH_CONTAINER}>
 
         {/* Hero affiché en tête des onglets Enveloppes ET Offres (comme l'employé). */}
-        {(activeTab === 'employes' || activeTab === 'enveloppes' || activeTab === 'offres') && (
+        {(activeTab === 'employes' ) && (
           <>
             {/* Hero (cf. README D1) */}
             <DashboardHero
@@ -226,17 +226,9 @@ export default function ManagerDashboard({ onLogout, firstName, profilePhoto }: 
                 </div>
                 <div className="rounded-2xl bg-white/[0.06] p-3.5">
                   <div className="text-xs text-white/65">Distribué</div>
-                  <div className="mt-1.5 text-xl font-extrabold">{totalDistributed}</div>
-                </div>
-                <div className="rounded-2xl bg-white/[0.06] p-3.5">
-                  <div className="text-xs text-white/65">Employés</div>
-                  <div className="mt-1.5 text-xl font-extrabold">{employees?.length ?? 0}</div>
-                </div>
-                <div className="rounded-2xl bg-white/[0.06] p-3.5">
-                  <div className="text-xs text-white/65">Pool entreprise</div>
                   <div className="mt-1.5 flex items-center gap-1.5">
                     <Coin size={18} />
-                    <span className="text-xl font-extrabold">{company?.tokenBalance ?? '—'}</span>
+                    <span className="text-xl font-extrabold">{totalDistributed}</span>
                   </div>
                 </div>
               </div>
