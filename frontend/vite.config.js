@@ -18,6 +18,9 @@ export default defineConfig({
     strictPort: true,
     host: true,
     allowedHosts: ['.trycloudflare.com', '.trycloudflare.com'],
+    // WSL : le watcher natif (inotify) rate souvent les changements de fichiers
+    // → HMR muet, les modifs n'apparaissent pas. Le polling est fiable en WSL.
+    watch: { usePolling: true, interval: 200 },
     // Proxy : les appels du front vers /api sont transmis au backend (port 4000).
     // Le navigateur ne parle qu'au front → règle les soucis WSL/CORS en dev.
     proxy: {

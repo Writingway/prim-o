@@ -30,7 +30,7 @@ const STROKE: Partial<Record<IconName, ReactNode>> = {
   send: <path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7Z" />,
   building: <path d="M9 12h6m-6 4h6m-3-12 8 4v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8l8-4Z" />,
   card: <><rect x="3.5" y="6" width="17" height="12" rx="2.5" /><path d="M3.5 10h17" /></>,
-  envelope: <><path d="M4 9 12 5l8 4" /><path d="M5 9v8M9 9v8M15 9v8M19 9v8" /><path d="M3.5 20h17" /></>,
+  envelope: <><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m3.5 7.5 8.5 6 8.5-6" /></>,
   chart: <path d="M4 20h16M6 20V12M11 20V6M16 20v-5" />,
   alert: <path d="M12 9v4M12 17h.01M10.3 4.3 2.7 18a2 2 0 0 0 1.7 3h15.2a2 2 0 0 0 1.7-3L13.7 4.3a2 2 0 0 0-3.4 0Z" />,
   info: <><circle cx="12" cy="12" r="9" /><path d="M12 11v5M12 8h.01" /></>,
