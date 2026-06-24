@@ -31,15 +31,6 @@ enum CompanyStatus {
   REJECTED
 }
 
-enum OfferCategory {
-  FOOD
-  SHOPPING
-  CULTURE
-  TRAVEL
-  WELLNESS
-  OTHER
-}
-
 // Addendum v1.1 §3.5 — 4 catégories officielles de motifs d'attribution.
 enum MotifCategory {
   COMPORTEMENTS_INDIVIDUELS
@@ -282,6 +273,22 @@ model Allocation {
   @@index([managerId])
 }
 
+// ─────────────────────────── CATÉGORIES (Phase 1 — entité) ──
+
+model Category {
+  id        String   @id @default(uuid()) @db.Uuid
+  slug      String   @unique              // "food", "shopping" etc — clé stable pour seed upsert
+  label     String
+  icon      String                        // IconName string: "coffee", "gift", "ticket", "plane", "heart"
+  color     String                        // hex: "#e5784a"
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  offers    PartnerOffer[]
+}
+
 // ─────────────────────────── OFFRES PARTENAIRES ──────────────
 
 model PartnerOffer {
@@ -289,15 +296,16 @@ model PartnerOffer {
   partnerName String
   cost        Int                              // prix en tokens
   discountPercent  Int
-  category    OfferCategory
+  categoryId  String        @db.Uuid
   isActive    Boolean       @default(true)
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 
+  category    Category      @relation(fields: [categoryId], references: [id])
   promoCodes  PromoCode[]
   redemptions Redemption[]
 
-  @@index([category])
+  @@index([categoryId])
   @@index([isActive])
 }
 

@@ -16,3 +16,4 @@ export * from "./promoCodes";
 export * from "./redemption";
 
 export * from "./me";
+export * from "./categories";

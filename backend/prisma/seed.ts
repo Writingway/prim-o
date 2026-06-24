@@ -18,10 +18,29 @@ async function main() {
   await prisma.companyInviteCode.deleteMany()
   await prisma.promoCode.deleteMany()
   await prisma.partnerOffer.deleteMany()
+  await prisma.category.deleteMany()
   await prisma.emailVerificationToken.deleteMany()
   await prisma.refreshToken.deleteMany()
   await prisma.user.deleteMany()
   await prisma.company.deleteMany()
+
+  // ── Catégories (Phase 1 — entité Category) ────────────────
+  const categoryDefs = [
+    { slug: 'food',     label: 'Restauration', icon: 'coffee', color: '#e5784a', sortOrder: 0 },
+    { slug: 'shopping', label: 'Shopping',     icon: 'gift',   color: '#7c5cbf', sortOrder: 1 },
+    { slug: 'culture',  label: 'Culture',      icon: 'ticket', color: '#2376ae', sortOrder: 2 },
+    { slug: 'travel',   label: 'Voyage',       icon: 'plane',  color: '#1a9c5b', sortOrder: 3 },
+    { slug: 'wellness', label: 'Bien-être',    icon: 'heart',  color: '#d64f6e', sortOrder: 4 },
+    { slug: 'other',    label: 'Autre',        icon: 'gift',   color: '#00a19a', sortOrder: 5 },
+  ]
+
+  for (const cat of categoryDefs) {
+    await prisma.category.upsert({
+      where: { slug: cat.slug },
+      update: cat,
+      create: cat,
+    })
+  }
 
   // ── Admin ─────────────────────────────────────────────────
   const admin = await prisma.user.create({
@@ -196,6 +215,21 @@ async function main() {
       { partnerName: 'SNCF Connect', cost: 25, discountPercent: 15, category: 'TRAVEL', isActive: true },
     ],
   })
+
+  // ── Backfill PartnerOffer.categoryId depuis l'enum OfferCategory (Phase 1) ──
+  const slugMap: Record<string, string> = {
+    FOOD: 'food', SHOPPING: 'shopping', CULTURE: 'culture',
+    TRAVEL: 'travel', WELLNESS: 'wellness', OTHER: 'other',
+  }
+  for (const [enumVal, slug] of Object.entries(slugMap)) {
+    const cat = await prisma.category.findUnique({ where: { slug } })
+    if (cat) {
+      await prisma.partnerOffer.updateMany({
+        where: { category: enumVal as any },
+        data: { categoryId: cat.id },
+      })
+    }
+  }
 
   // ── Codes promo ───────────────────────────────────────────
   await prisma.promoCode.createMany({

@@ -5,12 +5,20 @@ import { authRequest } from "./client";
 // en mémoire → pas de Bearer), authentifié côté admin.
 export const listOffers = () => authRequest<{ offers: Offer[] }>('GET', '/offers');
 
-// Crée une offre (admin). isActive/id sont posés côté serveur.
-export const createOffer = (payload: Omit<Offer, 'id' | 'isActive'>) =>
+type OfferWritePayload = {
+  partnerName: string;
+  cost: number;
+  discountPercent: number;
+  categoryId: string;
+  isActive?: boolean;
+};
+
+// Crée une offre (admin). isActive/id/category sont posés côté serveur à partir de categoryId.
+export const createOffer = (payload: OfferWritePayload) =>
   authRequest<{ offer: Offer }>('POST', '/admin/offers', payload);
 
 // Met à jour une offre (admin).
-export const updateOffer = (offerId: string, payload: Partial<Omit<Offer, 'id'>>) =>
+export const updateOffer = (offerId: string, payload: Partial<OfferWritePayload>) =>
   authRequest<{ offer: Offer }>('PATCH', `/admin/offers/${offerId}`, payload);
 
 // Désactive une offre (soft delete, admin).

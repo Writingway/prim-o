@@ -1,4 +1,12 @@
-export type OfferCategory = 'FOOD' | 'SHOPPING' | 'CULTURE' | 'TRAVEL' | 'WELLNESS' | 'OTHER';
+export type Category = {
+  id: string;
+  slug: string;
+  label: string;
+  icon: string;       // IconName value from the icon set
+  color: string;      // hex color e.g. "#e5784a"
+  sortOrder?: number;
+  isActive?: boolean;
+};
 
 // Offre partenaire (GET /api/offers, vitrine publique).
 export type Offer = {
@@ -6,7 +14,7 @@ export type Offer = {
   partnerName: string;
   cost: number;
   discountPercent: number;
-  category: OfferCategory;
+  category: Category;
   isActive: boolean;
   // Stock de codes promo (présent uniquement dans la liste admin).
   availableCodes?: number;
