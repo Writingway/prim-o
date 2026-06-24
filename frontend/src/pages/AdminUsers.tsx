@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { listAdminUsers, updateAdminUser, deleteAdminUser } from '../services/api';
-import type { AdminUser, AdminRole, AdminStatus } from '../types/types';
+import type { AdminUser, AdminRole } from '../types/types';
 import { useConfirm } from '../components/ui/ConfirmDialog';
 import Icon from '@/components/ui/Icon';
 import Coin from '@/components/ui/Coin';
@@ -20,10 +20,9 @@ import {
 } from './adminClasses';
 
 const ROLES: (AdminRole | '')[] = ['', 'ADMIN', 'MANAGER', 'EMPLOYEE'];
-const STATUSES: (AdminStatus | '')[] = ['', 'PENDING', 'APPROVED', 'REJECTED'];
 const PAGE_SIZE = 20;
 
-type Filters = { role: AdminRole | ''; status: AdminStatus | ''; search: string };
+type Filters = { role: AdminRole | ''; search: string };
 
 // onFlash : message transitoire remonté au parent (AdminPage gère l'affichage).
 type AdminUsersProps = { onFlash: (msg: string) => void };
@@ -44,12 +43,10 @@ function avatarFor(name: string) {
 const INPUT_CLS =
   'rounded-xl border border-primo-line bg-primo-bg px-3 py-2 text-sm text-primo-ink outline-none transition focus:border-primo-teal focus:shadow-[0_0_0_3px_rgba(0,161,154,0.15)]';
 
-function statusBadge(status: AdminStatus) {
-  if (status === 'APPROVED')
-    return 'inline-flex rounded-full px-2 py-0.5 text-xs font-semibold bg-primo-success-soft text-primo-success';
-  if (status === 'PENDING')
-    return 'inline-flex rounded-full px-2 py-0.5 text-xs font-semibold bg-primo-warn-soft text-primo-warn-strong';
-  return 'inline-flex rounded-full px-2 py-0.5 text-xs font-semibold bg-primo-error-soft text-primo-error';
+function emailVerifiedBadge(verified: boolean) {
+  return verified
+    ? 'inline-flex rounded-full px-2 py-0.5 text-xs font-semibold bg-primo-success-soft text-primo-success'
+    : 'inline-flex rounded-full px-2 py-0.5 text-xs font-semibold bg-primo-warn-soft text-primo-warn-strong';
 }
 
 export default function AdminUsers({ onFlash }: AdminUsersProps) {
@@ -58,7 +55,7 @@ export default function AdminUsers({ onFlash }: AdminUsersProps) {
   const [total, setTotal] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const [page, setPage] = useState(1);
-  const [filters, setFilters] = useState<Filters>({ role: '', status: '', search: '' });
+  const [filters, setFilters] = useState<Filters>({ role: '', search: '' });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -71,7 +68,6 @@ export default function AdminUsers({ onFlash }: AdminUsersProps) {
         page,
         limit: PAGE_SIZE,
         role: filters.role || undefined,
-        status: filters.status || undefined,
         search: filters.search || undefined,
       });
       if (res.ok && res.data) {
@@ -102,19 +98,19 @@ export default function AdminUsers({ onFlash }: AdminUsersProps) {
 
   const patchUser = async (
     u: AdminUser,
-    payload: { role?: 'MANAGER' | 'EMPLOYEE'; status?: 'APPROVED' | 'REJECTED' },
+    payload: { role?: 'MANAGER' | 'EMPLOYEE'; isEmailVerified?: boolean },
     okMsg: string,
   ) => {
     const action = payload.role
       ? `changer le rôle de ${u.email} en ${payload.role}`
-      : payload.status === 'APPROVED'
-        ? `approuver ${u.email}`
-        : `rejeter ${u.email}`;
+      : payload.isEmailVerified
+        ? `vérifier l'email de ${u.email}`
+        : `révoquer la vérification email de ${u.email}`;
     const ok = await confirm({
       title: "Confirmer l'action",
       message: `Voulez-vous ${action} ?`,
       confirmLabel: 'Confirmer',
-      danger: payload.status === 'REJECTED',
+      danger: payload.isEmailVerified === false,
     });
     if (!ok) return;
     setBusyId(u.id);
@@ -178,13 +174,13 @@ export default function AdminUsers({ onFlash }: AdminUsersProps) {
           </span>
           {!loading && (
             <span className="text-[13px] text-primo-gray">
-              — {total} au total
+              - {total} au total
             </span>
           )}
         </div>
         {!loading && users && users.length > 0 && (
           <span className="text-[13px] text-primo-gray">
-            {startIdx}–{endIdx} sur {total}
+            {startIdx} - {endIdx} sur {total}
           </span>
         )}
       </div>
@@ -214,15 +210,6 @@ export default function AdminUsers({ onFlash }: AdminUsersProps) {
             <option key={r || 'all'} value={r}>{r || 'Tous les rôles'}</option>
           ))}
         </select>
-        <select
-          className={INPUT_CLS}
-          value={filters.status}
-          onChange={(e) => setFilter({ status: e.target.value as AdminStatus | '' })}
-        >
-          {STATUSES.map((s) => (
-            <option key={s || 'all'} value={s}>{s || 'Tous les statuts'}</option>
-          ))}
-        </select>
       </div>
 
       {loading && <p className={ADMIN_MSG}>Chargement…</p>}
@@ -240,7 +227,7 @@ export default function AdminUsers({ onFlash }: AdminUsersProps) {
                     <th className={ADMIN_TH}>Email</th>
                     <th className={ADMIN_TH}>Nom</th>
                     <th className={ADMIN_TH}>Rôle</th>
-                    <th className={ADMIN_TH}>Statut</th>
+                    <th className={ADMIN_TH}>Email vérifié</th>
                     <th className={ADMIN_TH}>Solde</th>
                     <th className={ADMIN_TH}>Actions</th>
                   </tr>
@@ -283,9 +270,9 @@ export default function AdminUsers({ onFlash }: AdminUsersProps) {
                             </select>
                           )}
                         </td>
-                        <td className={ADMIN_TD} data-label="Statut">
-                          <span className={statusBadge(u.status)}>
-                            {u.status}
+                        <td className={ADMIN_TD} data-label="Email vérifié">
+                          <span className={emailVerifiedBadge(u.isEmailVerified)}>
+                            {u.isEmailVerified ? 'Vérifié' : 'Non vérifié'}
                           </span>
                         </td>
                         <td className={ADMIN_TD} data-label="Solde">
@@ -296,22 +283,21 @@ export default function AdminUsers({ onFlash }: AdminUsersProps) {
                         </td>
                         <td className={ADMIN_TD} data-label="Actions">
                           <div className={ADMIN_ACTIONS}>
-                            {u.status !== 'APPROVED' && (
+                            {u.isEmailVerified ? (
                               <button
                                 className={ADMIN_BTN_LINK}
                                 disabled={busy}
-                                onClick={() => patchUser(u, { status: 'APPROVED' }, 'Utilisateur approuvé.')}
-                              >
-                                Approuver
-                              </button>
-                            )}
-                            {u.status !== 'REJECTED' && (
-                              <button
-                                className={ADMIN_BTN_LINK}
-                                disabled={busy}
-                                onClick={() => patchUser(u, { status: 'REJECTED' }, 'Utilisateur rejeté.')}
+                                onClick={() => patchUser(u, { isEmailVerified: false }, 'Email révoqué.')}
                               >
                                 Rejeter
+                              </button>
+                            ) : (
+                              <button
+                                className={ADMIN_BTN_LINK}
+                                disabled={busy}
+                                onClick={() => patchUser(u, { isEmailVerified: true }, 'Email vérifié.')}
+                              >
+                                Approuver
                               </button>
                             )}
                             <button
