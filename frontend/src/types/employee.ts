@@ -18,6 +18,7 @@ export type ReceivedToken = {
   motifLabel: string | null;
   createdAt: string;
   managerName: string;
+  managerPhoto: string | null; // avatar de l'expéditeur (manager/owner), null = initiales
 };
 
 // Un token dépensé (redemption contre une offre), GET /api/employees/me/spent.
