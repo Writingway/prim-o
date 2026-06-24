@@ -204,7 +204,7 @@ export default function OfferCatalog({
           // Squelette : on annonce la vitrine plutôt qu'un texte gris.
           <div className="mt-6">
             <div className="h-[168px] w-full animate-pulse rounded-[24px] bg-primo-line/70" />
-            <div className="mt-5 grid grid-cols-2 gap-3.5 sm:grid-cols-[repeat(auto-fill,minmax(220px,1fr))]">
+            <div className="mt-5 grid grid-cols-1 gap-3.5">
               {[0, 1, 2, 3].map((i) => (
                 <div key={i} className="animate-pulse overflow-hidden rounded-[22px] border border-primo-line bg-white">
                   <div className="h-[104px] bg-primo-line/70" />
@@ -279,7 +279,7 @@ export default function OfferCatalog({
             })()}
 
             {/* Toutes les offres (paginées par paquets de PAGE_SIZE) */}
-            <div className="mt-6 grid grid-cols-2 gap-3.5 sm:grid-cols-[repeat(auto-fill,minmax(220px,1fr))]">
+            <div className="mt-6 grid grid-cols-1 gap-3.5">
               {gridOffers.slice(0, visible).map((o, i) => {
                 const meta = categoryMeta[o.category] ?? categoryMeta.OTHER;
                 return (

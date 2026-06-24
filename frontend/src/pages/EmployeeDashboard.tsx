@@ -58,6 +58,32 @@ export default function EmployeeDashboard({ onLogout, firstName, profilePhoto }:
     </div>
   );
 
+  // Hero solde, partagé par les onglets Offres et Historique.
+  const hero =
+    balance === null ? null : (
+      <DashboardHero
+        halos
+        eyebrow="Bonjour"
+        title={firstName ?? 'Mon espace'}
+        photo={heroPhoto}
+        initials={heroInitials}
+      >
+        {/* Solde : carte vitrée discrète, jeton mis en valeur. */}
+        <div className="relative mt-6 flex items-end justify-between gap-4 rounded-[20px] bg-white/[0.08] px-4 py-4 ring-1 ring-white/10 backdrop-blur-sm">
+          <div className="min-w-0">
+            <div className="text-[12px] font-medium uppercase tracking-[0.12em] text-white/55">
+              Mon solde
+            </div>
+            <div className="mt-1.5 flex items-baseline gap-1.5">
+              <span className="text-[40px] font-extrabold leading-none tracking-[-0.03em] text-white">{balance}</span>
+              <span className="text-[15px] font-semibold text-white/70">jetons</span>
+            </div>
+          </div>
+          <Coin size={56} className="drop-shadow-[0_10px_24px_rgba(232,148,23,0.45)]" />
+        </div>
+      </DashboardHero>
+    );
+
   return (
     <Layout
       title="Mon espace"
@@ -84,28 +110,7 @@ export default function EmployeeDashboard({ onLogout, firstName, profilePhoto }:
             : error ? errorNote
             : balance !== null && (
               <>
-                {/* Hero : solde en tête (halos), puis on pousse vers les offres. */}
-                <DashboardHero
-                  halos
-                  eyebrow="Bonjour"
-                  title={firstName ?? 'Mon espace'}
-                  photo={heroPhoto}
-                  initials={heroInitials}
-                >
-                  {/* Solde : carte vitrée discrète, jeton mis en valeur. */}
-                  <div className="relative mt-6 flex items-end justify-between gap-4 rounded-[20px] bg-white/[0.08] px-4 py-4 ring-1 ring-white/10 backdrop-blur-sm">
-                    <div className="min-w-0">
-                      <div className="text-[12px] font-medium uppercase tracking-[0.12em] text-white/55">
-                        Mon solde
-                      </div>
-                      <div className="mt-1.5 flex items-baseline gap-1.5">
-                        <span className="text-[40px] font-extrabold leading-none tracking-[-0.03em] text-white">{balance}</span>
-                        <span className="text-[15px] font-semibold text-white/70">jetons</span>
-                      </div>
-                    </div>
-                    <Coin size={56} className="drop-shadow-[0_10px_24px_rgba(232,148,23,0.45)]" />
-                  </div>
-                </DashboardHero>
+                {hero}
 
                 {/* Catalogue : mis en avant dès l'arrivée sur l'espace */}
                 <OfferCatalog
@@ -125,6 +130,8 @@ export default function EmployeeDashboard({ onLogout, firstName, profilePhoto }:
             : error ? errorNote
             : (
               <>
+                {hero}
+
                 <section className="mb-6">
                   <h2 className={SECTION_TITLE}>Jetons reçus</h2>
                   {received.items.length === 0 ? (

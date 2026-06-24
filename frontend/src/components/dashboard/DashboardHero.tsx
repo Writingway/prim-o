@@ -44,7 +44,7 @@ export default function DashboardHero({
 
       <div className="relative flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <ProfileAvatar photo={photo} initials={initials} size={40} className="ring-1 ring-white/15" />
+          <ProfileAvatar photo={photo} initials={initials} size={60} className="ring-1 ring-white/15" />
           <div>
             <div className="text-[12px] uppercase tracking-[0.12em] text-white/55">{eyebrow}</div>
             <div className="text-[17px] font-bold leading-tight">{title}</div>
