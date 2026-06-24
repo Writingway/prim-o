@@ -4,8 +4,12 @@ import {
   listOffersController,
   getOfferController,
 } from '../controllers/offer.controller';
+import { listActiveCategoriesController } from '../controllers/category.controller';
 
 const router = Router();
+
+// Catégories publiques (utilisées par la vitrine).
+router.get('/categories', listActiveCategoriesController);
 
 // Lecture publique : vitrine de la landing + users connectés.
 router.get('/', optionalAuth, listOffersController);

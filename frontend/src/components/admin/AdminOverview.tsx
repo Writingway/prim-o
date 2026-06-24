@@ -4,7 +4,7 @@ import type { IconName } from '@/components/ui/Icon';
 import Coin from '@/components/ui/Coin';
 import { formatDate } from '@/lib/format';
 import { listAdminCompanies } from '@/services/api';
-import type { AdminCompany, AdminStats, Offer, OfferCategory } from '@/types/types';
+import type { AdminCompany, AdminStats, Offer } from '@/types/types';
 import {
   ADMIN_BADGE,
   ADMIN_BTN_PRIMARY,
@@ -19,14 +19,6 @@ type Props = {
   onAuthExpired: () => void;
 };
 
-const CATEGORY_ICON: Record<OfferCategory, IconName> = {
-  FOOD: 'coffee',
-  SHOPPING: 'gift',
-  CULTURE: 'ticket',
-  TRAVEL: 'plane',
-  WELLNESS: 'heart',
-  OTHER: 'gift',
-};
 
 // Avatar coloré déterministe à partir du nom (palette tokens primo only).
 const AVATAR_BG = [
@@ -275,7 +267,7 @@ export default function AdminOverview({
                   const totalCodes = used + (offer.availableCodes ?? 0);
                   const pct = totalCodes > 0 ? Math.round((used / totalCodes) * 100) : 0;
                   const low = pct >= 90;
-                  const icon = CATEGORY_ICON[offer.category] ?? 'gift';
+                  const icon = (offer.category?.icon ?? 'gift') as IconName;
                   return (
                     <div key={offer.id}>
                       <div className="flex items-center gap-3">

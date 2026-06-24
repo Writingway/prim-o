@@ -1,5 +1,5 @@
-import { useState, Fragment } from 'react';
-import type { Offer, OfferCategory } from '@/types/types';
+import { useState, useEffect, Fragment } from 'react';
+import type { Offer, Category } from '@/types/types';
 import Coin from '@/components/ui/Coin';
 import Layout from '@/components/layout/Layout';
 import BottomNav from '@/components/layout/BottomNav';
@@ -16,6 +16,8 @@ import { useOfferForm } from '@/hooks/useOfferForm';
 import { usePromoCodes } from '@/hooks/usePromoCodes';
 import { HEADER_BTN_GHOST } from '@/components/layout/headerButtons';
 import AdminOverview from '@/components/admin/AdminOverview';
+import AdminCategories from '@/components/admin/AdminCategories';
+import { listAdminCategories } from '@/services/api/categories';
 import {
   ADMIN_ACTIONS,
   ADMIN_BADGE_ACTIVE,
@@ -43,7 +45,7 @@ import EditProfile from '@/components/privacy/EditProfile';
 import PrivacySection from '@/components/privacy/PrivacySection';
 
 type AdminPageProps = { onLogout: () => void; onBack: () => void };
-type AdminTab = 'overview' | 'companies' | 'offers' | 'codes' | 'users' | 'parametres';
+type AdminTab = 'overview' | 'companies' | 'offers' | 'codes' | 'users' | 'categories' | 'parametres';
 
 const TAB_META: Record<AdminTab, { title: string; subtitle: string }> = {
   overview:   { title: "Vue d'ensemble",     subtitle: 'Administration plateforme' },
@@ -51,15 +53,15 @@ const TAB_META: Record<AdminTab, { title: string; subtitle: string }> = {
   offers:     { title: 'Offres partenaires', subtitle: "Gestion du catalogue d'offres" },
   codes:      { title: 'Transactions',       subtitle: 'Historique des attributions, redemptions et paiements' },
   users:      { title: 'Utilisateurs',       subtitle: 'Comptes et rôles des membres de la plateforme' },
+  categories: { title: 'Catégories',         subtitle: "Gestion des catégories d'offres" },
   parametres: { title: 'Paramètres',         subtitle: 'Profil administrateur et confidentialité' },
 };
-
-const CATEGORIES: OfferCategory[] = ['FOOD', 'SHOPPING', 'CULTURE', 'TRAVEL', 'WELLNESS', 'OTHER'];
 
 const NAV_PLATEFORME: NavItem[] = [
   { key: 'overview',   label: 'Synthèse',      icon: 'chart',    targetId: 'nav-overview' },
   { key: 'companies',  label: 'Entreprises',   icon: 'building', targetId: 'nav-companies' },
-  { key: 'offers',     label: 'Offres',        icon: 'gift',     targetId: 'nav-offers' },
+  { key: 'offers',      label: 'Offres',        icon: 'gift',     targetId: 'nav-offers' },
+  { key: 'categories', label: 'Catégories',   icon: 'star',     targetId: 'nav-categories' },
   { key: 'codes',      label: 'Transactions',  icon: 'ticket',   targetId: 'nav-codes' },
 ];
 
@@ -79,6 +81,13 @@ export default function AdminPage({ onLogout, onBack }: AdminPageProps) {
   const { confirm, confirmDialog } = useConfirm();
   const { notice, flash } = useFlash();
   const [tab, setTab] = useState<AdminTab>('overview');
+  const [adminCategories, setAdminCategories] = useState<Category[]>([]);
+
+  useEffect(() => {
+    listAdminCategories()
+      .then((res) => { if (res.ok && res.data) setAdminCategories(res.data.categories); })
+      .catch(() => {});
+  }, []);
 
   const offers = useAdminOffers({ confirm, flash, onAuthExpired: onLogout });
   const offerForm = useOfferForm({ reload: offers.reload, flash });
@@ -198,11 +207,12 @@ export default function AdminPage({ onLogout, onBack }: AdminPageProps) {
                     Catégorie
                     <select
                       className="w-full rounded-lg border border-[#d1d5db] bg-primo-bg px-3 py-[9px] text-sm text-[#1f2937] outline-none transition focus:border-primo-teal focus:shadow-[0_0_0_3px_rgba(0,161,154,0.15)]"
-                      value={offerForm.form.category}
-                      onChange={(e) => offerForm.setForm({ ...offerForm.form, category: e.target.value as OfferCategory })}
+                      value={offerForm.form.categoryId}
+                      onChange={(e) => offerForm.setForm({ ...offerForm.form, categoryId: e.target.value })}
                     >
-                      {CATEGORIES.map((c) => (
-                        <option key={c} value={c}>{c}</option>
+                      <option value="">— Sélectionner une catégorie —</option>
+                      {adminCategories.filter((c) => c.isActive !== false).map((c) => (
+                        <option key={c.id} value={c.id}>{c.label}</option>
                       ))}
                     </select>
                   </label>
@@ -246,14 +256,7 @@ export default function AdminPage({ onLogout, onBack }: AdminPageProps) {
                                 <span className="flex h-8 w-8 items-center justify-center rounded-[8px] bg-primo-teal-soft text-primo-teal-dark">
                                   <Icon
                                     size={16}
-                                    name={
-                                      offer.category === 'FOOD' ? 'coffee' :
-                                      offer.category === 'SHOPPING' ? 'gift' :
-                                      offer.category === 'CULTURE' ? 'ticket' :
-                                      offer.category === 'TRAVEL' ? 'plane' :
-                                      offer.category === 'WELLNESS' ? 'heart' :
-                                      'gift'
-                                    }
+                                    name={(offer.category?.icon ?? 'gift') as import('@/components/ui/Icon').IconName}
                                   />
                                 </span>
                                 {offer.partnerName}
@@ -265,7 +268,7 @@ export default function AdminPage({ onLogout, onBack }: AdminPageProps) {
                               </span>
                             </td>
                             <td className="px-4 py-3 text-[13px] text-primo-ink border-b border-primo-line" data-label="Réduction">{offer.discountPercent}%</td>
-                            <td className="px-4 py-3 text-[13px] text-primo-ink border-b border-primo-line" data-label="Catégorie">{offer.category}</td>
+                            <td className="px-4 py-3 text-[13px] text-primo-ink border-b border-primo-line" data-label="Catégorie">{offer.category?.label ?? '—'}</td>
                             <td className="px-4 py-3 text-[13px] text-primo-ink border-b border-primo-line" data-label="Statut">
                               <span className={offer.isActive
                                 ? 'rounded-full px-2 py-0.5 text-xs font-semibold bg-primo-success-soft text-primo-success'
@@ -375,6 +378,7 @@ export default function AdminPage({ onLogout, onBack }: AdminPageProps) {
           </div>
         )}
 
+        {tab === 'categories' && <AdminCategories flash={flash} />}
         {tab === 'users' && <AdminUsers onFlash={flash} />}
         {tab === 'companies' && <AdminCompanies onFlash={flash} />}
         {tab === 'codes' && <AdminLedgers />}

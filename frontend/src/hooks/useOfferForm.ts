@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { createOffer, updateOffer } from '@/services/api';
-import type { Offer, OfferCategory } from '@/types/types';
+import type { Offer } from '@/types/types';
 
 // Form vide pour une nouvelle offre.
-const emptyForm = { partnerName: '', cost: '', discountPercent: '', category: 'FOOD' as OfferCategory };
+const emptyForm = { partnerName: '', cost: '', discountPercent: '', categoryId: '' };
 
 type Opts = {
   reload: () => Promise<void>;
@@ -31,7 +31,7 @@ export function useOfferForm({ reload, flash }: Opts) {
       partnerName: offer.partnerName,
       cost: String(offer.cost),
       discountPercent: String(offer.discountPercent),
-      category: offer.category,
+      categoryId: offer.category?.id ?? '',
     });
     setFormError('');
     setShowForm(true);
@@ -53,6 +53,7 @@ export function useOfferForm({ reload, flash }: Opts) {
     if (isNaN(cost) || cost < 0) return setFormError('Coût invalide.');
     if (isNaN(discountPercent) || discountPercent < 0 || discountPercent > 100)
       return setFormError('Réduction invalide (0-100).');
+    if (!form.categoryId.trim()) return setFormError('La catégorie est requise.');
 
     setSaving(true);
     try {
@@ -60,7 +61,7 @@ export function useOfferForm({ reload, flash }: Opts) {
         partnerName: form.partnerName.trim(),
         cost,
         discountPercent,
-        category: form.category,
+        categoryId: form.categoryId,
       };
       const res = editingId
         ? await updateOffer(editingId, payload)
