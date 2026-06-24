@@ -1,4 +1,5 @@
 import Coin from '@/components/ui/Coin';
+import logo4 from '@/assets/logos/logo_4.png';
 
 // Écran d'entrée mobile (visiteur non connecté). Plein écran, hors Layout :
 // hero teal, pièce or flottante (élément signature), 2 chemins d'accès.
@@ -15,8 +16,9 @@ export default function Splash({ onLogin, onRegister }: Props) {
       style={{ paddingBottom: 'max(3rem, env(safe-area-inset-bottom))' }}
     >
       <div className="flex flex-1 flex-col items-center justify-center text-center">
-        <Coin size={128} float />
-        <h1 className="mt-10 text-[54px] font-extrabold leading-none tracking-[-0.04em]">Prim'O</h1>
+        <Coin size={135} float />
+        <h1 className="mt-2 text-[54px] font-extrabold leading-none tracking-[-0.04em]">
+            <img src={logo4} alt="Logo" className="w-64 h-auto"/></h1>
         <p className="mt-4 max-w-[280px] text-[18px] font-medium leading-relaxed text-white/70">
           Tes efforts récompensés{' '}
           <span className="font-bold text-primo-gold-bright">instantanément</span>.

@@ -6,6 +6,7 @@ import PrivacySection from '@/components/privacy/PrivacySection';
 import EditProfile from '@/components/privacy/EditProfile';
 import Icon from '@/components/ui/Icon';
 import Coin from '@/components/ui/Coin';
+import DashboardHero from '@/components/dashboard/DashboardHero';
 import OfferCatalog from '@/components/offers/OfferCatalog';
 import { useEmployeeDashboard } from '@/hooks/useEmployeeDashboard';
 import { formatDate } from '@/lib/format';
@@ -30,19 +31,24 @@ const MORE_BTN =
 const MOBILE_LOGOUT =
   'mt-2.5 flex w-full items-center justify-center gap-2.5 rounded-[14px] border-[1.5px] border-primo-error-line bg-white px-4 py-3.5 text-[15px] font-bold text-primo-error hover:bg-primo-error-soft lg:hidden';
 
-type EmployeeTab = 'solde' | 'offres' | 'historique' | 'profil';
+type EmployeeTab = 'offres' | 'historique' | 'profil';
 
 type EmployeeDashboardProps = {
   onLogout: () => void;
   onBack: () => void; // conservé pour la signature de route (non utilisé : `/` redirige)
+  firstName?: string | null;
+  profilePhoto?: string | null;
 };
 
 // Espace employé : un shell unique à onglets-vues (barre du bas fixe, le contenu
 // est remplacé par onglet — modèle « app mobile », identique à manager/owner).
-export default function EmployeeDashboard({ onLogout }: EmployeeDashboardProps) {
+export default function EmployeeDashboard({ onLogout, firstName, profilePhoto }: EmployeeDashboardProps) {
   const { balance, error, loading, reload, received, spent, handleLogout } =
     useEmployeeDashboard(onLogout);
-  const [tab, setTab] = useState<EmployeeTab>('solde');
+  const [tab, setTab] = useState<EmployeeTab>('offres');
+  // Avatar du hero, maj en direct quand on l'enregistre dans le profil.
+  const [heroPhoto, setHeroPhoto] = useState<string | null>(profilePhoto ?? null);
+  const heroInitials = (firstName?.[0] ?? '?').toUpperCase();
 
   const loader = <p className={NOTE}>Chargement…</p>;
   const errorNote = (
@@ -51,6 +57,32 @@ export default function EmployeeDashboard({ onLogout }: EmployeeDashboardProps) 
       <button type="button" className={ERROR_RETRY} onClick={reload}>Réessayer</button>
     </div>
   );
+
+  // Hero solde, partagé par les onglets Offres et Historique.
+  const hero =
+    balance === null ? null : (
+      <DashboardHero
+        halos
+        eyebrow="Bonjour"
+        title={firstName ?? 'Mon espace'}
+        photo={heroPhoto}
+        initials={heroInitials}
+      >
+        {/* Solde : carte vitrée discrète, jeton mis en valeur. */}
+        <div className="relative mt-6 flex items-end justify-between gap-4 rounded-[20px] bg-white/[0.08] px-4 py-4 ring-1 ring-white/10 backdrop-blur-sm">
+          <div className="min-w-0">
+            <div className="text-[12px] font-medium uppercase tracking-[0.12em] text-white/55">
+              Mon solde
+            </div>
+            <div className="mt-1.5 flex items-baseline gap-1.5">
+              <span className="text-[40px] font-extrabold leading-none tracking-[-0.03em] text-white">{balance}</span>
+              <span className="text-[15px] font-semibold text-white/70">jetons</span>
+            </div>
+          </div>
+          <Coin size={56} className="drop-shadow-[0_10px_24px_rgba(232,148,23,0.45)]" />
+        </div>
+      </DashboardHero>
+    );
 
   return (
     <Layout
@@ -72,74 +104,24 @@ export default function EmployeeDashboard({ onLogout }: EmployeeDashboardProps) 
       <div className={WRAPPER}>
         <div className={CONTAINER}>
 
-          {/* ── Onglet Solde : hero + stats rapides ── */}
-          {tab === 'solde' && (
+          {/* ── Onglet Offres : solde compact + catalogue mis en avant ── */}
+          {tab === 'offres' && (
             loading ? loader
             : error ? errorNote
             : balance !== null && (
               <>
-                <div className="mb-4 overflow-hidden rounded-3xl bg-gradient-to-b from-primo-hero-from to-primo-ink-900 px-5 pb-7 pt-5 text-white">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <span className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-white/12 text-white">
-                        <Icon name="user" size={21} />
-                      </span>
-                      <div>
-                        <div className="text-[13px] text-white/65">Bonjour</div>
-                        <div className="text-[17px] font-bold leading-tight">Mon espace</div>
-                      </div>
-                    </div>
-                    <span className="relative flex h-10 w-10 items-center justify-center rounded-full bg-white/10">
-                      <Icon name="bell" size={21} />
-                    </span>
-                  </div>
+                {hero}
 
-                  <div className="mt-7 text-center">
-                    <div className="text-[13px] font-medium text-white/65">Mon solde de jetons</div>
-                    <div className="mt-2 flex items-center justify-center gap-3">
-                      <Coin size={44} />
-                      <span className="text-[56px] font-extrabold leading-none tracking-[-0.03em]">{balance}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setTab('historique')}
-                    className="rounded-2xl border border-primo-line bg-white p-4 text-left transition hover:border-primo-teal-100"
-                  >
-                    <span className="mb-2 flex h-8 w-8 items-center justify-center rounded-[10px] bg-primo-success-soft text-primo-success">
-                      <Icon name="arrow-up" size={17} />
-                    </span>
-                    <div className="text-[21px] font-extrabold text-primo-ink">{received.items.length}</div>
-                    <div className="text-xs text-primo-slate-soft">récompenses reçues</div>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setTab('offres')}
-                    className="rounded-2xl border border-primo-line bg-white p-4 text-left transition hover:border-primo-teal-100"
-                  >
-                    <span className="mb-2 flex h-8 w-8 items-center justify-center rounded-[10px] bg-primo-warn-soft text-primo-warn">
-                      <Icon name="gift" size={17} />
-                    </span>
-                    <div className="text-[21px] font-extrabold text-primo-ink">{spent.items.length}</div>
-                    <div className="text-xs text-primo-slate-soft">codes échangés</div>
-                  </button>
-                </div>
+                {/* Catalogue : mis en avant dès l'arrivée sur l'espace */}
+                <OfferCatalog
+                  isLoggedIn
+                  canRedeem
+                  heading="Offres partenaires"
+                  onRedeemed={reload}
+                  onSeeSpending={() => setTab('historique')}
+                />
               </>
             )
-          )}
-
-          {/* ── Onglet Offres : catalogue partagé (charge ses propres données) ── */}
-          {tab === 'offres' && (
-            <OfferCatalog
-              isLoggedIn
-              canRedeem
-              heading="Offres partenaires"
-              onRedeemed={reload}
-              onSeeSpending={() => setTab('historique')}
-            />
           )}
 
           {/* ── Onglet Historique : reçus + dépenses ── */}
@@ -148,6 +130,8 @@ export default function EmployeeDashboard({ onLogout }: EmployeeDashboardProps) 
             : error ? errorNote
             : (
               <>
+                {hero}
+
                 <section className="mb-6">
                   <h2 className={SECTION_TITLE}>Jetons reçus</h2>
                   {received.items.length === 0 ? (
@@ -212,7 +196,7 @@ export default function EmployeeDashboard({ onLogout }: EmployeeDashboardProps) 
           {/* ── Onglet Profil ── */}
           {tab === 'profil' && (
             <>
-              <EditProfile />
+              <EditProfile onPhotoChange={setHeroPhoto} />
               <PrivacySection onAccountDeleted={onLogout} />
               <button type="button" className={MOBILE_LOGOUT} onClick={handleLogout}>
                 <Icon name="logout" size={19} /> Se déconnecter

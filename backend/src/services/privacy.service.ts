@@ -145,9 +145,13 @@ export async function updateOwnProfile(userId: string, input: UpdateProfileInput
   }
 
   // Construit l'objet de mise à jour à partir des seuls champs fournis.
-  const data: { firstName?: string; lastName?: string; email?: string; isEmailVerified?: boolean } = {};
+  const data: {
+    firstName?: string; lastName?: string; email?: string;
+    isEmailVerified?: boolean; profilePhoto?: string | null;
+  } = {};
   if (input.firstName !== undefined) data.firstName = input.firstName;
   if (input.lastName !== undefined) data.lastName = input.lastName;
+  if (input.profilePhoto !== undefined) data.profilePhoto = input.profilePhoto;
 
   // Email : seulement s'il est fourni ET différent de l'actuel.
   if (input.email !== undefined && input.email !== user.email) {
@@ -173,7 +177,7 @@ export async function updateOwnProfile(userId: string, input: UpdateProfileInput
     data,
     select: {
       id: true, email: true, firstName: true, lastName: true,
-      role: true, isEmailVerified: true,
+      role: true, isEmailVerified: true, profilePhoto: true,
     },
   });
 
@@ -207,7 +211,7 @@ export async function deleteOwnAccount(userId: string, password: string): Promis
 export async function getMyProfile(userId: string) {
   const user = await prisma.user.findFirst({
     where: { id: userId, deletedAt: null },
-    select: { id: true, email: true, firstName: true, lastName: true, role: true, isEmailVerified: true },
+    select: { id: true, email: true, firstName: true, lastName: true, role: true, isEmailVerified: true, profilePhoto: true },
   });
   if (!user) {
     throw new Error('USER_NOT_FOUND');

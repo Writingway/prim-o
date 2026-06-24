@@ -93,6 +93,7 @@ model User {
   role            Role?                           // null = utilisateur flottant (inscrit, pas encore dans une entreprise)
   firstName       String?                         // null pour ADMIN
   lastName        String?
+  profilePhoto    String?                         // clé d'avatar prédéfini (av_1…av_6) ; null = initiales
   balance         Int        @default(0)          // Portefeuille EMPLOYÉ + solde perso MANAGER (rétribution cumulée, addendum v1.1). CHECK >= 0 en SQL.
   isEmailVerified Boolean    @default(false)
   companyId       String?    @db.Uuid             // null = ADMIN OU utilisateur flottant pas encore rattaché
