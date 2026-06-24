@@ -10,26 +10,35 @@ import type { AdminCompany } from '../types/types';
 import { useConfirm } from '../components/ui/ConfirmDialog';
 import {
   ADMIN_ACTIONS,
-  ADMIN_BADGE_INACTIVE,
   ADMIN_BTN_DANGER,
   ADMIN_BTN_GHOST,
   ADMIN_BTN_LINK,
   ADMIN_BTN_PRIMARY,
-  ADMIN_ERROR,
   ADMIN_FORM_ERROR,
-  ADMIN_INLINE_FORM,
   ADMIN_INPUT,
-  ADMIN_MSG,
-  ADMIN_NOTICE,
-  ADMIN_PAGE_INFO,
-  ADMIN_PAGINATION,
   ADMIN_TABLE,
   ADMIN_TABLE_SCROLL,
   ADMIN_TD,
   ADMIN_TH,
 } from './adminClasses';
+import Icon from '@/components/ui/Icon';
+import Coin from '@/components/ui/Coin';
+import { formatDate } from '@/lib/format';
 
 const PAGE_SIZE = 20;
+
+const AVATAR_BG = [
+  'bg-primo-teal-soft text-primo-teal-dark',
+  'bg-primo-warn-soft text-primo-warn-strong',
+  'bg-primo-success-soft text-primo-success',
+  'bg-primo-mint text-primo-teal-dark',
+];
+function avatarFor(name: string) {
+  const initials = name.trim().slice(0, 2).toUpperCase() || '??';
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = (hash + name.charCodeAt(i)) % AVATAR_BG.length;
+  return { initials, cls: AVATAR_BG[hash] };
+}
 
 type AdminCompaniesProps = { onFlash: (msg: string) => void };
 
@@ -43,13 +52,11 @@ export default function AdminCompanies({ onFlash }: AdminCompaniesProps) {
   const [error, setError] = useState('');
   const [busyId, setBusyId] = useState<string | null>(null);
 
-  // Création
   const [name, setName] = useState('');
   const [creating, setCreating] = useState(false);
   const [formError, setFormError] = useState('');
+  const [showForm, setShowForm] = useState(false);
 
-  // Undo : après une suppression, on garde l'id pour pouvoir restaurer
-  // (listCompanies ne renvoie pas les supprimées → seul ce chemin expose restore).
   const [lastDeleted, setLastDeleted] = useState<{ id: string; name: string } | null>(null);
 
   const load = useCallback(async () => {
@@ -87,6 +94,7 @@ export default function AdminCompanies({ onFlash }: AdminCompaniesProps) {
       if (res.ok) {
         onFlash('Entreprise créée.');
         setName('');
+        setShowForm(false);
         setPage(1);
         load();
       } else if (res.status === 401) {
@@ -177,7 +185,6 @@ export default function AdminCompanies({ onFlash }: AdminCompaniesProps) {
       } else if (res.status === 401) {
         setError('Session expirée, reconnecte-toi.');
       } else {
-        // 409 = un email a été réutilisé entre-temps → restauration impossible.
         setError((res.data as { error?: string } | null)?.error ?? 'Restauration impossible.');
       }
     } catch {
@@ -186,97 +193,197 @@ export default function AdminCompanies({ onFlash }: AdminCompaniesProps) {
   };
 
   return (
-    <div>
-      <form className={ADMIN_INLINE_FORM} onSubmit={create}>
-        <input
-          className={ADMIN_INPUT}
-          type="text"
-          placeholder="Nom de la nouvelle entreprise"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-        />
-        <button type="submit" className={ADMIN_BTN_PRIMARY} disabled={creating}>
-          {creating ? 'Création…' : 'Créer'}
-        </button>
-      </form>
-      {formError && <p className={ADMIN_FORM_ERROR}>{formError}</p>}
+    <div className="rounded-2xl border border-primo-line bg-white p-5 lg:p-6">
+      {/* Header */}
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="text-[17px] font-extrabold tracking-[-0.01em] text-primo-ink">
+            Entreprises
+          </h2>
+          <p className="text-[13px] text-primo-gray">
+            {total} entreprise{total !== 1 ? 's' : ''} enregistrée{total !== 1 ? 's' : ''}
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="rounded-full bg-primo-teal-soft px-2.5 py-0.5 text-xs font-semibold text-primo-teal-dark">
+            {total}
+          </span>
+          <button
+            className={ADMIN_BTN_PRIMARY}
+            onClick={() => setShowForm((v) => !v)}
+          >
+            <Icon name="plus" size={15} className="mr-1" />
+            Créer
+          </button>
+        </div>
+      </div>
 
-      {lastDeleted && (
-        <p className={ADMIN_NOTICE}>
-          « {lastDeleted.name} » supprimée.
-          <button className={ADMIN_BTN_LINK} onClick={undoDelete}>Annuler</button>
-        </p>
+      {/* Create form */}
+      {showForm && (
+        <div className="rounded-2xl border border-primo-line bg-white p-4 mb-5">
+          <form className="flex flex-wrap gap-2" onSubmit={create}>
+            <input
+              className={`${ADMIN_INPUT} flex-1 min-w-[200px]`}
+              type="text"
+              placeholder="Nom de la nouvelle entreprise"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+            <button type="submit" className={ADMIN_BTN_PRIMARY} disabled={creating}>
+              {creating ? 'Création…' : 'Créer'}
+            </button>
+            <button
+              type="button"
+              className={ADMIN_BTN_GHOST}
+              onClick={() => { setShowForm(false); setFormError(''); setName(''); }}
+            >
+              Annuler
+            </button>
+          </form>
+          {formError && <p className={ADMIN_FORM_ERROR}>{formError}</p>}
+        </div>
       )}
 
-      {loading && <p className={ADMIN_MSG}>Chargement…</p>}
-      {error && <p className={`${ADMIN_MSG} ${ADMIN_ERROR}`}>{error}</p>}
+      {/* Undo restore notice */}
+      {lastDeleted && (
+        <div className="mb-5 rounded-xl border border-primo-warn-strong/30 bg-primo-warn-soft p-4 flex items-start gap-3">
+          <Icon name="alert" size={16} className="mt-0.5 flex-none text-primo-warn-strong" />
+          <p className="text-sm text-primo-warn-strong">
+            <span className="font-bold">« {lastDeleted.name} »</span> supprimée.{' '}
+            <button className={ADMIN_BTN_LINK} onClick={undoDelete}>
+              Restaurer
+            </button>
+          </p>
+        </div>
+      )}
 
+      {/* Loading / error */}
+      {loading && <p className="py-8 text-center text-sm text-primo-gray">Chargement…</p>}
+      {error && <p className="py-8 text-center text-sm text-primo-error">{error}</p>}
+
+      {/* Table */}
       {!loading && companies && (
         companies.length === 0 ? (
-          <p className={ADMIN_MSG}>Aucune entreprise.</p>
+          <p className="py-8 text-center text-sm text-primo-gray">Aucune entreprise.</p>
         ) : (
           <>
-            <div className={ADMIN_TABLE_SCROLL}>
-              <table className={ADMIN_TABLE}>
-                <thead>
-                  <tr>
-                    <th className={ADMIN_TH}>Nom</th>
-                    <th className={ADMIN_TH}>Statut</th>
-                    <th className={ADMIN_TH}>Solde pool</th>
-                    <th className={ADMIN_TH}>Utilisateurs</th>
-                    <th className={ADMIN_TH}>Créée le</th>
-                    <th className={ADMIN_TH}>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {companies.map((c) => (
-                    <tr key={c.id}>
-                      <td className={ADMIN_TD} data-label="Nom">{c.name}</td>
-                      <td className={ADMIN_TD} data-label="Statut">
-                        <span className={c.status === 'APPROVED' ? 'bg-primo-teal-soft text-primo-teal-dark inline-flex rounded-full px-2 py-0.5 text-xs font-semibold' : ADMIN_BADGE_INACTIVE}>
-                          {c.status === 'APPROVED' ? 'Validée' : c.status === 'PENDING' ? 'En attente' : 'Rejetée'}
-                        </span>
-                      </td>
-                      <td className={ADMIN_TD} data-label="Solde pool">{c.tokenBalance}</td>
-                      <td className={ADMIN_TD} data-label="Utilisateurs">{c._count.users}</td>
-                      <td className={ADMIN_TD} data-label="Créée le">{new Date(c.createdAt).toLocaleDateString('fr-FR')}</td>
-                      <td className={ADMIN_TD} data-label="Actions">
-                        <div className={ADMIN_ACTIONS}>
-                        {c.status !== 'APPROVED' && (
-                          <button className={ADMIN_BTN_LINK} disabled={busyId === c.id}
-                            onClick={() => changeStatus(c, 'APPROVED')}>
-                            Valider
-                          </button>
-                        )}
-                        {c.status === 'PENDING' && (
-                          <button className={ADMIN_BTN_DANGER} disabled={busyId === c.id}
-                            onClick={() => changeStatus(c, 'REJECTED')}>
-                            Rejeter
-                          </button>
-                        )}
-                        <button className={ADMIN_BTN_DANGER} disabled={busyId === c.id}
-                          onClick={() => remove(c)}>
-                          Supprimer
-                        </button>
-                        </div>
-                      </td>
+            <div className="rounded-2xl border border-primo-line bg-white overflow-hidden">
+              <div className={ADMIN_TABLE_SCROLL}>
+                <table className={ADMIN_TABLE}>
+                  <thead>
+                    <tr>
+                      <th className={ADMIN_TH}>Nom</th>
+                      <th className={ADMIN_TH}>Statut</th>
+                      <th className={ADMIN_TH}>Solde pool</th>
+                      <th className={ADMIN_TH}>Utilisateurs</th>
+                      <th className={ADMIN_TH}>Créée le</th>
+                      <th className={ADMIN_TH}>Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {companies.map((c) => {
+                      const av = avatarFor(c.name);
+                      return (
+                        <tr key={c.id}>
+                          <td className={ADMIN_TD} data-label="Nom">
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={`inline-flex h-7 w-7 flex-none items-center justify-center rounded-full text-[11px] font-bold ${av.cls}`}
+                              >
+                                {av.initials}
+                              </span>
+                              {c.name}
+                            </div>
+                          </td>
+                          <td className={ADMIN_TD} data-label="Statut">
+                            {c.status === 'APPROVED' && (
+                              <span className="rounded-full px-2 py-0.5 text-xs font-semibold bg-primo-success-soft text-primo-success">
+                                Validée
+                              </span>
+                            )}
+                            {c.status === 'PENDING' && (
+                              <span className="rounded-full px-2 py-0.5 text-xs font-semibold bg-primo-warn-soft text-primo-warn-strong">
+                                En attente
+                              </span>
+                            )}
+                            {c.status === 'REJECTED' && (
+                              <span className="rounded-full px-2 py-0.5 text-xs font-semibold bg-primo-error-soft text-primo-error">
+                                Rejetée
+                              </span>
+                            )}
+                          </td>
+                          <td className={ADMIN_TD} data-label="Solde pool">
+                            <div className="flex items-center gap-1.5">
+                              <Coin size={16} />
+                              {c.tokenBalance}
+                            </div>
+                          </td>
+                          <td className={ADMIN_TD} data-label="Utilisateurs">
+                            <div className="flex items-center gap-1.5">
+                              <Icon name="users" size={14} className="text-primo-gray" />
+                              {c._count.users}
+                            </div>
+                          </td>
+                          <td className={ADMIN_TD} data-label="Créée le">
+                            {formatDate(c.createdAt)}
+                          </td>
+                          <td className={ADMIN_TD} data-label="Actions">
+                            <div className={ADMIN_ACTIONS}>
+                              {c.status !== 'APPROVED' && (
+                                <button
+                                  className={ADMIN_BTN_LINK}
+                                  disabled={busyId === c.id}
+                                  onClick={() => changeStatus(c, 'APPROVED')}
+                                >
+                                  <Icon name="check" size={13} className="mr-1" />
+                                  Valider
+                                </button>
+                              )}
+                              {c.status === 'PENDING' && (
+                                <button
+                                  className={ADMIN_BTN_DANGER}
+                                  disabled={busyId === c.id}
+                                  onClick={() => changeStatus(c, 'REJECTED')}
+                                >
+                                  Rejeter
+                                </button>
+                              )}
+                              <button
+                                className={ADMIN_BTN_DANGER}
+                                disabled={busyId === c.id}
+                                onClick={() => remove(c)}
+                              >
+                                <Icon name="trash" size={13} className="mr-1" />
+                                Supprimer
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
 
-            <div className={ADMIN_PAGINATION}>
-              <button className={ADMIN_BTN_GHOST} disabled={page <= 1 || loading}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}>
-                 Précédent
+            {/* Pagination */}
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
+              <button
+                className="rounded-full border border-primo-line bg-white px-4 py-1.5 text-sm font-semibold text-primo-gray transition hover:bg-primo-surface disabled:cursor-not-allowed disabled:opacity-50"
+                disabled={page <= 1 || loading}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+              >
+                Précédent
               </button>
-              <span className={ADMIN_PAGE_INFO}>
+              <span className="text-sm font-medium text-primo-gray">
                 Page {page} · {total} entreprise{total > 1 ? 's' : ''}
               </span>
-              <button className={ADMIN_BTN_GHOST} disabled={!hasMore || loading}
-                onClick={() => setPage((p) => p + 1)}>
-                Suivant →
+              <button
+                className="rounded-full border border-primo-line bg-white px-4 py-1.5 text-sm font-semibold text-primo-gray transition hover:bg-primo-surface disabled:cursor-not-allowed disabled:opacity-50"
+                disabled={!hasMore || loading}
+                onClick={() => setPage((p) => p + 1)}
+              >
+                Suivant
               </button>
             </div>
           </>

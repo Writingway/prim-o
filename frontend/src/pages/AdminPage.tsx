@@ -1,8 +1,10 @@
 import { useState, Fragment } from 'react';
 import type { Offer, OfferCategory } from '@/types/types';
+import Coin from '@/components/ui/Coin';
 import Layout from '@/components/layout/Layout';
 import BottomNav from '@/components/layout/BottomNav';
 import type { NavItem } from '@/hooks/useBottomNav';
+import type { NavSection } from '@/components/layout/Sidebar';
 import { useConfirm } from '@/components/ui/ConfirmDialog';
 import Icon from '@/components/ui/Icon';
 import AdminUsers from './AdminUsers';
@@ -13,6 +15,7 @@ import { useAdminOffers } from '@/hooks/useAdminOffers';
 import { useOfferForm } from '@/hooks/useOfferForm';
 import { usePromoCodes } from '@/hooks/usePromoCodes';
 import { HEADER_BTN_GHOST } from '@/components/layout/headerButtons';
+import AdminOverview from '@/components/admin/AdminOverview';
 import {
   ADMIN_ACTIONS,
   ADMIN_BADGE_ACTIVE,
@@ -29,46 +32,53 @@ import {
   ADMIN_CODE,
   ADMIN_CONTAINER,
   ADMIN_ERROR,
-  ADMIN_FORM,
   ADMIN_FORM_ACTIONS,
   ADMIN_FORM_ERROR,
-  ADMIN_FORM_GRID,
-  ADMIN_FORM_TITLE,
   ADMIN_MSG,
-  ADMIN_OFFERS_BAR,
-  ADMIN_SECTION_TITLE,
-  ADMIN_TAB,
-  ADMIN_TAB_ACTIVE,
   ADMIN_TABLE,
-  ADMIN_TABLE_SCROLL,
-  ADMIN_TD,
-  ADMIN_TH,
-  ADMIN_TABS,
+  ADMIN_TEXTAREA,
   ADMIN_WRAPPER,
-  ADMIN_STATS,
-  ADMIN_STAT_CARD,
-  ADMIN_STAT_LABEL,
-  ADMIN_STAT_VALUE,
 } from './adminClasses';
+import EditProfile from '@/components/privacy/EditProfile';
+import PrivacySection from '@/components/privacy/PrivacySection';
 
 type AdminPageProps = { onLogout: () => void; onBack: () => void };
-type AdminTab = 'offers' | 'users' | 'companies' | 'ledgers';
+type AdminTab = 'overview' | 'companies' | 'offers' | 'codes' | 'users' | 'parametres';
+
+const TAB_META: Record<AdminTab, { title: string; subtitle: string }> = {
+  overview:   { title: "Vue d'ensemble",     subtitle: 'Administration plateforme' },
+  companies:  { title: 'Entreprises',        subtitle: 'Gestion des sociétés enregistrées' },
+  offers:     { title: 'Offres partenaires', subtitle: "Gestion du catalogue d'offres" },
+  codes:      { title: 'Transactions',       subtitle: 'Historique des attributions, redemptions et paiements' },
+  users:      { title: 'Utilisateurs',       subtitle: 'Comptes et rôles des membres de la plateforme' },
+  parametres: { title: 'Paramètres',         subtitle: 'Profil administrateur et confidentialité' },
+};
 
 const CATEGORIES: OfferCategory[] = ['FOOD', 'SHOPPING', 'CULTURE', 'TRAVEL', 'WELLNESS', 'OTHER'];
 
-// Onglets admin → items de navigation (icônes linéaires valides uniquement).
-// `targetId` n'est pas utilisé ici (pas de scroll-spy), valeur neutre.
-const ADMIN_NAV: NavItem[] = [
-  { key: 'offers', label: 'Offres', icon: 'gift', targetId: 'nav-offers' },
-  { key: 'users', label: 'Utilisateurs', icon: 'users', targetId: 'nav-users' },
-  { key: 'companies', label: 'Entreprises', icon: 'building', targetId: 'nav-companies' },
-  { key: 'ledgers', label: 'Registres', icon: 'chart', targetId: 'nav-ledgers' },
+const NAV_PLATEFORME: NavItem[] = [
+  { key: 'overview',   label: 'Synthèse',      icon: 'chart',    targetId: 'nav-overview' },
+  { key: 'companies',  label: 'Entreprises',   icon: 'building', targetId: 'nav-companies' },
+  { key: 'offers',     label: 'Offres',        icon: 'gift',     targetId: 'nav-offers' },
+  { key: 'codes',      label: 'Transactions',  icon: 'ticket',   targetId: 'nav-codes' },
 ];
+
+const NAV_GESTION: NavItem[] = [
+  { key: 'users',      label: 'Utilisateurs',  icon: 'users',    targetId: 'nav-users' },
+  { key: 'parametres', label: 'Paramètres',    icon: 'settings', targetId: 'nav-parametres' },
+];
+
+const ADMIN_SECTIONS: NavSection[] = [
+  { label: 'Plateforme', items: NAV_PLATEFORME },
+  { label: 'Gestion',    items: NAV_GESTION },
+];
+
+const ADMIN_NAV_FLAT: NavItem[] = [...NAV_PLATEFORME, ...NAV_GESTION];
 
 export default function AdminPage({ onLogout, onBack }: AdminPageProps) {
   const { confirm, confirmDialog } = useConfirm();
   const { notice, flash } = useFlash();
-  const [tab, setTab] = useState<AdminTab>('offers');
+  const [tab, setTab] = useState<AdminTab>('overview');
 
   const offers = useAdminOffers({ confirm, flash, onAuthExpired: onLogout });
   const offerForm = useOfferForm({ reload: offers.reload, flash });
@@ -83,11 +93,30 @@ export default function AdminPage({ onLogout, onBack }: AdminPageProps) {
   return (
     <Layout
       chrome="console"
-      title="Administration"
-      subtitle="Console"
-      nav={{ items: ADMIN_NAV, active: tab, onSelect: (item) => setTab(item.key as AdminTab) }}
+      title={TAB_META[tab].title}
+      subtitle={TAB_META[tab].subtitle}
+      nav={{ items: ADMIN_NAV_FLAT, sections: ADMIN_SECTIONS, active: tab, onSelect: (item) => setTab(item.key as AdminTab) }}
       bottomNav={
-        <BottomNav items={ADMIN_NAV} active={tab} onSelect={(item) => setTab(item.key as AdminTab)} />
+        <BottomNav items={ADMIN_NAV_FLAT} active={tab} onSelect={(item) => setTab(item.key as AdminTab)} />
+      }
+      sidebarFooter={
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2.5 rounded-[10px] bg-white/[.05] px-3 py-2.5">
+            <div className="flex h-[34px] w-[34px] flex-none items-center justify-center rounded-[8px] bg-[#1A4F4A] text-[12px] font-bold text-[#9FCFCA]">AD</div>
+            <div className="min-w-0">
+              <div className="text-[12.5px] font-bold text-[#D4EEEB]">Administrateur</div>
+              <div className="text-[11px] text-[#3D7A74]">Super Admin</div>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onLogout}
+            className="flex w-full items-center gap-2.5 rounded-[9px] px-3 py-2.5 text-[13px] font-semibold text-[#6BA8A2] transition hover:bg-white/5 hover:text-primo-error"
+          >
+            <Icon name="logout" size={16} strokeWidth={1.8} />
+            Se déconnecter
+          </button>
+        </div>
       }
       headerActions={
         <>
@@ -100,260 +129,269 @@ export default function AdminPage({ onLogout, onBack }: AdminPageProps) {
     >
     <div className={ADMIN_WRAPPER}>
       <div className={ADMIN_CONTAINER}>
-        {offers.stats && (
-          <div className={ADMIN_STATS}>
-            <div className={ADMIN_STAT_CARD}>
-              <span className={ADMIN_STAT_VALUE}>{offers.stats.companies}</span>
-              <span className={ADMIN_STAT_LABEL}>Entreprises</span>
-            </div>
-            <div className={ADMIN_STAT_CARD}>
-              <span className={ADMIN_STAT_VALUE}>{offers.stats.users}</span>
-              <span className={ADMIN_STAT_LABEL}>Utilisateurs</span>
-            </div>
-            <div className={ADMIN_STAT_CARD}>
-              <span className={ADMIN_STAT_VALUE}>{offers.stats.managers}</span>
-              <span className={ADMIN_STAT_LABEL}>Managers</span>
-            </div>
-          </div>
-        )}
-
         {notice && <p className={ADMIN_MSG}>{notice}</p>}
 
-        <div className={`${ADMIN_TABS} lg:hidden`}>
-          <button
-            type="button"
-            className={`${ADMIN_TAB} ${tab === 'offers' ? ADMIN_TAB_ACTIVE : ''}`}
-            onClick={() => setTab('offers')}
-          >
-            Offres
-          </button>
-          <button
-            type="button"
-            className={`${ADMIN_TAB} ${tab === 'users' ? ADMIN_TAB_ACTIVE : ''}`}
-            onClick={() => setTab('users')}
-          >
-            Utilisateurs
-          </button>
-          <button
-            type="button"
-            className={`${ADMIN_TAB} ${tab === 'companies' ? ADMIN_TAB_ACTIVE : ''}`}
-            onClick={() => setTab('companies')}
-          >
-            Entreprises
-          </button>
-          <button
-            type="button"
-            className={`${ADMIN_TAB} ${tab === 'ledgers' ? ADMIN_TAB_ACTIVE : ''}`}
-            onClick={() => setTab('ledgers')}
-          >
-            Registres
-          </button>
-        </div>
+        {tab === 'overview' && offers.stats && offers.offers && (
+          <AdminOverview
+            stats={offers.stats}
+            offers={offers.offers}
+            onManageCompanies={() => setTab('companies')}
+            onManageOffers={() => setTab('offers')}
+            onAuthExpired={onLogout}
+          />
+        )}
 
         {tab === 'offers' && (
-          <>
-        <div className={ADMIN_OFFERS_BAR}>
-          <h2 className={ADMIN_SECTION_TITLE}>Offres</h2>
-          {!offerForm.showForm && (
-            <button className={ADMIN_BTN_PRIMARY} type="button" onClick={offerForm.openCreate}>+ Nouvelle offre</button>
-          )}
-        </div>
-        {offerForm.showForm && (
-          <form className={ADMIN_FORM} onSubmit={offerForm.submit}>
-            <h2 className={ADMIN_FORM_TITLE}>{offerForm.editingId ? "Modifier l'offre" : 'Nouvelle offre'}</h2>
-            <div className={ADMIN_FORM_GRID}>
-              <label className="flex flex-col gap-1.5 text-sm font-medium text-primo-gray">
-                Partenaire
-                <input
-                  className="w-full rounded-lg border border-[#d1d5db] bg-primo-bg px-3 py-[9px] text-sm text-[#1f2937] outline-none transition focus:border-primo-teal focus:shadow-[0_0_0_3px_rgba(0,161,154,0.15)]"
-                  type="text"
-                  value={offerForm.form.partnerName}
-                  onChange={(e) => offerForm.setForm({ ...offerForm.form, partnerName: e.target.value })}
-                  placeholder="Ex. Cinéma Pathé"
-                />
-              </label>
-              <label className="flex flex-col gap-1.5 text-sm font-medium text-primo-gray">
-                Coût (points)
-                <input
-                  className="w-full rounded-lg border border-[#d1d5db] bg-primo-bg px-3 py-[9px] text-sm text-[#1f2937] outline-none transition focus:border-primo-teal focus:shadow-[0_0_0_3px_rgba(0,161,154,0.15)]"
-                  type="number"
-                  min={0}
-                  value={offerForm.form.cost}
-                  onChange={(e) => offerForm.setForm({ ...offerForm.form, cost: e.target.value })}
-                />
-              </label>
-              <label className="flex flex-col gap-1.5 text-sm font-medium text-primo-gray">
-                Réduction (%)
-                <input
-                  className="w-full rounded-lg border border-[#d1d5db] bg-primo-bg px-3 py-[9px] text-sm text-[#1f2937] outline-none transition focus:border-primo-teal focus:shadow-[0_0_0_3px_rgba(0,161,154,0.15)]"
-                  type="number"
-                  min={0}
-                  max={100}
-                  value={offerForm.form.discountPercent}
-                  onChange={(e) => offerForm.setForm({ ...offerForm.form, discountPercent: e.target.value })}
-                />
-              </label>
-              <label className="flex flex-col gap-1.5 text-sm font-medium text-primo-gray">
-                Catégorie
-                <select
-                  className="w-full rounded-lg border border-[#d1d5db] bg-primo-bg px-3 py-[9px] text-sm text-[#1f2937] outline-none transition focus:border-primo-teal focus:shadow-[0_0_0_3px_rgba(0,161,154,0.15)]"
-                  value={offerForm.form.category}
-                  onChange={(e) => offerForm.setForm({ ...offerForm.form, category: e.target.value as OfferCategory })}
-                >
-                  {CATEGORIES.map((c) => (
-                    <option key={c} value={c}>{c}</option>
-                  ))}
-                </select>
-              </label>
+          <div className="rounded-2xl border border-primo-line bg-white p-5 lg:p-6">
+            {/* Header row */}
+            <div className="mb-5 flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2.5">
+                <h2 className="text-[17px] font-extrabold tracking-[-0.01em] text-primo-ink">Offres partenaires</h2>
+                {offers.offers && (
+                  <span className="rounded-full bg-primo-teal-soft px-2.5 py-0.5 text-[12px] font-semibold text-primo-teal-dark">
+                    {offers.offers.length}
+                  </span>
+                )}
+              </div>
+              {!offerForm.showForm && (
+                <button className={ADMIN_BTN_PRIMARY} type="button" onClick={offerForm.openCreate}>+ Nouvelle offre</button>
+              )}
             </div>
-            {offerForm.formError && <p className={ADMIN_FORM_ERROR}>{offerForm.formError}</p>}
-            <div className={ADMIN_FORM_ACTIONS}>
-              <button type="submit" className={ADMIN_BTN_PRIMARY} disabled={offerForm.saving}>
-                {offerForm.saving ? 'Enregistrement…' : offerForm.editingId ? 'Mettre à jour' : 'Créer'}
-              </button>
-              <button type="button" className={ADMIN_BTN_GHOST} onClick={offerForm.closeForm}>Annuler</button>
-            </div>
-          </form>
-        )}
 
-        {offers.loading && <p className={ADMIN_MSG}>Chargement…</p>}
-        {offers.error && <p className={`${ADMIN_MSG} ${ADMIN_ERROR}`}>{offers.error}</p>}
+            {/* Create / Edit form */}
+            {offerForm.showForm && (
+              <form className="rounded-2xl border border-primo-line bg-white p-5 mb-5" onSubmit={offerForm.submit}>
+                <h2 className="text-[15px] font-extrabold text-primo-ink mb-4">{offerForm.editingId ? "Modifier l'offre" : 'Nouvelle offre'}</h2>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <label className="flex flex-col gap-1.5 text-sm font-medium text-primo-gray">
+                    Partenaire
+                    <input
+                      className="w-full rounded-lg border border-[#d1d5db] bg-primo-bg px-3 py-[9px] text-sm text-[#1f2937] outline-none transition focus:border-primo-teal focus:shadow-[0_0_0_3px_rgba(0,161,154,0.15)]"
+                      type="text"
+                      value={offerForm.form.partnerName}
+                      onChange={(e) => offerForm.setForm({ ...offerForm.form, partnerName: e.target.value })}
+                      placeholder="Ex. Cinéma Pathé"
+                    />
+                  </label>
+                  <label className="flex flex-col gap-1.5 text-sm font-medium text-primo-gray">
+                    Coût (points)
+                    <input
+                      className="w-full rounded-lg border border-[#d1d5db] bg-primo-bg px-3 py-[9px] text-sm text-[#1f2937] outline-none transition focus:border-primo-teal focus:shadow-[0_0_0_3px_rgba(0,161,154,0.15)]"
+                      type="number"
+                      min={0}
+                      value={offerForm.form.cost}
+                      onChange={(e) => offerForm.setForm({ ...offerForm.form, cost: e.target.value })}
+                    />
+                  </label>
+                  <label className="flex flex-col gap-1.5 text-sm font-medium text-primo-gray">
+                    Réduction (%)
+                    <input
+                      className="w-full rounded-lg border border-[#d1d5db] bg-primo-bg px-3 py-[9px] text-sm text-[#1f2937] outline-none transition focus:border-primo-teal focus:shadow-[0_0_0_3px_rgba(0,161,154,0.15)]"
+                      type="number"
+                      min={0}
+                      max={100}
+                      value={offerForm.form.discountPercent}
+                      onChange={(e) => offerForm.setForm({ ...offerForm.form, discountPercent: e.target.value })}
+                    />
+                  </label>
+                  <label className="flex flex-col gap-1.5 text-sm font-medium text-primo-gray">
+                    Catégorie
+                    <select
+                      className="w-full rounded-lg border border-[#d1d5db] bg-primo-bg px-3 py-[9px] text-sm text-[#1f2937] outline-none transition focus:border-primo-teal focus:shadow-[0_0_0_3px_rgba(0,161,154,0.15)]"
+                      value={offerForm.form.category}
+                      onChange={(e) => offerForm.setForm({ ...offerForm.form, category: e.target.value as OfferCategory })}
+                    >
+                      {CATEGORIES.map((c) => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+                {offerForm.formError && <p className={ADMIN_FORM_ERROR}>{offerForm.formError}</p>}
+                <div className={ADMIN_FORM_ACTIONS}>
+                  <button type="submit" className={ADMIN_BTN_PRIMARY} disabled={offerForm.saving}>
+                    {offerForm.saving ? 'Enregistrement…' : offerForm.editingId ? 'Mettre à jour' : 'Créer'}
+                  </button>
+                  <button type="button" className={ADMIN_BTN_GHOST} onClick={offerForm.closeForm}>Annuler</button>
+                </div>
+              </form>
+            )}
 
-        {!offers.loading && offers.offers && (
-          offers.offers.length === 0 ? (
-            <p className={ADMIN_MSG}>Aucune offre pour le moment.</p>
-          ) : (
-            <div className={ADMIN_TABLE_SCROLL}>
-            <table className={ADMIN_TABLE}>
-              <thead>
-                <tr>
-                  <th className={ADMIN_TH}>Partenaire</th>
-                  <th className={ADMIN_TH}>Coût</th>
-                  <th className={ADMIN_TH}>Réduction</th>
-                  <th className={ADMIN_TH}>Catégorie</th>
-                  <th className={ADMIN_TH}>Statut</th>
-                  <th className={ADMIN_TH}>Codes</th>
-                  <th className={ADMIN_TH}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {offers.offers.map((offer: Offer) => (
-                  <Fragment key={offer.id}>
-                  <tr className={offer.isActive ? '' : 'bg-[#fafafb] text-primo-gray'}>
-                    <td className={ADMIN_TD} data-label="Partenaire">{offer.partnerName}</td>
-                    <td className={ADMIN_TD} data-label="Coût">{offer.cost}</td>
-                    <td className={ADMIN_TD} data-label="Réduction">{offer.discountPercent}%</td>
-                    <td className={ADMIN_TD} data-label="Catégorie">{offer.category}</td>
-                    <td className={ADMIN_TD} data-label="Statut">
-                      <span className={offer.isActive ? ADMIN_BADGE_ACTIVE : ADMIN_BADGE_INACTIVE}>
-                        {offer.isActive ? 'Active' : 'Désactivée'}
-                      </span>
-                    </td>
-                    <td className={ADMIN_TD} data-label="Codes">
-                      <span className="inline-flex items-center gap-1.5">
-                        <Icon name="ticket" size={15} />
-                        {offer.availableCodes ?? 0} dispo · {offer.usedCodes ?? 0} utilisés
-                      </span>
-                    </td>
-                    <td className={ADMIN_TD} data-label="Actions">
-                      <div className={ADMIN_ACTIONS}>
-                      <button className={ADMIN_BTN_LINK} onClick={() => offerForm.openEdit(offer)}>Modifier</button>
-                      <button className={ADMIN_BTN_LINK} onClick={() => offers.toggleActive(offer)}>
-                        {offer.isActive ? 'Désactiver' : 'Réactiver'}
-                      </button>
-                      <button className={ADMIN_BTN_LINK} onClick={() => codes.toggle(offer.id)}>
-                        {codes.openId === offer.id ? 'Fermer' : 'Gérer les codes'}
-                      </button>
-                      </div>
-                    </td>
-                  </tr>
-                  {codes.openId === offer.id && (
-                    <tr className={ADMIN_CODES_ROW}>
-                      <td colSpan={7}>
-                        <div className={ADMIN_CODES_PANEL}>
-                          <textarea
-                            rows={5}
-                            value={codes.text}
-                            onChange={(e) => codes.setText(e.target.value)}
-                            placeholder={'AMZN-XXXX-1111\nAMZN-XXXX-2222\n...'}
-                            className="w-full resize-y rounded-lg border border-[#d1d5db] bg-primo-bg px-3 py-2 text-sm text-[#1f2937] outline-none transition focus:border-primo-teal focus:shadow-[0_0_0_3px_rgba(0,161,154,0.15)]"
-                          />
-                          {codes.error && <p className={ADMIN_ERROR}>{codes.error}</p>}
-                          <input
-                            ref={codes.csvInputRef}
-                            type="file"
-                            accept=".csv,text/csv,text/plain"
-                            style={{ display: 'none' }}
-                            onChange={codes.handleCsvFile}
-                          />
-                          <div className={ADMIN_CODES_ACTIONS}>
-                            <button
-                              type="button"
-                              className={ADMIN_BTN_GHOST}
-                              onClick={() => codes.csvInputRef.current?.click()}
-                            >
-                              <Icon name="copy" size={16} /> Importer un CSV
-                            </button>
-                            <button
-                              type="button"
-                              className={ADMIN_BTN_PRIMARY}
-                              disabled={codes.submitting}
-                              onClick={() => codes.addCodes(offer)}
-                            >
-                              {codes.submitting ? '…' : 'Ajouter les codes'}
-                            </button>
-                          </div>
+            {offers.loading && <p className={ADMIN_MSG}>Chargement…</p>}
+            {offers.error && <p className={`${ADMIN_MSG} ${ADMIN_ERROR}`}>{offers.error}</p>}
 
-                          <div className={ADMIN_CODES_LIST}>
-                            {codes.listLoading ? (
-                              <p className={ADMIN_MSG}>Chargement des codes…</p>
-                            ) : codes.list && codes.list.length > 0 ? (
-                              <ul className={ADMIN_CODES_LIST_UL}>
-                                {codes.list.map((c) => (
-                                  <li key={c.id} className={ADMIN_CODES_ITEM}>
-                                    <code className={ADMIN_CODE}>{c.code}</code>{' '}
-                                    {c.isUsed ? (
-                                      <span className={ADMIN_BADGE_INACTIVE}>
-                                        utilisé{c.usedAt ? ` le ${new Date(c.usedAt).toLocaleDateString('fr-FR')}` : ''}
-                                      </span>
+            {!offers.loading && offers.offers && (
+              offers.offers.length === 0 ? (
+                <p className={ADMIN_MSG}>Aucune offre pour le moment.</p>
+              ) : (
+                <div className="rounded-xl border border-primo-line overflow-hidden">
+                  <table className={ADMIN_TABLE}>
+                    <thead>
+                      <tr>
+                        <th className="bg-primo-teal-soft px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-primo-teal-dark">Partenaire</th>
+                        <th className="bg-primo-teal-soft px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-primo-teal-dark">Coût</th>
+                        <th className="bg-primo-teal-soft px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-primo-teal-dark">Réduction</th>
+                        <th className="bg-primo-teal-soft px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-primo-teal-dark">Catégorie</th>
+                        <th className="bg-primo-teal-soft px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-primo-teal-dark">Statut</th>
+                        <th className="bg-primo-teal-soft px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-primo-teal-dark">Codes</th>
+                        <th className="bg-primo-teal-soft px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-primo-teal-dark">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {offers.offers.map((offer: Offer) => (
+                        <Fragment key={offer.id}>
+                          <tr className={offer.isActive ? '' : 'bg-[#fafafb] text-primo-gray'}>
+                            <td className="px-4 py-3 text-[13px] text-primo-ink border-b border-primo-line" data-label="Partenaire">
+                              <div className="flex items-center gap-2.5">
+                                <span className="flex h-8 w-8 items-center justify-center rounded-[8px] bg-primo-teal-soft text-primo-teal-dark">
+                                  <Icon
+                                    size={16}
+                                    name={
+                                      offer.category === 'FOOD' ? 'coffee' :
+                                      offer.category === 'SHOPPING' ? 'gift' :
+                                      offer.category === 'CULTURE' ? 'ticket' :
+                                      offer.category === 'TRAVEL' ? 'plane' :
+                                      offer.category === 'WELLNESS' ? 'heart' :
+                                      'gift'
+                                    }
+                                  />
+                                </span>
+                                {offer.partnerName}
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 text-[13px] text-primo-ink border-b border-primo-line" data-label="Coût">
+                              <span className="inline-flex items-center gap-1">
+                                {offer.cost} <Coin size={16} />
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-[13px] text-primo-ink border-b border-primo-line" data-label="Réduction">{offer.discountPercent}%</td>
+                            <td className="px-4 py-3 text-[13px] text-primo-ink border-b border-primo-line" data-label="Catégorie">{offer.category}</td>
+                            <td className="px-4 py-3 text-[13px] text-primo-ink border-b border-primo-line" data-label="Statut">
+                              <span className={offer.isActive
+                                ? 'rounded-full px-2 py-0.5 text-xs font-semibold bg-primo-success-soft text-primo-success'
+                                : 'rounded-full px-2 py-0.5 text-xs font-semibold bg-primo-error-soft text-primo-error'
+                              }>
+                                {offer.isActive ? 'Active' : 'Désactivée'}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-[13px] text-primo-ink border-b border-primo-line" data-label="Codes">
+                              <span className="inline-flex items-center gap-1.5">
+                                <Icon name="ticket" size={15} />
+                                {offer.availableCodes ?? 0} dispo · {offer.usedCodes ?? 0} utilisés
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-[13px] text-primo-ink border-b border-primo-line" data-label="Actions">
+                              <div className={ADMIN_ACTIONS}>
+                                <button className={ADMIN_BTN_LINK} onClick={() => offerForm.openEdit(offer)}>Modifier</button>
+                                <button className={ADMIN_BTN_LINK} onClick={() => offers.toggleActive(offer)}>
+                                  {offer.isActive ? 'Désactiver' : 'Réactiver'}
+                                </button>
+                                <button className={ADMIN_BTN_LINK} onClick={() => codes.toggle(offer.id)}>
+                                  {codes.openId === offer.id ? 'Fermer' : 'Gérer les codes'}
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                          {codes.openId === offer.id && (
+                            <tr className={ADMIN_CODES_ROW}>
+                              <td colSpan={7}>
+                                <div className={ADMIN_CODES_PANEL}>
+                                  <textarea
+                                    rows={5}
+                                    value={codes.text}
+                                    onChange={(e) => codes.setText(e.target.value)}
+                                    placeholder={'AMZN-XXXX-1111\nAMZN-XXXX-2222\n...'}
+                                    className={ADMIN_TEXTAREA}
+                                  />
+                                  {codes.error && <p className={ADMIN_ERROR}>{codes.error}</p>}
+                                  <input
+                                    ref={codes.csvInputRef}
+                                    type="file"
+                                    accept=".csv,text/csv,text/plain"
+                                    style={{ display: 'none' }}
+                                    onChange={codes.handleCsvFile}
+                                  />
+                                  <div className={ADMIN_CODES_ACTIONS}>
+                                    <button
+                                      type="button"
+                                      className={ADMIN_BTN_GHOST}
+                                      onClick={() => codes.csvInputRef.current?.click()}
+                                    >
+                                      <Icon name="copy" size={16} /> Importer un CSV
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className={ADMIN_BTN_PRIMARY}
+                                      disabled={codes.submitting}
+                                      onClick={() => codes.addCodes(offer)}
+                                    >
+                                      {codes.submitting ? '…' : 'Ajouter les codes'}
+                                    </button>
+                                  </div>
+                                  <div className={ADMIN_CODES_LIST}>
+                                    {codes.listLoading ? (
+                                      <p className={ADMIN_MSG}>Chargement des codes…</p>
+                                    ) : codes.list && codes.list.length > 0 ? (
+                                      <ul className={ADMIN_CODES_LIST_UL}>
+                                        {codes.list.map((c) => (
+                                          <li key={c.id} className={ADMIN_CODES_ITEM}>
+                                            <code className={ADMIN_CODE}>{c.code}</code>{' '}
+                                            {c.isUsed ? (
+                                              <span className={ADMIN_BADGE_INACTIVE}>
+                                                utilisé{c.usedAt ? ` le ${new Date(c.usedAt).toLocaleDateString('fr-FR')}` : ''}
+                                              </span>
+                                            ) : (
+                                              <>
+                                                <span className={ADMIN_BADGE_ACTIVE}>dispo</span>
+                                                <button
+                                                  type="button"
+                                                  className={ADMIN_BTN_LINK}
+                                                  title="Supprimer ce code"
+                                                  aria-label="Supprimer ce code"
+                                                  onClick={() => codes.deleteCode(c.id)}
+                                                >
+                                                  <Icon name="trash" size={15} />
+                                                </button>
+                                              </>
+                                            )}
+                                          </li>
+                                        ))}
+                                      </ul>
                                     ) : (
-                                      <>
-                                        <span className={ADMIN_BADGE_ACTIVE}>dispo</span>
-                                        <button
-                                          type="button"
-                                          className={ADMIN_BTN_LINK}
-                                          title="Supprimer ce code"
-                                          aria-label="Supprimer ce code"
-                                          onClick={() => codes.deleteCode(c.id)}
-                                        >
-                                          <Icon name="trash" size={15} />
-                                        </button>
-                                      </>
+                                      <p className={ADMIN_MSG}>Aucun code pour cette offre.</p>
                                     )}
-                                  </li>
-                                ))}
-                              </ul>
-                            ) : (
-                              <p className={ADMIN_MSG}>Aucun code pour cette offre.</p>
-                            )}
-                          </div>
-                        </div>
-                      </td>
-                    </tr>
-                  )}
-                  </Fragment>
-                ))}
-              </tbody>
-            </table>
-            </div>
-          )
-        )}
-          </>
+                                  </div>
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </Fragment>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )
+            )}
+          </div>
         )}
 
         {tab === 'users' && <AdminUsers onFlash={flash} />}
         {tab === 'companies' && <AdminCompanies onFlash={flash} />}
-        {tab === 'ledgers' && <AdminLedgers />}
+        {tab === 'codes' && <AdminLedgers />}
+        {tab === 'parametres' && (
+          <>
+            <div id="nav-parametres" className="scroll-mt-20" />
+            <EditProfile />
+            <PrivacySection onAccountDeleted={onLogout} />
+            <button
+              type="button"
+              className="mt-2.5 flex w-full items-center justify-center gap-2.5 rounded-[14px] border-[1.5px] border-primo-error-line bg-white px-4 py-3.5 text-[15px] font-bold text-primo-error hover:bg-primo-error-soft lg:hidden"
+              onClick={onLogout}
+            >
+              <Icon name="logout" size={19} /> Se déconnecter
+            </button>
+          </>
+        )}
       </div>
     </div>
     {confirmDialog}

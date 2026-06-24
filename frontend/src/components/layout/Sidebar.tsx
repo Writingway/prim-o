@@ -2,47 +2,72 @@ import type { ReactNode } from 'react';
 import Icon from '@/components/ui/Icon';
 import type { NavItem } from '@/hooks/useBottomNav';
 
-// Sidebar console (desktop lg+ uniquement) — composant de présentation contrôlé.
-// Mêmes items que la BottomNav mobile (source unique), rendus en vertical.
-// Actif = bg-white/10 + texte blanc gras ; inactif = teal clair muted.
+export type NavSection = { label?: string; items: NavItem[] };
+
 type Props = {
-  items: NavItem[];
+  items?: NavItem[];
+  sections?: NavSection[];
   active: string;
   onSelect: (item: NavItem) => void;
   footer?: ReactNode;
+  subtitle?: string;
 };
 
-export default function Sidebar({ items, active, onSelect, footer }: Props) {
+function NavBtn({ item, active, onSelect }: { item: NavItem; active: string; onSelect: (item: NavItem) => void }) {
+  const on = active === item.key;
   return (
-    <aside className="hidden w-[248px] shrink-0 flex-col bg-primo-ink-900 text-white lg:flex">
-      <div className="flex items-center gap-2.5 px-5 py-5">
-        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primo-gold text-primo-ink-900">
-          <Icon name="star" size={20} />
+    <button
+      key={item.key}
+      type="button"
+      onClick={() => onSelect(item)}
+      aria-current={on ? 'page' : undefined}
+      className={`flex items-center gap-3 rounded-[9px] px-3 py-[11px] text-[13.5px] transition ${
+        on ? 'bg-primo-teal font-bold text-white' : 'font-medium text-[#6BA8A2] hover:bg-white/5'
+      }`}
+    >
+      <Icon name={item.icon} size={17} strokeWidth={on ? 1.95 : 1.8} />
+      {item.label}
+    </button>
+  );
+}
+
+export default function Sidebar({ items, sections, active, onSelect, footer, subtitle }: Props) {
+  const resolved: NavSection[] = sections ?? (items ? [{ items }] : []);
+
+  return (
+    <aside className="hidden w-[244px] shrink-0 flex-col bg-[#0B2B28] text-white lg:flex">
+      <div className="flex items-center gap-2.5 px-5 pb-7 pt-6">
+        <span className="flex h-8 w-8 flex-none items-center justify-center rounded-[8px] bg-primo-gold text-primo-ink-900">
+          <Icon name="star" size={16} />
         </span>
-        <span className="text-xl font-extrabold tracking-[-0.5px]">Prim'O</span>
+        <div>
+          <div className="text-base font-extrabold leading-none tracking-[-0.01em]">Prim'O</div>
+          {subtitle && (
+            <div className="mt-0.5 text-[10px] font-semibold uppercase tracking-[.06em] text-[#3D7A74]">
+              {subtitle}
+            </div>
+          )}
+        </div>
       </div>
 
-      <nav className="flex flex-1 flex-col gap-1 px-3 py-2">
-        {items.map((item) => {
-          const on = active === item.key;
-          return (
-            <button
-              key={item.key}
-              type="button"
-              onClick={() => onSelect(item)}
-              aria-current={on ? 'page' : undefined}
-              className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition ${
-                on ? 'bg-white/10 font-bold text-white' : 'font-medium text-[#9FCFCA] hover:bg-white/5'
-              }`}
-            >
-              <Icon name={item.icon} size={20} strokeWidth={on ? 1.95 : 1.8} />
-              {item.label}
-            </button>
-          );
-        })}
+      <nav className="flex flex-1 flex-col gap-5 px-[14px] pb-4">
+        {resolved.map((section, i) => (
+          <div key={i}>
+            {section.label && (
+              <div className="mb-2 px-[10px] text-[10px] font-bold uppercase tracking-[.12em] text-[#2E6660]">
+                {section.label}
+              </div>
+            )}
+            <div className="flex flex-col gap-0.5">
+              {section.items.map((item) => (
+                <NavBtn key={item.key} item={item} active={active} onSelect={onSelect} />
+              ))}
+            </div>
+          </div>
+        ))}
       </nav>
 
-      {footer && <div className="border-t border-white/10 px-3 py-4">{footer}</div>}
+      {footer && <div className="border-t border-white/[.07] px-[14px] py-5">{footer}</div>}
     </aside>
   );
 }

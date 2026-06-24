@@ -1,11 +1,10 @@
-export const ADMIN_WRAPPER = 'min-h-screen bg-primo-surface px-4 py-6 sm:px-5';
-export const ADMIN_CONTAINER = 'mx-auto flex w-full max-w-[900px] flex-col';
+export const ADMIN_WRAPPER = 'flex h-full flex-col bg-primo-surface px-4 py-6 sm:px-5';
+export const ADMIN_CONTAINER = 'mx-auto flex min-h-0 w-full flex-1 flex-col';
 export const ADMIN_NOTICE = 'mb-4 rounded-lg border border-primo-teal bg-primo-teal-soft px-3.5 py-2.5 text-sm text-primo-teal-dark';
 export const ADMIN_MSG = 'py-7 text-center text-primo-gray';
 export const ADMIN_ERROR = 'text-primo-error';
 export const ADMIN_TABS = 'mb-4 flex flex-wrap gap-2';
-export const ADMIN_TAB =
-  'rounded-full border border-primo-border bg-primo-bg px-4 py-2 text-sm font-semibold text-primo-gray transition';
+export const ADMIN_TAB = 'rounded-full border border-primo-border bg-primo-bg px-4 py-2 text-sm font-semibold text-primo-gray transition';
 export const ADMIN_TAB_ACTIVE = 'border-primo-teal bg-primo-teal-soft text-primo-teal-dark';
 export const ADMIN_SUBTABS = 'mb-4 flex flex-wrap gap-2';
 export const ADMIN_STATS = 'mb-4 grid grid-cols-1 gap-3 sm:grid-cols-3';
@@ -52,3 +51,4 @@ export const ADMIN_BTN_DANGER = 'inline-flex items-center justify-center rounded
 export const ADMIN_BADGE = 'inline-flex rounded-full px-2 py-0.5 text-xs font-semibold';
 export const ADMIN_BADGE_ACTIVE = `${ADMIN_BADGE} bg-primo-teal-soft text-primo-teal-dark`;
 export const ADMIN_BADGE_INACTIVE = `${ADMIN_BADGE} bg-primo-warn-soft text-primo-warn-strong`;
+export const ADMIN_BADGE_SUCCESS = `${ADMIN_BADGE} bg-primo-teal-soft text-primo-teal-dark`;
