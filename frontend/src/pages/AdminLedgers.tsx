@@ -1,18 +1,16 @@
 import { useCallback, useEffect, useState } from 'react';
 import { listAdminAttributions, listAdminRedemptions, listAdminPurchases } from '../services/api';
 import type { AdminAttribution, AdminRedemption, AdminPurchase } from '../types/types';
+import Coin from '@/components/ui/Coin';
 import {
   ADMIN_BTN_GHOST,
-  ADMIN_MSG,
+  ADMIN_CODE,
   ADMIN_PAGE_INFO,
   ADMIN_PAGINATION,
-  ADMIN_TAB,
-  ADMIN_TAB_ACTIVE,
   ADMIN_TABLE,
   ADMIN_TABLE_SCROLL,
   ADMIN_TH,
   ADMIN_TD,
-  ADMIN_TABS,
 } from './adminClasses';
 
 const PAGE_SIZE = 20;
@@ -21,6 +19,15 @@ type Ledger = 'attributions' | 'redemptions' | 'purchases';
 const fmtDate = (iso: string) =>
   new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 const fullName = (p: { firstName: string; lastName: string }) => `${p.firstName} ${p.lastName}`;
+
+const TAB_INACTIVE = 'inline-flex rounded-full border border-primo-line bg-primo-bg px-4 py-1.5 text-sm font-semibold transition text-primo-gray hover:bg-primo-surface';
+const TAB_ACTIVE = 'inline-flex rounded-full border border-primo-teal bg-primo-teal-soft px-4 py-1.5 text-sm font-semibold transition text-primo-teal-dark';
+
+const SUBTITLE: Record<Ledger, string> = {
+  attributions: 'Historique des attributions de jetons par les managers',
+  redemptions: 'Historique des échanges de jetons contre des offres',
+  purchases: 'Historique des achats de jetons via Stripe',
+};
 
 export default function AdminLedgers() {
   const [ledger, setLedger] = useState<Ledger>('attributions');
@@ -72,28 +79,33 @@ export default function AdminLedgers() {
   const rows = ledger === 'attributions' ? attributions : ledger === 'redemptions' ? redemptions : purchases;
 
   return (
-    <div>
-      <div className={ADMIN_TABS}>
-        <button type="button" className={`${ADMIN_TAB} ${ledger === 'attributions' ? ADMIN_TAB_ACTIVE : ''}`}
+    <div className="rounded-2xl border border-primo-line bg-white p-5 lg:p-6">
+      <div className="mb-5">
+        <h2 className="text-[17px] font-extrabold tracking-[-0.01em] text-primo-ink">Registres</h2>
+        <p className="mt-0.5 text-[13px] text-primo-gray">{SUBTITLE[ledger]}</p>
+      </div>
+
+      <div className="mb-5 flex flex-wrap gap-2">
+        <button type="button" className={ledger === 'attributions' ? TAB_ACTIVE : TAB_INACTIVE}
           onClick={() => switchLedger('attributions')}>
           Attributions
         </button>
-        <button type="button" className={`${ADMIN_TAB} ${ledger === 'redemptions' ? ADMIN_TAB_ACTIVE : ''}`}
+        <button type="button" className={ledger === 'redemptions' ? TAB_ACTIVE : TAB_INACTIVE}
           onClick={() => switchLedger('redemptions')}>
           Redemptions
         </button>
-        <button type="button" className={`${ADMIN_TAB} ${ledger === 'purchases' ? ADMIN_TAB_ACTIVE : ''}`}
+        <button type="button" className={ledger === 'purchases' ? TAB_ACTIVE : TAB_INACTIVE}
           onClick={() => switchLedger('purchases')}>
           Transactions Stripe
         </button>
       </div>
 
-      {loading && <p className={ADMIN_MSG}>Chargement…</p>}
-      {error && <p className={`${ADMIN_MSG} text-primo-error`}>{error}</p>}
+      {loading && <p className="py-8 text-center text-sm text-primo-gray">Chargement…</p>}
+      {error && <p className="py-8 text-center text-sm text-primo-error">{error}</p>}
 
       {!loading && rows && (
         rows.length === 0 ? (
-          <p className={ADMIN_MSG}>Aucune entrée.</p>
+          <p className="py-8 text-center text-sm text-primo-gray">Aucune entrée.</p>
         ) : (
           <>
             <div className={ADMIN_TABLE_SCROLL}>
@@ -104,7 +116,7 @@ export default function AdminLedgers() {
                       <th className={ADMIN_TH}>Date</th>
                       <th className={ADMIN_TH}>Entreprise</th>
                       <th className={ADMIN_TH}>Manager</th>
-                      <th className={ADMIN_TH}>Employé</th>
+                      <th className={ADMIN_TH}>Employ&eacute;</th>
                       <th className={ADMIN_TH}>Montant</th>
                       <th className={ADMIN_TH}>Motif</th>
                     </tr>
@@ -115,8 +127,13 @@ export default function AdminLedgers() {
                         <td className={ADMIN_TD} data-label="Date">{fmtDate(a.createdAt)}</td>
                         <td className={ADMIN_TD} data-label="Entreprise">{a.company.name}</td>
                         <td className={ADMIN_TD} data-label="Manager">{fullName(a.manager)}</td>
-                        <td className={ADMIN_TD} data-label="Employé">{fullName(a.employee)}</td>
-                        <td className={ADMIN_TD} data-label="Montant">{a.amount}</td>
+                        <td className={ADMIN_TD} data-label="Employ&eacute;">{fullName(a.employee)}</td>
+                        <td className={ADMIN_TD} data-label="Montant">
+                          <span className="inline-flex items-center gap-1">
+                            {a.amount}
+                            <Coin size={16} />
+                          </span>
+                        </td>
                         <td className={ADMIN_TD} data-label="Motif">{a.reason}</td>
                       </tr>
                     ))}
@@ -128,7 +145,7 @@ export default function AdminLedgers() {
                     <tr>
                       <th className={ADMIN_TH}>Date</th>
                       <th className={ADMIN_TH}>Entreprise</th>
-                      <th className={ADMIN_TH}>Employé</th>
+                      <th className={ADMIN_TH}>Employ&eacute;</th>
                       <th className={ADMIN_TH}>Offre</th>
                       <th className={ADMIN_TH}>Code</th>
                       <th className={ADMIN_TH}>Montant</th>
@@ -139,10 +156,15 @@ export default function AdminLedgers() {
                       <tr key={r.id}>
                         <td className={ADMIN_TD} data-label="Date">{fmtDate(r.createdAt)}</td>
                         <td className={ADMIN_TD} data-label="Entreprise">{r.company.name}</td>
-                        <td className={ADMIN_TD} data-label="Employé">{fullName(r.employee)}</td>
+                        <td className={ADMIN_TD} data-label="Employ&eacute;">{fullName(r.employee)}</td>
                         <td className={ADMIN_TD} data-label="Offre">{r.offer.partnerName}</td>
                         <td className={ADMIN_TD} data-label="Code">{r.promoCode.code}</td>
-                        <td className={ADMIN_TD} data-label="Montant">{r.amount}</td>
+                        <td className={ADMIN_TD} data-label="Montant">
+                          <span className="inline-flex items-center gap-1">
+                            {r.amount}
+                            <Coin size={16} />
+                          </span>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -153,7 +175,7 @@ export default function AdminLedgers() {
                     <tr>
                       <th className={ADMIN_TH}>Date</th>
                       <th className={ADMIN_TH}>Entreprise</th>
-                      <th className={ADMIN_TH}>Crédité par</th>
+                      <th className={ADMIN_TH}>Cr&eacute;dit&eacute; par</th>
                       <th className={ADMIN_TH}>Montant</th>
                       <th className={ADMIN_TH}>Note</th>
                       <th className={ADMIN_TH}>Session Stripe</th>
@@ -164,10 +186,17 @@ export default function AdminLedgers() {
                       <tr key={p.id}>
                         <td className={ADMIN_TD} data-label="Date">{fmtDate(p.createdAt)}</td>
                         <td className={ADMIN_TD} data-label="Entreprise">{p.company.name}</td>
-                        <td className={ADMIN_TD} data-label="Crédité par">{fullName(p.createdBy)}</td>
-                        <td className={ADMIN_TD} data-label="Montant">{p.amount}</td>
+                        <td className={ADMIN_TD} data-label="Cr&eacute;dit&eacute; par">{fullName(p.createdBy)}</td>
+                        <td className={ADMIN_TD} data-label="Montant">
+                          <span className="inline-flex items-center gap-1">
+                            {p.amount}
+                            <Coin size={16} />
+                          </span>
+                        </td>
                         <td className={ADMIN_TD} data-label="Note">{p.note ?? '-'}</td>
-                        <td className={ADMIN_TD} data-label="Session Stripe"><code className="rounded-md bg-[#f3f4f6] px-2 py-0.5 font-mono text-xs">{p.stripeSessionId}</code></td>
+                        <td className={ADMIN_TD} data-label="Session Stripe">
+                          <code className={`${ADMIN_CODE} text-primo-gray`}>{p.stripeSessionId}</code>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -178,14 +207,14 @@ export default function AdminLedgers() {
             <div className={ADMIN_PAGINATION}>
               <button className={ADMIN_BTN_GHOST} disabled={page <= 1 || loading}
                 onClick={() => setPage((p) => Math.max(1, p - 1))}>
-                 Précédent
+                Pr&eacute;c&eacute;dent
               </button>
               <span className={ADMIN_PAGE_INFO}>
-                Page {page} · {total} entrée{total > 1 ? 's' : ''}
+                Page {page} &middot; {total} entr&eacute;e{total > 1 ? 's' : ''}
               </span>
               <button className={ADMIN_BTN_GHOST} disabled={!hasMore || loading}
                 onClick={() => setPage((p) => p + 1)}>
-                Suivant →
+                Suivant &rarr;
               </button>
             </div>
           </>

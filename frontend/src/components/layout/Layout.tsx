@@ -2,13 +2,13 @@ import type { ReactNode } from 'react';
 import Header from './Header';
 import Footer from './Footer';
 import Sidebar from './Sidebar';
+import type { NavSection } from './Sidebar';
 import Topbar from './Topbar';
 import type { NavItem } from '@/hooks/useBottomNav';
 
-// Description de navigation partagée : alimente la Sidebar (lg+) ET la BottomNav
-// (mobile) à partir du même objet — source unique, pas de duplication.
 type LayoutNav = {
   items: NavItem[];
+  sections?: NavSection[];
   active: string;
   onSelect: (item: NavItem) => void;
 };
@@ -42,19 +42,26 @@ export default function Layout({
 }: LayoutProps) {
   if (chrome === 'console') {
     return (
-      <div className="min-h-[100dvh] lg:flex">
+      <div className="flex h-[100dvh] overflow-hidden lg:flex">
         {/* Desktop (lg+) : sidebar verticale à gauche. */}
         {nav && (
-          <Sidebar items={nav.items} active={nav.active} onSelect={nav.onSelect} footer={sidebarFooter} />
+          <Sidebar
+            items={nav.items}
+            sections={nav.sections}
+            active={nav.active}
+            onSelect={nav.onSelect}
+            footer={sidebarFooter}
+            subtitle={subtitle}
+          />
         )}
-        <div className="flex min-h-[100dvh] flex-1 flex-col">
+        <div className="flex min-h-0 flex-1 flex-col">
           {/* Mobile (<lg) : Header classique ; masqué en desktop. */}
           <div className="lg:hidden">
             <Header title={title}>{headerActions}</Header>
           </div>
           {/* Desktop (lg+) : topbar ; masquée en mobile. */}
           <Topbar title={title} subtitle={subtitle} actions={headerActions} />
-          <main className="w-full flex-1 pb-24 lg:overflow-y-auto lg:pb-0">{children}</main>
+          <main className="w-full flex-1 overflow-y-auto pb-24 lg:pb-0">{children}</main>
           {/* Mobile (<lg) : BottomNav depuis le MÊME objet nav que la Sidebar. */}
           {nav && bottomNav}
         </div>
