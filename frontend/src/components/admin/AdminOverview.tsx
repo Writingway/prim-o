@@ -42,11 +42,11 @@ const STATUS_BADGE: Record<AdminCompany['status'], { label: string; cls: string 
   REJECTED: { label: 'Suspendu', cls: `${ADMIN_BADGE} bg-primo-error-soft text-primo-error` },
 };
 
-const KPI_CARD = 'rounded-2xl border border-primo-line bg-white p-5';
+const KPI_CARD = 'rounded-xl border border-primo-line bg-white p-3 sm:rounded-2xl sm:p-5';
 const KPI_CHIP =
-  'flex h-[38px] w-[38px] items-center justify-center rounded-[10px] bg-primo-teal-soft text-primo-teal-dark';
-const KPI_NUMBER = 'mt-3 text-[34px] font-extrabold tracking-[-0.02em] text-primo-ink';
-const KPI_LABEL = 'text-[13px] text-primo-gray';
+  'flex h-8 w-8 items-center justify-center rounded-[8px] bg-primo-teal-soft text-primo-teal-dark sm:h-[38px] sm:w-[38px] sm:rounded-[10px]';
+const KPI_NUMBER = 'mt-2 text-[22px] font-extrabold tracking-[-0.02em] text-primo-ink sm:mt-3 sm:text-[34px]';
+const KPI_LABEL = 'text-[11px] text-primo-gray sm:text-[13px]';
 const PANEL = 'rounded-2xl border border-primo-line bg-white p-5 lg:p-6';
 
 export default function AdminOverview({
@@ -58,6 +58,7 @@ export default function AdminOverview({
 }: Props) {
   const [companies, setCompanies] = useState<AdminCompany[] | null>(null);
   const [total, setTotal] = useState(0);
+  const [tokensIssued, setTokensIssued] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -65,15 +66,27 @@ export default function AdminOverview({
     setLoading(true);
     setError('');
     try {
-      const res = await listAdminCompanies(1, 20);
-      if (res.ok && res.data) {
-        setCompanies(res.data.items);
-        setTotal(res.data.total);
-      } else if (res.status === 401) {
-        onAuthExpired();
-      } else {
-        setError('Impossible de charger les entreprises.');
+      // 1re page (limit max 100) : sert l'aperçu + amorce le calcul exact des jetons.
+      const first = await listAdminCompanies(1, 100);
+      if (!first.ok || !first.data) {
+        if (first.status === 401) onAuthExpired();
+        else setError('Impossible de charger les entreprises.');
+        return;
       }
+      setCompanies(first.data.items);
+      setTotal(first.data.total);
+
+      // Jetons en circulation = somme exacte sur TOUTES les entreprises.
+      // Pages restantes récupérées en parallèle (backend plafonne limit à 100).
+      const pages = Math.ceil(first.data.total / 100);
+      const rest =
+        pages > 1
+          ? await Promise.all(
+              Array.from({ length: pages - 1 }, (_, i) => listAdminCompanies(i + 2, 100)),
+            )
+          : [];
+      const all = [first.data.items, ...rest.map((r) => (r.ok && r.data ? r.data.items : []))];
+      setTokensIssued(all.flat().reduce((sum, c) => sum + c.tokenBalance, 0));
     } catch {
       setError('Impossible de joindre le serveur.');
     } finally {
@@ -85,8 +98,6 @@ export default function AdminOverview({
     void load();
   }, [load]);
 
-  // Jetons en circulation = somme des soldes des entreprises chargées (1re page).
-  const tokensIssued = (companies ?? []).reduce((sum, c) => sum + c.tokenBalance, 0);
   const activeOffers = offers.filter((o) => o.isActive).length;
 
   // Offres avec stock de codes (présent uniquement en vue admin).
@@ -105,12 +116,13 @@ export default function AdminOverview({
   const preview = (companies ?? []).slice(0, 6);
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-5 py-1 lg:px-2">
+    <div className="flex flex-col gap-5 py-1 lg:min-h-0 lg:flex-1 lg:px-2">
       {/* KPI ROW */}
-      <div className="grid flex-none grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid flex-none grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <div className={KPI_CARD}>
           <div className={KPI_CHIP}>
-            <Icon name="building" size={20} strokeWidth={1.8} />
+            <Icon name="building" size={16} strokeWidth={1.8} className="sm:hidden" />
+            <Icon name="building" size={20} strokeWidth={1.8} className="hidden sm:block" />
           </div>
           <div className={KPI_NUMBER}>{stats.companies}</div>
           <div className={KPI_LABEL}>Entreprises actives</div>
@@ -118,29 +130,31 @@ export default function AdminOverview({
 
         <div className={KPI_CARD}>
           <div className={KPI_CHIP}>
-            <Icon name="users" size={20} strokeWidth={1.8} />
+            <Icon name="users" size={16} strokeWidth={1.8} className="sm:hidden" />
+            <Icon name="users" size={20} strokeWidth={1.8} className="hidden sm:block" />
           </div>
           <div className={KPI_NUMBER}>{stats.users}</div>
           <div className={KPI_LABEL}>Utilisateurs enregistrés</div>
         </div>
 
-        {/* Carte sombre accent or — jetons */}
-        <div className="rounded-2xl bg-primo-ink-900 p-5 text-white">
+        {/* Carte sombre accent or — tokens */}
+        <div className="rounded-xl bg-primo-ink-900 p-3 text-white sm:rounded-2xl sm:p-5">
           <div className="flex items-start justify-between">
-            <Coin size={38} />
-            <span className="rounded-full bg-primo-gold px-2.5 py-0.5 text-[11px] font-extrabold text-primo-ink-900">
-              En circulation
+            <Coin size={28} className="sm:hidden" />
+            <span className="rounded-full bg-primo-gold px-2 py-0.5 text-[10px] font-extrabold text-primo-ink-900 sm:px-2.5 sm:text-[11px]">
+              En circ.
             </span>
           </div>
-          <div className="mt-3 text-[34px] font-extrabold tracking-[-0.02em] text-white">
-            {tokensIssued.toLocaleString('fr-FR')}
+          <div className="mt-2 text-[22px] font-extrabold tracking-[-0.02em] text-white sm:mt-3 sm:text-[34px]">
+            {tokensIssued === null ? '…' : tokensIssued.toLocaleString('fr-FR')}
           </div>
-          <div className="text-[13px] text-white/65">Jetons émis</div>
+          <div className="text-[11px] text-white/65 sm:text-[13px]">Tokens émis</div>
         </div>
 
         <div className={KPI_CARD}>
           <div className={KPI_CHIP}>
-            <Icon name="gift" size={20} strokeWidth={1.8} />
+            <Icon name="gift" size={16} strokeWidth={1.8} className="sm:hidden" />
+            <Icon name="gift" size={20} strokeWidth={1.8} className="hidden sm:block" />
           </div>
           <div className={KPI_NUMBER}>{activeOffers}</div>
           <div className={KPI_LABEL}>Offres actives</div>
@@ -148,9 +162,9 @@ export default function AdminOverview({
       </div>
 
       {/* BOTTOM TWO-COL */}
-      <div className="grid min-h-0 flex-1 grid-cols-1 gap-5 lg:grid-cols-[1fr_380px]">
+      <div className="grid grid-cols-1 gap-5 lg:min-h-0 lg:flex-1 lg:grid-cols-[1fr_380px]">
         {/* LEFT — Entreprises preview */}
-        <div className={`${PANEL} flex min-h-0 flex-col overflow-hidden`}>
+        <div className={`${PANEL} flex flex-col lg:min-h-0 lg:overflow-hidden`}>
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 className="text-[17px] font-extrabold tracking-[-0.01em] text-primo-ink">Entreprises</h2>
@@ -184,7 +198,7 @@ export default function AdminOverview({
                 <span className="text-right">Action</span>
               </div>
 
-              <div className="min-h-0 flex-1 divide-y divide-primo-line overflow-y-auto">
+              <div className="divide-y divide-primo-line lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
                 {preview.map((c) => {
                   const av = avatarFor(c.name);
                   const badge = STATUS_BADGE[c.status];
@@ -241,9 +255,9 @@ export default function AdminOverview({
         </div>
 
         {/* RIGHT — colonne droite */}
-        <div className="flex min-h-0 flex-col gap-4">
+        <div className="flex flex-col gap-4 lg:min-h-0">
           {/* Stock codes promo */}
-          <div className={`${PANEL} flex min-h-0 flex-1 flex-col overflow-hidden`}>
+          <div className={`${PANEL} flex flex-col lg:min-h-0 lg:flex-1 lg:overflow-hidden`}>
             <div className="mb-3 flex items-center justify-between gap-2">
               <div>
                 <h3 className="text-[15px] font-extrabold text-primo-ink">Stock codes promo</h3>
@@ -261,7 +275,7 @@ export default function AdminOverview({
             {offersWithCodes.length === 0 ? (
               <p className="py-6 text-center text-sm text-primo-gray">Aucun stock de codes.</p>
             ) : (
-              <div className="min-h-0 flex-1 space-y-3 overflow-y-auto">
+              <div className="space-y-3 lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
                 {offersWithCodes.map((offer) => {
                   const used = offer.usedCodes ?? 0;
                   const totalCodes = used + (offer.availableCodes ?? 0);

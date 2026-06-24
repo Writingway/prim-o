@@ -213,7 +213,15 @@ export async function updateUser(id: string, data: UpdateUserInput) {
     });
     if (!user) throw new Error('USER_NOT_FOUND');
 
-    const nextRole = data.role;
+    // isEmailVerified-only patch: no role/company guards needed.
+    if (data.isEmailVerified !== undefined && data.role === undefined) {
+      return tx.user.update({
+        where: { id }, data: { isEmailVerified: data.isEmailVerified },
+        select: ADMIN_SAFE_SELECT,
+      });
+    }
+
+    const nextRole = data.role!;
 
     // Cet endpoint ne peut affecter que MANAGER/EMPLOYEE (jamais ADMIN, anti-escalade) :
     // un rôle non-ADMIN exige toujours une entreprise.
@@ -230,8 +238,11 @@ export async function updateUser(id: string, data: UpdateUserInput) {
       if (admins <= 1) throw new Error('LAST_ADMIN');
     }
 
+    const updateData: { role: 'MANAGER' | 'EMPLOYEE'; isEmailVerified?: boolean } = { role: nextRole };
+    if (data.isEmailVerified !== undefined) updateData.isEmailVerified = data.isEmailVerified;
+
     const updated = await tx.user.update({
-      where: { id }, data: { role: nextRole },
+      where: { id }, data: updateData,
       select: ADMIN_SAFE_SELECT,
     });
 

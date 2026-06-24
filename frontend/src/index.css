@@ -188,3 +188,69 @@ body {
     font-size: 16px;
   }
 }
+
+/* ── Admin tables → stacked cards on mobile ──────────────────────────────── */
+@media (max-width: 639px) {
+  .admin-table-responsive {
+    overflow-x: visible;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+  }
+  .admin-table-responsive table,
+  .admin-table-responsive thead,
+  .admin-table-responsive tbody,
+  .admin-table-responsive th,
+  .admin-table-responsive td,
+  .admin-table-responsive tr {
+    display: block;
+  }
+  .admin-table-responsive thead tr {
+    position: absolute;
+    top: -9999px;
+    left: -9999px;
+  }
+  .admin-table-responsive tbody tr {
+    background: #fff;
+    border: 1px solid var(--color-primo-line);
+    border-radius: 14px;
+    margin-bottom: 10px;
+    padding: 4px 0;
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.04);
+  }
+  .admin-table-responsive td {
+    border: none;
+    border-bottom: 1px solid var(--color-primo-surface);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+  .admin-table-responsive td:last-child {
+    border-bottom: none;
+  }
+  /* Label injected from data-label attribute */
+  .admin-table-responsive td[data-label]::before {
+    content: attr(data-label);
+    font-size: 10.5px;
+    font-weight: 600;
+    color: var(--color-primo-gray);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    flex-shrink: 0;
+    min-width: 90px;
+  }
+  /* Actions row: stack buttons full-width */
+  .admin-table-responsive td:last-child {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+  .admin-table-responsive td:last-child::before {
+    display: none;
+  }
+}
