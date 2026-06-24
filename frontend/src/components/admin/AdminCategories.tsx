@@ -17,6 +17,9 @@ import {
   ADMIN_SELECT,
   ADMIN_FORM_ACTIONS,
   ADMIN_BTN_DANGER,
+  ADMIN_TABLE_SCROLL,
+  ADMIN_TH,
+  ADMIN_TD,
 } from '@/pages/adminClasses';
 
 const ICON_OPTIONS: IconName[] = [
@@ -274,28 +277,28 @@ export default function AdminCategories({ flash }: Props) {
       ) : categories.length === 0 ? (
         <p className={ADMIN_MSG}>Aucune catégorie pour le moment.</p>
       ) : (
-        <div className="rounded-xl border border-primo-line overflow-hidden">
+        <div className={ADMIN_TABLE_SCROLL}>
           <table className={ADMIN_TABLE}>
             <thead>
               <tr>
-                <th className="bg-primo-teal-soft px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-primo-teal-dark">Catégorie</th>
-                <th className="bg-primo-teal-soft px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-primo-teal-dark">Icône</th>
-                <th className="bg-primo-teal-soft px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-primo-teal-dark">Couleur</th>
-                <th className="bg-primo-teal-soft px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-primo-teal-dark">Ordre</th>
-                <th className="bg-primo-teal-soft px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-primo-teal-dark">Statut</th>
-                <th className="bg-primo-teal-soft px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-primo-teal-dark">Actions</th>
+                <th className={ADMIN_TH}>Catégorie</th>
+                <th className={ADMIN_TH}>Icône</th>
+                <th className={ADMIN_TH}>Couleur</th>
+                <th className={ADMIN_TH}>Ordre</th>
+                <th className={ADMIN_TH}>Statut</th>
+                <th className={ADMIN_TH}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {categories.map((cat) => (
                 <tr key={cat.id} className={cat.isActive === false ? 'bg-[#fafafb] text-primo-gray' : ''}>
-                  <td className="px-4 py-3 text-[13px] text-primo-ink border-b border-primo-line">
+                  <td className={ADMIN_TD} data-label="Catégorie">
                     <div className="flex flex-col">
                       <span className="font-semibold">{cat.label}</span>
                       <span className="text-[11px] text-primo-muted font-mono">{cat.slug}</span>
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-[13px] text-primo-ink border-b border-primo-line">
+                  <td className={ADMIN_TD} data-label="Icône">
                     <div
                       className="flex h-8 w-8 items-center justify-center rounded-[8px]"
                       style={{ backgroundColor: cat.color + '33', color: cat.color }}
@@ -303,7 +306,7 @@ export default function AdminCategories({ flash }: Props) {
                       <Icon name={cat.icon as IconName} size={16} />
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-[13px] text-primo-ink border-b border-primo-line">
+                  <td className={ADMIN_TD} data-label="Couleur">
                     <div className="flex items-center gap-2">
                       <span
                         className="inline-block h-5 w-5 rounded-md border border-primo-line"
@@ -312,17 +315,15 @@ export default function AdminCategories({ flash }: Props) {
                       <span className="font-mono text-[11px] text-primo-muted">{cat.color}</span>
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-[13px] text-primo-ink border-b border-primo-line">
-                    {cat.sortOrder ?? 0}
-                  </td>
-                  <td className="px-4 py-3 text-[13px] text-primo-ink border-b border-primo-line">
+                  <td className={ADMIN_TD} data-label="Ordre">{cat.sortOrder ?? 0}</td>
+                  <td className={ADMIN_TD} data-label="Statut">
                     {cat.isActive !== false ? (
                       <span className={ADMIN_BADGE_ACTIVE}>Actif</span>
                     ) : (
                       <span className={ADMIN_BADGE_INACTIVE}>Inactif</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-[13px] text-primo-ink border-b border-primo-line">
+                  <td className={ADMIN_TD} data-label="Actions">
                     <div className={ADMIN_ACTIONS}>
                       <button className={ADMIN_BTN_LINK} type="button" onClick={() => openEdit(cat)}>
                         Modifier

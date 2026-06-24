@@ -9,3 +9,9 @@ const HEADER_BTN =
 export const HEADER_BTN_PRIMARY = `${HEADER_BTN} bg-white text-primo-teal hover:bg-primo-teal-soft`;
 // Sur fond teal : bouton fantôme (contour blanc translucide).
 export const HEADER_BTN_GHOST = `${HEADER_BTN} border-white/60 bg-transparent text-white hover:bg-white/[0.12]`;
+
+// Header console MOBILE (fond blanc) : bouton icône carré, lisible sur clair.
+export const HEADER_BTN_ICON =
+  'flex h-9 w-9 flex-none items-center justify-center rounded-[10px] text-primo-gray transition hover:bg-primo-surface hover:text-primo-ink';
+export const HEADER_BTN_ICON_DANGER =
+  'flex h-9 w-9 flex-none items-center justify-center rounded-[10px] text-primo-gray transition hover:bg-primo-error-soft hover:text-primo-error';
