@@ -1,6 +1,10 @@
 import type { RetributionMode } from '../../types/types';
 import { MODE_LABELS } from '../../types/types';
-import { ALLOC_MODE, ALLOC_MODE_OPTIONS, ALLOC_MODE_OPT, ALLOC_MODE_OPT_ACTIVE, ALLOC_MODE_HINT, ALLOC_INPUT } from '../dashboard/dashStyles';
+import Icon from '../ui/Icon';
+import {
+  ALLOC_MODE, ALLOC_MODE_OPTIONS, ALLOC_MODE_OPT, ALLOC_MODE_OPT_ACTIVE, ALLOC_MODE_HINT,
+  ALLOC_PCT_ROW, ALLOC_PCT_LABEL, ALLOC_PCT_CTRL, ALLOC_PCT_BTN, ALLOC_PCT_VALUE,
+} from '../dashboard/dashStyles';
 
 type Props = {
   mode: RetributionMode;
@@ -18,34 +22,57 @@ const HINTS: Record<RetributionMode, string> = {
 };
 
 // Choix du mode de rétribution (+ champ % conditionnel) pour l'allocation employeur.
+// Borne le % saisi dans [1, 100] et le renvoie en chaîne contrôlée.
+const clampPct = (n: number) => String(Math.min(100, Math.max(1, n)));
+
 export default function ModeSelector({ mode, percentage, onModeChange, onPercentageChange }: Props) {
+  const pctNum = Number(percentage) || 0;
+
   return (
     <div className={ALLOC_MODE}>
-      <div className={ALLOC_MODE_OPTIONS}>
+      {/* Onglets segmentés Part égale / Pourcentage / Aucune */}
+      <div className={ALLOC_MODE_OPTIONS} role="tablist">
         {MODES.map((m) => (
-          <label key={m} className={`${ALLOC_MODE_OPT}${mode === m ? ` ${ALLOC_MODE_OPT_ACTIVE}` : ''}`}>
-            <input
-              type="radio"
-              name="alloc-mode"
-              checked={mode === m}
-              onChange={() => onModeChange(m)}
-            />
+          <button
+            key={m}
+            type="button"
+            role="tab"
+            aria-selected={mode === m}
+            className={`${ALLOC_MODE_OPT}${mode === m ? ` ${ALLOC_MODE_OPT_ACTIVE}` : ''}`}
+            onClick={() => onModeChange(m)}
+          >
             {MODE_LABELS[m]}
-          </label>
+          </button>
         ))}
       </div>
       <p className={ALLOC_MODE_HINT}>{HINTS[mode]}</p>
+
+      {/* Stepper −/+ : part reversée au manager */}
       {mode === 'POURCENTAGE' && (
-        <input
-          className={`${ALLOC_INPUT} w-[120px]`}
-          type="number"
-          min="1"
-          max="100"
-          step="1"
-          placeholder="% (1–100)"
-          value={percentage}
-          onChange={(e) => onPercentageChange(e.target.value.replace(/[^0-9]/g, ''))}
-        />
+        <div className={ALLOC_PCT_ROW}>
+          <span className={ALLOC_PCT_LABEL}>Part reversée au manager</span>
+          <div className={ALLOC_PCT_CTRL}>
+            <button
+              type="button"
+              className={ALLOC_PCT_BTN}
+              aria-label="Diminuer le pourcentage"
+              disabled={pctNum <= 1}
+              onClick={() => onPercentageChange(clampPct((pctNum || 1) - 1))}
+            >
+              <Icon name="minus" size={18} strokeWidth={2.2} />
+            </button>
+            <span className={ALLOC_PCT_VALUE}>{pctNum || 0}%</span>
+            <button
+              type="button"
+              className={ALLOC_PCT_BTN}
+              aria-label="Augmenter le pourcentage"
+              disabled={pctNum >= 100}
+              onClick={() => onPercentageChange(clampPct((pctNum || 0) + 1))}
+            >
+              <Icon name="plus" size={18} strokeWidth={2.2} />
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
