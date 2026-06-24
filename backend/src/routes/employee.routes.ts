@@ -5,7 +5,8 @@ import {
   deleteEmployeeController,
   getEmployeeBalanceController,
   getEmployeeReceivedController,
-  getEmployeeSpentController
+  getEmployeeSpentController,
+  setRedemptionUsedController
 } from '../controllers/employee.controller';
 import { redeemOfferController } from '../controllers/redemption.controller';
 
@@ -19,6 +20,8 @@ router.delete('/:id', requireAuth, deleteEmployeeController);
 router.get('/me', requireAuth, getEmployeeBalanceController);
 router.get('/me/received', requireAuth, getEmployeeReceivedController);
 router.get('/me/spent', requireAuth, getEmployeeSpentController);
+// PATCH /api/employees/me/spent/:id - bascule « utilisé » d'un de mes codes.
+router.patch('/me/spent/:id', requireAuth, setRedemptionUsedController);
 
 // Échange de tokens contre un code promo (employé connecté).
 router.post('/me/redeem', requireAuth, redeemOfferController);

@@ -197,39 +197,34 @@ async function main() {
     prisma.company.update({ where: { id: acme.id }, data: { tokenBalance: { decrement: 80 } } }),
   ])
 
-  // ── Offres partenaires (category en enum OfferCategory) ───
+  // ── Offres partenaires (catégorie via relation Category) ───
+  // L'enum OfferCategory a été supprimé : chaque offre référence une Category
+  // par son id (résolu depuis les catégories créées plus haut).
+  const cats = await prisma.category.findMany({ select: { id: true, slug: true } })
+  const catId = new Map(cats.map((c) => [c.slug, c.id]))
+  const need = (slug: string): string => {
+    const id = catId.get(slug)
+    if (!id) throw new Error(`Catégorie manquante au seed : ${slug}`)
+    return id
+  }
+
   const amazon = await prisma.partnerOffer.create({
-    data: { partnerName: 'Amazon', cost: 20, discountPercent: 50, category: 'SHOPPING', isActive: true },
+    data: { partnerName: 'Amazon', cost: 20, discountPercent: 50, categoryId: need('shopping'), isActive: true },
   })
 
   const netflix = await prisma.partnerOffer.create({
-    data: { partnerName: 'Netflix', cost: 15, discountPercent: 30, category: 'CULTURE', isActive: true },
+    data: { partnerName: 'Netflix', cost: 15, discountPercent: 30, categoryId: need('culture'), isActive: true },
   })
 
   // Offres supplémentaires pour étoffer la vitrine
   await prisma.partnerOffer.createMany({
     data: [
-      { partnerName: 'Uber Eats', cost: 12, discountPercent: 25, category: 'FOOD', isActive: true },
-      { partnerName: 'Spotify', cost: 10, discountPercent: 40, category: 'CULTURE', isActive: true },
-      { partnerName: 'Decathlon', cost: 18, discountPercent: 20, category: 'WELLNESS', isActive: true },
-      { partnerName: 'SNCF Connect', cost: 25, discountPercent: 15, category: 'TRAVEL', isActive: true },
+      { partnerName: 'Uber Eats', cost: 12, discountPercent: 25, categoryId: need('food'), isActive: true },
+      { partnerName: 'Spotify', cost: 10, discountPercent: 40, categoryId: need('culture'), isActive: true },
+      { partnerName: 'Decathlon', cost: 18, discountPercent: 20, categoryId: need('wellness'), isActive: true },
+      { partnerName: 'SNCF Connect', cost: 25, discountPercent: 15, categoryId: need('travel'), isActive: true },
     ],
   })
-
-  // ── Backfill PartnerOffer.categoryId depuis l'enum OfferCategory (Phase 1) ──
-  const slugMap: Record<string, string> = {
-    FOOD: 'food', SHOPPING: 'shopping', CULTURE: 'culture',
-    TRAVEL: 'travel', WELLNESS: 'wellness', OTHER: 'other',
-  }
-  for (const [enumVal, slug] of Object.entries(slugMap)) {
-    const cat = await prisma.category.findUnique({ where: { slug } })
-    if (cat) {
-      await prisma.partnerOffer.updateMany({
-        where: { category: enumVal as any },
-        data: { categoryId: cat.id },
-      })
-    }
-  }
 
   // ── Codes promo ───────────────────────────────────────────
   await prisma.promoCode.createMany({
