@@ -1,0 +1,29 @@
+import type { ReactNode } from 'react';
+
+// Header console MOBILE (<lg) — pendant du Topbar desktop.
+// Titre + sous-titre de la section à gauche, slot actions à droite
+// (réservé pour de futures icônes : thème clair/sombre, notifications…).
+// Blanc, bordure basse, collé en haut — cohérent avec Topbar.
+type Props = {
+  title?: string;
+  subtitle?: string;
+  actions?: ReactNode;
+};
+
+export default function ConsoleHeaderMobile({ title, subtitle, actions }: Props) {
+  return (
+    <header className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-primo-line bg-white px-4 py-3 sm:px-5 lg:hidden">
+      <div className="flex min-w-0 flex-col">
+        {title && (
+          <span className="truncate text-[17px] font-extrabold tracking-[-0.3px] text-primo-ink">
+            {title}
+          </span>
+        )}
+        {subtitle && (
+          <span className="truncate text-[12px] text-primo-muted">{subtitle}</span>
+        )}
+      </div>
+      {actions && <nav className="flex flex-none items-center gap-2">{actions}</nav>}
+    </header>
+  );
+}

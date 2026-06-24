@@ -14,7 +14,7 @@ import { useFlash } from '@/hooks/useFlash';
 import { useAdminOffers } from '@/hooks/useAdminOffers';
 import { useOfferForm } from '@/hooks/useOfferForm';
 import { usePromoCodes } from '@/hooks/usePromoCodes';
-import { HEADER_BTN_GHOST } from '@/components/layout/headerButtons';
+import { HEADER_BTN_GHOST, HEADER_BTN_ICON, HEADER_BTN_ICON_DANGER } from '@/components/layout/headerButtons';
 import AdminOverview from '@/components/admin/AdminOverview';
 import AdminCategories from '@/components/admin/AdminCategories';
 import { listAdminCategories } from '@/services/api/categories';
@@ -77,6 +77,15 @@ const ADMIN_SECTIONS: NavSection[] = [
 
 const ADMIN_NAV_FLAT: NavItem[] = [...NAV_PLATEFORME, ...NAV_GESTION];
 
+// Bottom nav capped at 5 — categories & codes accessible via sidebar on desktop only.
+const ADMIN_BOTTOM_NAV_ITEMS: NavItem[] = [
+  { key: 'overview',    label: 'Synthèse',     icon: 'chart',    targetId: 'nav-overview' },
+  { key: 'companies',   label: 'Entreprises',  icon: 'building', targetId: 'nav-companies' },
+  { key: 'offers',      label: 'Offres',       icon: 'gift',     targetId: 'nav-offers' },
+  { key: 'users',       label: 'Utilisateurs', icon: 'users',    targetId: 'nav-users' },
+  { key: 'parametres',  label: 'Paramètres',   icon: 'settings', targetId: 'nav-parametres' },
+];
+
 export default function AdminPage({ onLogout, onBack }: AdminPageProps) {
   const { confirm, confirmDialog } = useConfirm();
   const { notice, flash } = useFlash();
@@ -106,7 +115,7 @@ export default function AdminPage({ onLogout, onBack }: AdminPageProps) {
       subtitle={TAB_META[tab].subtitle}
       nav={{ items: ADMIN_NAV_FLAT, sections: ADMIN_SECTIONS, active: tab, onSelect: (item) => setTab(item.key as AdminTab) }}
       bottomNav={
-        <BottomNav items={ADMIN_NAV_FLAT} active={tab} onSelect={(item) => setTab(item.key as AdminTab)} />
+        <BottomNav items={ADMIN_BOTTOM_NAV_ITEMS} active={tab} onSelect={(item) => setTab(item.key as AdminTab)} />
       }
       sidebarFooter={
         <div className="flex flex-col gap-2">
@@ -133,6 +142,16 @@ export default function AdminPage({ onLogout, onBack }: AdminPageProps) {
              Accueil
           </button>
           <button className={HEADER_BTN_GHOST} type="button" onClick={onLogout}>Se déconnecter</button>
+        </>
+      }
+      headerActionsMobile={
+        <>
+          <button className={HEADER_BTN_ICON} type="button" onClick={onBack} aria-label="Accueil" title="Accueil">
+            <Icon name="home" size={20} strokeWidth={1.8} />
+          </button>
+          <button className={HEADER_BTN_ICON_DANGER} type="button" onClick={onLogout} aria-label="Se déconnecter" title="Se déconnecter">
+            <Icon name="logout" size={20} strokeWidth={1.8} />
+          </button>
         </>
       }
     >
@@ -234,7 +253,7 @@ export default function AdminPage({ onLogout, onBack }: AdminPageProps) {
               offers.offers.length === 0 ? (
                 <p className={ADMIN_MSG}>Aucune offre pour le moment.</p>
               ) : (
-                <div className="rounded-xl border border-primo-line overflow-hidden">
+                <div className="admin-table-responsive rounded-xl border border-primo-line overflow-hidden">
                   <table className={ADMIN_TABLE}>
                     <thead>
                       <tr>

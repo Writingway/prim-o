@@ -15,7 +15,6 @@ export type AdminUser = {
   id: string;
   email: string;
   role: AdminRole;
-  status: AdminStatus;
   firstName: string;
   lastName: string;
   balance: number;

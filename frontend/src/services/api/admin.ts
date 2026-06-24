@@ -35,7 +35,7 @@ export const listAdminUsers = (params: {
 // bloque l'auto-modification et le dernier admin.
 export const updateAdminUser = (
   id: string,
-  payload: { role?: 'MANAGER' | 'EMPLOYEE'; status?: 'APPROVED' | 'REJECTED' },
+  payload: { role?: 'MANAGER' | 'EMPLOYEE'; isEmailVerified?: boolean },
 ) => authRequest<{ user: AdminUser }>('PATCH', `/admin/users/${id}`, payload);
 
 // Soft-delete d'un utilisateur (admin).

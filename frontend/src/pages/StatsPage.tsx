@@ -12,11 +12,14 @@ import {
 import type { Employee } from '../types/types';
 import Layout from '../components/layout/Layout';
 import Icon from '../components/ui/Icon';
+import BottomNav from '../components/layout/BottomNav';
+import { NAV_ITEMS } from '../hooks/useBottomNav';
 import { HEADER_BTN_GHOST } from '../components/layout/headerButtons';
 
 type StatsPageProps = {
   onLogout: () => void;
   onBack: () => void;
+  onNavTab?: (tab: string) => void;
 };
 
 const CATEGORY_LABELS: Record<MotifCategory, string> = {
@@ -267,7 +270,7 @@ function EvolutionSection({ evolution, evoMotif, onMotif, evoEmployee, onEmploye
 }
 
 // Tableau de bord statistiques employeur (§3.2/§3.4) — OWNER only.
-export default function StatsPage({ onLogout, onBack }: StatsPageProps) {
+export default function StatsPage({ onLogout, onBack, onNavTab }: StatsPageProps) {
   const [stats, setStats] = useState<StatsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -354,6 +357,14 @@ export default function StatsPage({ onLogout, onBack }: StatsPageProps) {
   return (
     <Layout
       title="Prim'O — Statistiques"
+      chrome="app"
+      bottomNav={
+        <BottomNav
+          items={NAV_ITEMS.owner}
+          active="stats"
+          onSelect={(it) => { if (it.key !== 'stats') (onNavTab ? onNavTab(it.key) : onBack()); }}
+        />
+      }
       headerActions={
         <>
           <button className={HEADER_BTN_GHOST} type="button" onClick={onBack}>Dashboard</button>
@@ -363,6 +374,11 @@ export default function StatsPage({ onLogout, onBack }: StatsPageProps) {
     >
       <div className={C.wrapper}>
         <div className={C.container}>
+
+          <div>
+            <h1 className="text-[24px] font-extrabold tracking-[-0.02em] text-primo-ink">Statistiques</h1>
+            <p className="mt-1 text-[13px] text-primo-slate">Reconnaissance · 30 derniers jours</p>
+          </div>
 
           <div className={C.filters}>
             <label>Du <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} /></label>

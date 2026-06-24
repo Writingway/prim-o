@@ -27,7 +27,10 @@ export type ListUsersQuery = z.infer<typeof listUsersQuerySchema>;
 // role is restricted to MANAGER/EMPLOYEE on purpose: you can NEVER
 // promote someone to ADMIN through this API (privilege-escalation block).
 export const updateUserSchema = z.object({
-  role: z.enum(['MANAGER', 'EMPLOYEE']),
+  role: z.enum(['MANAGER', 'EMPLOYEE']).optional(),
+  isEmailVerified: z.boolean().optional(),
+}).refine((d) => d.role !== undefined || d.isEmailVerified !== undefined, {
+  message: 'At least one field required',
 });
 export type UpdateUserInput = z.infer<typeof updateUserSchema>;
 

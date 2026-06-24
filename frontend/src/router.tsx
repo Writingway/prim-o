@@ -164,7 +164,13 @@ const statsRoute = createRoute({
   },
   component: function StatsRoute() {
     const navigate = useNavigate();
-    return <StatsPage onLogout={() => doLogout(navigate)} onBack={() => navigate({ to: '/dashboard' })} />;
+    return (
+      <StatsPage
+        onLogout={() => doLogout(navigate)}
+        onBack={() => navigate({ to: '/dashboard' })}
+        onNavTab={(tab) => navigate({ to: '/dashboard', hash: tab })}
+      />
+    );
   },
 });
 
