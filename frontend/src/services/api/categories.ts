@@ -1,9 +1,10 @@
 import { authRequest } from './client';
 import type { Category } from '@/types/types';
 
-// Public endpoint: active categories with >=1 active offer
+// Public endpoint: active categories with >=1 active offer.
+// Monté sous offerRouter (/api/offers) côté back → chemin /offers/categories.
 export const listCategories = () =>
-  authRequest<{ categories: Category[] }>('GET', '/categories');
+  authRequest<{ categories: Category[] }>('GET', '/offers/categories');
 
 // Admin: all categories including inactive
 export const listAdminCategories = () =>
