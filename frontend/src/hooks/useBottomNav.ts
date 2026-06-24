@@ -22,10 +22,9 @@ export const NAV_ITEMS: Record<NavContext, NavItem[]> = {
     { key: 'profil', label: 'Profil', icon: 'user', targetId: 'nav-profil' },
   ],
   owner: [
-    { key: 'accueil', label: 'Accueil', icon: 'home', targetId: 'nav-accueil' },
-    { key: 'managers', label: 'Managers', icon: 'users', targetId: 'nav-managers' },
-    { key: 'envoyees', label: 'Enveloppes', icon: 'envelope', targetId: 'nav-envoyees' },
-    { key: 'employes', label: 'Employés', icon: 'user', targetId: 'nav-employes' },
+    { key: 'accueil', label: 'Pool', icon: 'building', targetId: 'nav-accueil' },
+    { key: 'managers', label: 'Allouer', icon: 'send', targetId: 'nav-managers' },
+    { key: 'stats', label: 'Stats', icon: 'chart', targetId: 'nav-stats' },
     { key: 'profil', label: 'Profil', icon: 'settings', targetId: 'nav-profil' },
   ],
 };

@@ -2,22 +2,16 @@ import { useEffect, useState } from 'react';
 import {
   listEmployees,
   getCompany,
-  listAttributions,
-  deleteEmployee,
   generateInviteCode,
-  createAttribution,
-  approveEmployee as apiApproveEmployee,
   createCheckout,
   listManagers,
   allocateTokens,
-  listMotifs,
   listSentEnvelopes,
   logout as apiLogout,
 } from '../services/api';
 import type { CompanyManager } from '../services/api';
-import type { Employee, Company, AttributionHistory } from '../types/types';
-import type { RetributionMode, MotifCategoryGroup, SentEnvelope } from '../types/types';
-import { formatDate } from '../lib/format';
+import type { Employee, Company } from '../types/types';
+import type { RetributionMode, SentEnvelope } from '../types/types';
 import Layout from '../components/layout/Layout';
 import BottomNav from '../components/layout/BottomNav';
 import { NAV_ITEMS } from '../hooks/useBottomNav';
@@ -25,9 +19,7 @@ import PrivacySection from '../components/privacy/PrivacySection';
 import EditProfile from '../components/privacy/EditProfile';
 import { useConfirm } from '../components/ui/ConfirmDialog';
 import ModeSelector from '../components/allocation/ModeSelector';
-import MotifSelect from '../components/allocation/MotifSelect';
 import SentEnvelopeTile from '../components/allocation/SentEnvelopeTile';
-import DashHistory from '../components/dashboard/DashHistory';
 import Icon from '../components/ui/Icon';
 import Coin from '../components/ui/Coin';
 import DashboardHero from '../components/dashboard/DashboardHero';
@@ -35,36 +27,37 @@ import { HEADER_BTN_GHOST } from '../components/layout/headerButtons';
 import Avatar from '../components/dashboard/Avatar';
 import {
   DASH_WRAPPER, DASH_CONTAINER, DASH_INVITE, DASH_MSG, DASH_ERROR, DASH_RETRY,
-  HISTORY, HISTORY_TITLE, ENV_GRID, EMP_LIST, EMP_ITEM, EMP_ROW, EMP_MAIN, EMP_NAME,
-  EMP_SUB, EMP_BADGE, EMP_BADGE_VERIFIED, EMP_ATTRIB_BTN, EMP_ATTRIB_FORM,
-  EMP_ATTRIB_SUBMIT, EMP_ATTRIB_ERROR, EMP_BALANCE, EMP_BALANCE_NUM, EMP_BALANCE_LABEL,
-  EMP_DELETE_BTN, ALLOC_INPUT,
+  HISTORY, HISTORY_TITLE, ENV_GRID, EMP_MAIN, EMP_NAME,
+  EMP_SUB, EMP_ATTRIB_SUBMIT, EMP_ATTRIB_ERROR, ALLOC_INPUT,
+  ALLOC_AMOUNT_CARD, ALLOC_AMOUNT_VALUE,
+  ALLOC_CHIPS, ALLOC_CHIP, ALLOC_CHIP_ON, ALLOC_CHIP_OFF, ALLOC_BANNER,
 } from '../components/dashboard/dashStyles';
+
+// Montants rapides proposés pour l'allocation d'enveloppe (chips F2).
+const ALLOC_QUICK = ['50', '150', '300', '500'];
 
 type Props = { onLogout: () => void; onBack: () => void; onStats?: () => void; firstName?: string | null; profilePhoto?: string | null };
 
-const initials = (e: Employee) =>
-  `${e.firstName[0] ?? ''}${e.lastName[0] ?? ''}`.toUpperCase();
-
-// Dashboard patron : alloue des enveloppes aux managers (avec mode), suit les
-// enveloppes envoyées, et distribue en direct à ses employés (montant + motif).
+// Dashboard patron : alloue des enveloppes aux managers (avec mode) et suit les
+// enveloppes envoyées. La gestion des employés (suppression, etc.) est back-office.
 export default function OwnerDashboard({ onLogout, onStats, firstName, profilePhoto }: Props) {
   // Avatar du hero, maj en direct depuis le profil.
   const [heroPhoto, setHeroPhoto] = useState<string | null>(profilePhoto ?? null);
   const heroInitials = (firstName?.[0] ?? '?').toUpperCase();
-  const { confirm, confirmDialog } = useConfirm();
+  const { confirmDialog } = useConfirm();
   const [employees, setEmployees] = useState<Employee[] | null>(null);
   const [company, setCompany] = useState<Company | null>(null);
-  const [attributions, setAttributions] = useState<AttributionHistory[]>([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [inviteCode, setInviteCode] = useState<string | null>(null);
   const [inviteError, setInviteError] = useState('');
 
+  // Onglet initial : permet l'arrivée directe depuis /stats (ex. #managers).
+  const hashTab = window.location.hash.replace('#', '');
   const [activeTab, setActiveTab] =
-    useState<'accueil' | 'managers' | 'envoyees' | 'employes' | 'profil'>('accueil');
-  const [motifGroups, setMotifGroups] = useState<MotifCategoryGroup[]>([]);
+    useState<'accueil' | 'managers' | 'profil'>(
+      hashTab === 'managers' || hashTab === 'profil' ? hashTab : 'accueil',
+    );
 
   // Recharge du pool via Stripe.
   const [rechargeAmount, setRechargeAmount] = useState('');
@@ -82,22 +75,13 @@ export default function OwnerDashboard({ onLogout, onStats, firstName, profilePh
   const [allocError, setAllocError] = useState('');
   const [allocSubmitting, setAllocSubmitting] = useState(false);
 
-  // Envoi direct → employé (montant + motif).
-  const [attribOpenId, setAttribOpenId] = useState<string | null>(null);
-  const [attribAmount, setAttribAmount] = useState('');
-  const [attribMotif, setAttribMotif] = useState('');
-  const [attribError, setAttribError] = useState('');
-  const [attribSubmitting, setAttribSubmitting] = useState(false);
-
   const load = async () => {
     setLoading(true);
     setError('');
     try {
-      const [empRes, compRes, attrRes, motifRes] = await Promise.all([
+      const [empRes, compRes] = await Promise.all([
         listEmployees(),
         getCompany(),
-        listAttributions(),
-        listMotifs(),
       ]);
 
       if (empRes.status === 401) {
@@ -111,8 +95,6 @@ export default function OwnerDashboard({ onLogout, onStats, firstName, profilePh
 
       setEmployees(empRes.data.employees);
       if (compRes.ok && compRes.data) setCompany(compRes.data.company);
-      if (attrRes.ok && attrRes.data) setAttributions(attrRes.data.attributions);
-      if (motifRes.ok && motifRes.data) setMotifGroups(motifRes.data.categories);
 
       const [mgrRes, sentRes] = await Promise.all([listManagers(), listSentEnvelopes()]);
       if (mgrRes.ok && mgrRes.data) setManagers(mgrRes.data.managers);
@@ -139,26 +121,6 @@ export default function OwnerDashboard({ onLogout, onStats, firstName, profilePh
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  const handleDelete = async (e: Employee) => {
-    const ok = await confirm({
-      title: 'Supprimer cet employé ?',
-      message: `Supprimer ${e.firstName} ${e.lastName} ? Son historique est conservé.`,
-      confirmLabel: 'Supprimer',
-      danger: true,
-    });
-    if (!ok) return;
-    setDeletingId(e.id);
-    try {
-      const res = await deleteEmployee(e.id);
-      if (res.ok) await load();
-      else setError("Impossible de supprimer cet employé.");
-    } catch {
-      setError('Impossible de joindre le serveur.');
-    } finally {
-      setDeletingId(null);
-    }
-  };
 
   const handleLogout = async () => {
     try {
@@ -244,62 +206,6 @@ export default function OwnerDashboard({ onLogout, onStats, firstName, profilePh
     }
   };
 
-  const openAttrib = (id: string) => {
-    setAttribOpenId(id);
-    setAttribAmount('');
-    setAttribMotif('');
-    setAttribError('');
-  };
-
-  const closeAttrib = () => {
-    setAttribOpenId(null);
-    setAttribError('');
-  };
-
-  const submitAttrib = async (employeeId: string) => {
-    setAttribError('');
-    const amount = Number(attribAmount);
-    if (!Number.isInteger(amount) || amount <= 0) {
-      setAttribError('Le montant doit être un entier positif.');
-      return;
-    }
-    if (!attribMotif) {
-      setAttribError('Le motif est obligatoire.');
-      return;
-    }
-    setAttribSubmitting(true);
-    try {
-      const res = await createAttribution({ employeeId, amount, motifId: attribMotif });
-      if (res.ok) {
-        closeAttrib();
-        await load();
-      } else if (res.status === 409) {
-        const msg = res.data && 'error' in res.data ? res.data.error : 'Solde de tokens insuffisant.';
-        setAttribError(msg);
-      } else if (res.status === 401) {
-        setAttribError('Session expirée, reconnecte-toi.');
-      } else {
-        const msg = res.data && 'error' in res.data ? res.data.error : "Échec de l'attribution.";
-        setAttribError(msg);
-      }
-    } catch {
-      setAttribError('Impossible de joindre le serveur.');
-    } finally {
-      setAttribSubmitting(false);
-    }
-  };
-
-  const approveEmployee = async (employeeId: string) => {
-    try {
-      const res = await apiApproveEmployee(employeeId);
-      if (res.ok) await load();
-      else if (res.status === 401) setError('Session expirée, reconnecte-toi.');
-      else setError("Impossible d'approuver cet employé.");
-    } catch {
-      setError('Impossible de joindre le serveur.');
-    }
-  };
-
   const totalDistributed = (employees ?? []).reduce((sum, e) => sum + e.balance, 0);
 
   const loader = <p className={DASH_MSG}>Chargement…</p>;
@@ -318,7 +224,10 @@ export default function OwnerDashboard({ onLogout, onStats, firstName, profilePh
         <BottomNav
           items={NAV_ITEMS.owner}
           active={activeTab}
-          onSelect={(it) => setActiveTab(it.key as typeof activeTab)}
+          onSelect={(it) => {
+            if (it.key === 'stats') { onStats?.(); return; }
+            setActiveTab(it.key as typeof activeTab);
+          }}
         />
       }
       headerActions={
@@ -426,6 +335,15 @@ export default function OwnerDashboard({ onLogout, onStats, firstName, profilePh
           {rechargeError && <p className="mt-2 text-[13px] text-primo-error">{rechargeError}</p>}
         </div>
 
+        {/* CTA principal : aller allouer aux managers (cf. mockup F1) */}
+        <button
+          type="button"
+          onClick={() => setActiveTab('managers')}
+          className="mb-4 flex w-full items-center justify-center gap-2.5 rounded-[14px] border-0 bg-primo-ink-900 px-4 py-3.5 text-[15px] font-bold text-white"
+        >
+          <Icon name="send" size={19} /> Allouer aux managers
+        </button>
+
         {/* Invitations */}
         <div className="mb-2 flex flex-wrap gap-2.5">
           <button className={DASH_INVITE} type="button" onClick={() => handleGenerateInvite('MANAGER')}>
@@ -452,62 +370,120 @@ export default function OwnerDashboard({ onLogout, onStats, firstName, profilePh
           : error ? errorNote
           : (
           <section className={HISTORY}>
-            <h2 className={HISTORY_TITLE}>Allouer des tokens à un manager</h2>
+            <div className="mb-4 flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setActiveTab('accueil')}
+                aria-label="Retour"
+                className="flex h-9 w-9 items-center justify-center rounded-full text-primo-ink hover:bg-primo-mint"
+              >
+                <Icon name="arrow-left" size={22} />
+              </button>
+              <h2 className={`${HISTORY_TITLE} !mb-0`}>Allouer à un manager</h2>
+            </div>
             {managers.length === 0 ? (
               <p className={DASH_MSG}>Aucun manager pour l'instant.</p>
-            ) : (
-              <ul className={EMP_LIST}>
-                {managers.map((m) => (
-                  <li className={EMP_ITEM} key={m.id}>
-                    <div className={EMP_ROW}>
-                      <Avatar initials={`${m.firstName?.[0] ?? ''}${m.lastName?.[0] ?? ''}`.toUpperCase()} />
-                      <div className={EMP_MAIN}>
-                        <div className={EMP_NAME}>{m.firstName} {m.lastName}</div>
-                        <div className={EMP_SUB}>{m.email}</div>
-                      </div>
-                      <button
-                        type="button"
-                        className={EMP_ATTRIB_BTN}
-                        onClick={() => (allocOpenId === m.id ? setAllocOpenId(null) : openAlloc(m.id))}
-                      >
-                        {allocOpenId === m.id ? 'Annuler' : 'Attribuer'}
-                      </button>
-                    </div>
-                    {allocOpenId === m.id && (
-                      <form className={EMP_ATTRIB_FORM} onSubmit={(ev) => { ev.preventDefault(); submitAlloc(m.id); }}>
-                        <input
-                          className={ALLOC_INPUT} type="number" min="1" step="1"
-                          placeholder="Montant de l'enveloppe"
-                          value={allocAmount}
-                          onChange={(ev) => setAllocAmount(ev.target.value)}
-                        />
-                        <ModeSelector
-                          mode={allocMode}
-                          percentage={allocPercentage}
-                          onModeChange={setAllocMode}
-                          onPercentageChange={setAllocPercentage}
-                        />
-                        <button type="submit" className={EMP_ATTRIB_SUBMIT} disabled={allocSubmitting}>
-                          {allocSubmitting ? '…' : "Envoyer l'enveloppe"}
-                        </button>
-                        {allocError && <p className={EMP_ATTRIB_ERROR}>{allocError}</p>}
-                      </form>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-          )
-        )}
+            ) : (() => {
+              const selected = managers.find((m) => m.id === allocOpenId) ?? null;
+              return (
+              <form onSubmit={(ev) => { ev.preventDefault(); if (selected) submitAlloc(selected.id); }}>
+                {/* Sélecteur de manager */}
+                <label className="mb-2 block text-[13px] font-bold text-primo-slate">Manager</label>
+                <div className="relative">
+                  <select
+                    className="w-full appearance-none rounded-[14px] border-[1.5px] border-primo-line bg-white px-4 py-3.5 pr-10 text-[15px] font-semibold text-primo-ink focus:border-primo-teal focus:shadow-[0_0_0_3px_rgba(0,161,154,0.12)] focus:outline-none"
+                    value={allocOpenId ?? ''}
+                    onChange={(ev) => (ev.target.value ? openAlloc(ev.target.value) : setAllocOpenId(null))}
+                  >
+                    <option value="" disabled>Choisir un manager…</option>
+                    {managers.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.firstName} {m.lastName} — {m.balance} jetons
+                      </option>
+                    ))}
+                  </select>
+                  <Icon name="chevron-down" size={20} className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-primo-teal" />
+                </div>
 
-        {/* ── Onglet Envoyées ── */}
-        {activeTab === 'envoyees' && (
-          loading ? loader
-          : error ? errorNote
-          : (
-          <section className={HISTORY}>
-            <h2 className={HISTORY_TITLE}>Mes enveloppes envoyées</h2>
+                {/* Récap du manager choisi : enveloppe actuelle */}
+                {selected && (
+                  <div className="mt-3 flex items-center gap-3 rounded-[14px] border border-primo-line bg-white px-4 py-3">
+                    <Avatar initials={`${selected.firstName?.[0] ?? ''}${selected.lastName?.[0] ?? ''}`.toUpperCase()} />
+                    <div className={EMP_MAIN}>
+                      <div className={EMP_NAME}>{selected.firstName} {selected.lastName}</div>
+                      <div className={EMP_SUB}>Enveloppe actuelle · {selected.balance} jetons</div>
+                    </div>
+                  </div>
+                )}
+
+                {selected && (
+                  <div className="mt-5 flex flex-col gap-1">
+                    {/* Carte montant : gros affichage + Coin or */}
+                    <label className="mb-2 block text-[13px] font-bold text-primo-slate">Montant à allouer</label>
+                    <div className={ALLOC_AMOUNT_CARD}>
+                      <div className={ALLOC_AMOUNT_VALUE}>
+                        <Coin size={38} />
+                        <span>{Number(allocAmount) > 0 ? Number(allocAmount) : 0}</span>
+                      </div>
+                    </div>
+
+                    {/* Saisie libre + chips de montant rapide */}
+                    <input
+                      className={`${ALLOC_INPUT} mt-3 w-full`} type="number" min="1" step="1"
+                      placeholder="Saisir un montant"
+                      value={allocAmount}
+                      onChange={(ev) => setAllocAmount(ev.target.value.replace(/[^0-9]/g, ''))}
+                    />
+                    <div className={ALLOC_CHIPS}>
+                      {ALLOC_QUICK.map((q) => (
+                        <button
+                          key={q}
+                          type="button"
+                          className={`${ALLOC_CHIP} ${allocAmount === q ? ALLOC_CHIP_ON : ALLOC_CHIP_OFF}`}
+                          onClick={() => setAllocAmount(q)}
+                        >
+                          {q}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Mode de rétribution */}
+                    <div className="mt-4 mb-1 text-[13px] font-bold text-primo-slate">Mode de rétribution</div>
+                    <ModeSelector
+                      mode={allocMode}
+                      percentage={allocPercentage}
+                      onModeChange={setAllocMode}
+                      onPercentageChange={setAllocPercentage}
+                    />
+
+                    {/* Bannière info rétribution (uniquement en POURCENTAGE) */}
+                    {allocMode === 'POURCENTAGE' && (
+                      <div className={ALLOC_BANNER}>
+                        <Icon name="info" size={16} className="mt-0.5 flex-shrink-0" />
+                        <span>
+                          À chaque distribution de ce manager, {Number(allocPercentage) || 0}% du montant lui
+                          sera crédité sur son solde perso (rétribution).
+                        </span>
+                      </div>
+                    )}
+
+                    <button
+                      type="submit"
+                      className={`${EMP_ATTRIB_SUBMIT} mt-4 w-full justify-center`}
+                      disabled={allocSubmitting}
+                    >
+                      <Icon name="send" size={16} />
+                      {allocSubmitting ? '…' : `Allouer ${Number(allocAmount) > 0 ? Number(allocAmount) : 0} jetons`}
+                    </button>
+                    {allocError && <p className={`${EMP_ATTRIB_ERROR} mt-2`}>{allocError}</p>}
+                  </div>
+                )}
+              </form>
+              );
+            })()}
+
+            {/* Enveloppes déjà envoyées aux managers (suivi) */}
+            <h2 className={`${HISTORY_TITLE} mt-7`}>Mes enveloppes envoyées</h2>
             {sentEnvelopes.length === 0 ? (
               <p className={DASH_MSG}>Aucune enveloppe envoyée pour l'instant.</p>
             ) : (
@@ -516,75 +492,6 @@ export default function OwnerDashboard({ onLogout, onStats, firstName, profilePh
               </div>
             )}
           </section>
-          )
-        )}
-
-        {/* ── Onglet Employés : envoi direct (montant + motif) + historique ── */}
-        {activeTab === 'employes' && (
-          loading ? loader
-          : error ? errorNote
-          : (
-          <>
-            {employees && employees.length === 0 && <p className={DASH_MSG}>Aucun employé pour l'instant.</p>}
-            {employees && employees.length > 0 && (
-              <ul className={EMP_LIST}>
-                {employees.map((e) => (
-                  <li className={EMP_ITEM} key={e.id}>
-                    <div className={EMP_ROW}>
-                      <Avatar initials={initials(e)} />
-                      <div className={EMP_MAIN}>
-                        <div className={EMP_NAME}>
-                          {e.firstName} {e.lastName}
-                          {e.isEmailVerified ? (
-                            <span className={`${EMP_BADGE} ${EMP_BADGE_VERIFIED}`}><Icon name="check" size={13} strokeWidth={2.4} /> vérifié</span>
-                          ) : (
-                            <button type="button" className={EMP_ATTRIB_BTN} onClick={() => approveEmployee(e.id)}>Approuver</button>
-                          )}
-                        </div>
-                        <div className={EMP_SUB}>{e.email} · inscrit le {formatDate(e.createdAt)}</div>
-                      </div>
-                      <div className={EMP_BALANCE}>
-                        <div className={EMP_BALANCE_NUM}>{e.balance}</div>
-                        <div className={EMP_BALANCE_LABEL}>tokens</div>
-                      </div>
-                      <button
-                        type="button"
-                        className={EMP_ATTRIB_BTN}
-                        onClick={() => (attribOpenId === e.id ? closeAttrib() : openAttrib(e.id))}
-                      >
-                        {attribOpenId === e.id ? 'Annuler' : 'Envoyer'}
-                      </button>
-                      <button
-                        type="button"
-                        className={EMP_DELETE_BTN}
-                        title="Supprimer cet employé"
-                        disabled={deletingId === e.id}
-                        onClick={() => handleDelete(e)}
-                      >
-                        {deletingId === e.id ? '…' : <Icon name="trash" size={18} />}
-                      </button>
-                    </div>
-
-                    {attribOpenId === e.id && (
-                      <form className={EMP_ATTRIB_FORM} onSubmit={(ev) => { ev.preventDefault(); submitAttrib(e.id); }}>
-                        <input
-                          className={ALLOC_INPUT} type="number" min="1" step="1" placeholder="Montant"
-                          value={attribAmount}
-                          onChange={(ev) => setAttribAmount(ev.target.value)}
-                        />
-                        <MotifSelect groups={motifGroups} value={attribMotif} onChange={setAttribMotif} />
-                        <button type="submit" className={EMP_ATTRIB_SUBMIT} disabled={attribSubmitting}>
-                          {attribSubmitting ? '…' : 'Envoyer'}
-                        </button>
-                        {attribError && <p className={EMP_ATTRIB_ERROR}>{attribError}</p>}
-                      </form>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            )}
-            <DashHistory attributions={attributions} />
-          </>
           )
         )}
 

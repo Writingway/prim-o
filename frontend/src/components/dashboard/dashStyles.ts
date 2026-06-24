@@ -81,14 +81,48 @@ export const ALLOC_INPUT =
   'rounded-[11px] border-[1.5px] border-primo-line bg-white px-3 py-2.5 text-sm text-primo-ink ' +
   'focus:border-primo-teal focus:shadow-[0_0_0_3px_rgba(0,161,154,0.12)] focus:outline-none';
 
-/* ── Sélecteur de mode (radios pill) ── */
+/* ── Sélecteur de mode (onglets segmentés) ── */
 export const ALLOC_MODE = 'w-full';
-export const ALLOC_MODE_OPTIONS = 'flex flex-wrap gap-2';
+export const ALLOC_MODE_OPTIONS =
+  'flex gap-1 rounded-[14px] border border-primo-line bg-primo-surface p-1';
 export const ALLOC_MODE_OPT =
-  'inline-flex cursor-pointer items-center gap-1.5 rounded-full border-[1.5px] border-primo-line ' +
-  'px-3 py-2 text-[13px] font-semibold text-primo-slate';
-export const ALLOC_MODE_OPT_ACTIVE = 'border-primo-teal-strong bg-primo-mint text-primo-teal-strong';
+  'inline-flex flex-1 cursor-pointer items-center justify-center rounded-[10px] ' +
+  'px-2 py-2 text-[13px] font-bold text-primo-slate transition';
+export const ALLOC_MODE_OPT_ACTIVE =
+  'bg-white text-primo-teal-strong shadow-[0_2px_8px_-3px_rgba(6,59,56,0.25)]';
 export const ALLOC_MODE_HINT = 'my-2 text-[13px] text-primo-muted';
+
+/* ── Stepper de pourcentage (−/+) ── */
+export const ALLOC_PCT_ROW =
+  'mt-2.5 flex items-center justify-between rounded-[14px] border border-primo-line bg-white px-3.5 py-3';
+export const ALLOC_PCT_LABEL = 'text-[13px] font-semibold text-primo-slate';
+export const ALLOC_PCT_CTRL = 'flex items-center gap-3';
+export const ALLOC_PCT_BTN =
+  'flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border-[1.5px] ' +
+  'border-primo-teal bg-white text-primo-teal transition hover:bg-primo-mint ' +
+  'disabled:cursor-not-allowed disabled:opacity-40';
+export const ALLOC_PCT_VALUE =
+  'min-w-[58px] text-center text-[26px] font-extrabold leading-none text-primo-ink';
+
+/* ── Carte montant (gros affichage, ink-teal foncé + Coin or) ── */
+export const ALLOC_AMOUNT_CARD =
+  'flex flex-col items-center gap-2 rounded-2xl bg-[#063B38] px-4 py-5 text-white';
+export const ALLOC_AMOUNT_LABEL = 'text-[12px] font-semibold uppercase tracking-wide text-white/60';
+export const ALLOC_AMOUNT_VALUE =
+  'flex items-center gap-2.5 text-[44px] font-extrabold leading-none tracking-[-0.03em]';
+
+/* ── Chips de montant rapide ── */
+export const ALLOC_CHIPS = 'mt-3 grid grid-cols-4 gap-2';
+export const ALLOC_CHIP =
+  'cursor-pointer rounded-[12px] border-[1.5px] px-2 py-2.5 text-[14px] font-bold transition';
+export const ALLOC_CHIP_ON = 'border-primo-teal bg-primo-teal text-white';
+export const ALLOC_CHIP_OFF =
+  'border-primo-line bg-white text-primo-slate hover:bg-primo-mint';
+
+/* ── Bannière info rétribution (menthe) ── */
+export const ALLOC_BANNER =
+  'mt-3 flex items-start gap-2 rounded-[14px] bg-primo-mint px-3.5 py-3 text-[13px] ' +
+  'font-medium text-primo-teal-strong';
 
 /* ── Grille des enveloppes ── */
 export const ENV_GRID = 'mt-2 flex flex-wrap gap-3';
