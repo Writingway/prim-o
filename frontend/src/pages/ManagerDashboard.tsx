@@ -31,7 +31,7 @@ import DashboardHero from '../components/dashboard/DashboardHero';
 import { HEADER_BTN_GHOST } from '../components/layout/headerButtons';
 import Avatar from '../components/dashboard/Avatar';
 import {
-  DASH_WRAPPER, DASH_CONTAINER, DASH_STAT, DASH_STAT_STRONG, DASH_INVITE,
+  DASH_WRAPPER, DASH_CONTAINER, DASH_INVITE,
   DASH_MSG, DASH_ERROR, DASH_RETRY, HISTORY, HISTORY_TITLE, ENV_GRID,
   EMP_LIST, EMP_ITEM, EMP_ROW, EMP_MAIN, EMP_NAME, EMP_BADGE, EMP_BADGE_VERIFIED,
   EMP_ATTRIB_BTN, EMP_SUB, EMP_BALANCE, EMP_BALANCE_NUM, EMP_BALANCE_LABEL, EMP_DELETE_BTN,
@@ -59,7 +59,8 @@ export default function ManagerDashboard({ onLogout, firstName, profilePhoto }: 
   const [inviteError, setInviteError] = useState('');
 
   const [activeTab, setActiveTab] =
-    useState<'accueil' | 'enveloppes' | 'offres' | 'codes' | 'employes' | 'profil'>('accueil');
+    useState<'enveloppes' | 'offres' | 'codes' | 'employes' | 'profil'>('employes');
+  const [envView, setEnvView] = useState<'recues' | 'ouvertes'>('recues');
   const [motifGroups, setMotifGroups] = useState<MotifCategoryGroup[]>([]);
   const [envelopes, setEnvelopes] = useState<ManagerEnvelope[]>([]);
   const [balances, setBalances] = useState<ManagerBalances | null>(null);
@@ -190,8 +191,8 @@ export default function ManagerDashboard({ onLogout, firstName, profilePhoto }: 
     <div className={DASH_WRAPPER}>
       <div className={DASH_CONTAINER}>
 
-        {/* ── Onglet Accueil : hero (enveloppe + soldes) + récap + invitation ── */}
-        {activeTab === 'accueil' && (
+        {/* Hero affiché en tête des onglets Enveloppes ET Offres (comme l'employé). */}
+        {(activeTab === 'employes' || activeTab === 'enveloppes' || activeTab === 'offres') && (
           <>
             {/* Hero (cf. README D1) */}
             <DashboardHero
@@ -201,19 +202,19 @@ export default function ManagerDashboard({ onLogout, firstName, profilePhoto }: 
               photo={heroPhoto}
               initials={heroInitials}
             >
-              <div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.09] p-4">
-                <div className="mb-2 flex items-center gap-2 text-white/65">
-                  <Icon name="envelope" size={18} />
-                  <span className="text-[13px] font-semibold">Enveloppe à distribuer</span>
-                </div>
+              <button
+                type="button"
+                onClick={() => setActiveTab('enveloppes')}
+                className="mt-5 block w-full rounded-2xl border border-white/10 bg-white/[0.09] p-4 text-left transition hover:bg-white/[0.14]"
+              >
+
                 <div className="flex items-end gap-2.5">
-                  <Coin size={36} />
+                  <Icon name="envelope" size={34} />
                   <span className="text-[42px] font-extrabold leading-none tracking-[-0.03em]">
-                    {balances?.envelopeRemaining ?? '—'}
+                    {envelopes.filter((e) => e.status === 'A_DISTRIBUER').length}
                   </span>
-                  <span className="mb-1.5 text-sm text-white/65">jetons</span>
                 </div>
-              </div>
+              </button>
 
               <div className="mt-3 grid grid-cols-2 gap-3">
                 <div className="rounded-2xl bg-white/[0.06] p-3.5">
@@ -227,56 +228,87 @@ export default function ManagerDashboard({ onLogout, firstName, profilePhoto }: 
                   <div className="text-xs text-white/65">Distribué</div>
                   <div className="mt-1.5 text-xl font-extrabold">{totalDistributed}</div>
                 </div>
+                <div className="rounded-2xl bg-white/[0.06] p-3.5">
+                  <div className="text-xs text-white/65">Employés</div>
+                  <div className="mt-1.5 text-xl font-extrabold">{employees?.length ?? 0}</div>
+                </div>
+                <div className="rounded-2xl bg-white/[0.06] p-3.5">
+                  <div className="text-xs text-white/65">Pool entreprise</div>
+                  <div className="mt-1.5 flex items-center gap-1.5">
+                    <Coin size={18} />
+                    <span className="text-xl font-extrabold">{company?.tokenBalance ?? '—'}</span>
+                  </div>
+                </div>
               </div>
             </DashboardHero>
-
-            {/* Récap compact + invitation */}
-            <div className="mb-4 flex flex-wrap items-center gap-2.5">
-              <span className={DASH_STAT}>
-                <strong className={DASH_STAT_STRONG}>{employees?.length ?? 0}</strong>&nbsp;employés
-              </span>
-              <span className={DASH_STAT}>
-                <strong className={DASH_STAT_STRONG}>{company?.tokenBalance ?? '—'}</strong>&nbsp;pool entreprise
-              </span>
-              <button className={`${DASH_INVITE} ml-auto max-[520px]:ml-0`} type="button" onClick={handleGenerateInvite}>
-                <Icon name="plus" size={16} /> Code employé
-              </button>
-            </div>
-
-            {inviteCode && (
-              <div className={DASH_MSG}>
-                Code d'invitation : <strong>{inviteCode}</strong>{' '}
-                <button type="button" className={DASH_RETRY} onClick={() => navigator.clipboard.writeText(inviteCode)}>Copier</button>
-              </div>
-            )}
-            {inviteError && <p className={`${DASH_MSG} ${DASH_ERROR}`}>{inviteError}</p>}
           </>
         )}
 
-        {/* ── Onglet Enveloppes : enveloppes reçues + redistribution ── */}
+        {/* ── Onglet Enveloppes : 2 sections — reçues (à distribuer) + ouvertes ── */}
         {activeTab === 'enveloppes' && (
           loading ? loader
           : error ? errorNote
           : (
-            <section className={HISTORY}>
-              <h2 className={HISTORY_TITLE}>Mes enveloppes reçues</h2>
-              {envelopes.length === 0 ? (
-                <p className={DASH_MSG}>Aucune enveloppe pour l'instant.</p>
-              ) : (
-                <div className={ENV_GRID}>
-                  {envelopes.map((e) => <EnvelopeTile key={e.allocationId} envelope={e} onOpen={setOpenEnvelope} />)}
-                </div>
+            <>
+              {/* Switch Reçues / Ouvertes */}
+              <div className="mb-4 grid grid-cols-2 gap-1 rounded-full bg-primo-mint p-1">
+                <button
+                  type="button"
+                  onClick={() => setEnvView('recues')}
+                  className={`rounded-full py-2 text-sm font-bold transition ${
+                    envView === 'recues' ? 'bg-white text-primo-teal-strong shadow-sm' : 'text-primo-slate'
+                  }`}
+                >
+                  Reçues ({envelopes.filter((e) => e.status === 'A_DISTRIBUER').length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEnvView('ouvertes')}
+                  className={`rounded-full py-2 text-sm font-bold transition ${
+                    envView === 'ouvertes' ? 'bg-white text-primo-teal-strong shadow-sm' : 'text-primo-slate'
+                  }`}
+                >
+                  Ouvertes ({envelopes.filter((e) => e.status === 'DISTRIBUEE').length})
+                </button>
+              </div>
+
+              {envView === 'recues' && (
+                <section className={HISTORY}>
+                  {envelopes.filter((e) => e.status === 'A_DISTRIBUER').length === 0 ? (
+                    <p className={DASH_MSG}>Aucune enveloppe à distribuer.</p>
+                  ) : (
+                    <div className={ENV_GRID}>
+                      {envelopes
+                        .filter((e) => e.status === 'A_DISTRIBUER')
+                        .map((e) => <EnvelopeTile key={e.allocationId} envelope={e} onOpen={setOpenEnvelope} />)}
+                    </div>
+                  )}
+                  {openEnvelope && (
+                    <RedistributionBlock
+                      envelope={openEnvelope}
+                      employees={employees ?? []}
+                      motifGroups={motifGroups}
+                      onCancel={() => setOpenEnvelope(null)}
+                      onDistributed={onEnvelopeDistributed}
+                    />
+                  )}
+                </section>
               )}
-              {openEnvelope && (
-                <RedistributionBlock
-                  envelope={openEnvelope}
-                  employees={employees ?? []}
-                  motifGroups={motifGroups}
-                  onCancel={() => setOpenEnvelope(null)}
-                  onDistributed={onEnvelopeDistributed}
-                />
+
+              {envView === 'ouvertes' && (
+                <section className={HISTORY}>
+                  {envelopes.filter((e) => e.status === 'DISTRIBUEE').length === 0 ? (
+                    <p className={DASH_MSG}>Aucune enveloppe ouverte pour l'instant.</p>
+                  ) : (
+                    <div className={ENV_GRID}>
+                      {envelopes
+                        .filter((e) => e.status === 'DISTRIBUEE')
+                        .map((e) => <EnvelopeTile key={e.allocationId} envelope={e} onOpen={setOpenEnvelope} />)}
+                    </div>
+                  )}
+                </section>
               )}
-            </section>
+            </>
           )
         )}
 
@@ -300,6 +332,21 @@ export default function ManagerDashboard({ onLogout, firstName, profilePhoto }: 
           : error ? errorNote
           : (
             <>
+              {/* Génération d'un code d'invitation employé */}
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-2.5">
+                <h2 className={HISTORY_TITLE}>Mes employés</h2>
+                <button className={DASH_INVITE} type="button" onClick={handleGenerateInvite}>
+                  <Icon name="plus" size={16} /> Générer un code employé
+                </button>
+              </div>
+              {inviteCode && (
+                <div className={DASH_MSG}>
+                  Code d'invitation : <strong>{inviteCode}</strong>{' '}
+                  <button type="button" className={DASH_RETRY} onClick={() => navigator.clipboard.writeText(inviteCode)}>Copier</button>
+                </div>
+              )}
+              {inviteError && <p className={`${DASH_MSG} ${DASH_ERROR}`}>{inviteError}</p>}
+
               {employees && employees.length === 0 && <p className={DASH_MSG}>Aucun employé pour l'instant.</p>}
               {employees && employees.length > 0 && (
                 <ul className={EMP_LIST}>
