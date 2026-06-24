@@ -6,6 +6,7 @@ import PrivacySection from '@/components/privacy/PrivacySection';
 import EditProfile from '@/components/privacy/EditProfile';
 import Icon from '@/components/ui/Icon';
 import Coin from '@/components/ui/Coin';
+import ProfileAvatar from '@/components/ui/ProfileAvatar';
 import DashboardHero from '@/components/dashboard/DashboardHero';
 import OfferCatalog from '@/components/offers/OfferCatalog';
 import MyPromoCodes from '@/components/offers/MyPromoCodes';
@@ -15,7 +16,6 @@ import { HEADER_BTN_GHOST } from '@/components/layout/headerButtons';
 
 const WRAPPER = 'min-h-screen bg-primo-surface px-4 py-5 sm:px-5';
 const CONTAINER = 'mx-auto flex w-full max-w-[640px] flex-col';
-const SECTION_TITLE = 'mb-3 text-base font-bold text-primo-ink';
 const NOTE = 'm-0 text-center text-[13px] text-primo-slate-soft';
 const ERROR_NOTE = 'm-0 rounded-xl bg-primo-error-soft px-4 py-3 text-center text-[13px] text-primo-error';
 const MUTED = 'text-sm font-medium text-primo-muted';
@@ -50,6 +50,7 @@ export default function EmployeeDashboard({ onLogout, firstName, profilePhoto }:
   // Avatar du hero, maj en direct quand on l'enregistre dans le profil.
   const [heroPhoto, setHeroPhoto] = useState<string | null>(profilePhoto ?? null);
   const heroInitials = (firstName?.[0] ?? '?').toUpperCase();
+  const [histView, setHistView] = useState<'recus' | 'depenses'>('recus');
 
   const loader = <p className={NOTE}>Chargement…</p>;
   const errorNote = (
@@ -140,63 +141,89 @@ export default function EmployeeDashboard({ onLogout, firstName, profilePhoto }:
               <>
                 {hero}
 
-                <section className="mb-6">
-                  <h2 className={SECTION_TITLE}>Jetons reçus</h2>
-                  {received.items.length === 0 ? (
-                    <p className={MUTED}>Aucun jeton reçu pour l'instant — ça ne saurait tarder.</p>
-                  ) : (
-                    <>
-                      <ul className="m-0 flex list-none flex-col gap-2.5 p-0">
-                        {received.items.map((t) => (
-                          <li className={`${TX_ROW} border-l-[3px] border-l-primo-success`} key={t.id}>
-                            <span className={`${TX_ICON} bg-primo-success-soft text-primo-success`}>
-                              <Icon name="received" size={19} />
-                            </span>
-                            <div className="min-w-0 flex-1">
-                              <div className={TX_REASON}>{t.reason}</div>
-                              <div className={TX_SUB}>de {t.managerName} · {formatDate(t.createdAt)}</div>
-                            </div>
-                            <div className={`${TX_AMOUNT} text-primo-success`}>+{t.amount}</div>
-                          </li>
-                        ))}
-                      </ul>
-                      {received.hasMore && (
-                        <button className={MORE_BTN} type="button" onClick={received.loadMore}>
-                          Voir plus
-                        </button>
-                      )}
-                    </>
-                  )}
-                </section>
+                {/* Switch Tokens reçus / Mes dépenses */}
+                <div className="mb-4 grid grid-cols-2 gap-1 rounded-full bg-primo-mint p-1">
+                  <button
+                    type="button"
+                    onClick={() => setHistView('recus')}
+                    className={`flex items-center justify-center gap-1.5 rounded-full py-2 text-sm font-bold transition ${
+                      histView === 'recus' ? 'bg-white text-primo-success shadow-sm' : 'text-primo-slate'
+                    }`}
+                  >
+                    Tokens reçus
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setHistView('depenses')}
+                    className={`flex items-center justify-center gap-1.5 rounded-full py-2 text-sm font-bold transition ${
+                      histView === 'depenses' ? 'bg-white text-primo-error shadow-sm' : 'text-primo-slate'
+                    }`}
+                  >
+                    Mes dépenses
+                  </button>
+                </div>
 
-                <section className="mb-6">
-                  <h2 className={SECTION_TITLE}>Mes dépenses</h2>
-                  {spent.items.length === 0 ? (
-                    <p className={MUTED}>Aucune dépense pour l'instant. Le catalogue d'offres t'attend.</p>
-                  ) : (
-                    <>
-                      <ul className="m-0 flex list-none flex-col gap-2.5 p-0">
-                        {spent.items.map((t) => (
-                          <li className={`${TX_ROW} border-l-[3px] border-l-primo-error`} key={t.id}>
-                            <span className={`${TX_ICON} bg-primo-error-soft text-primo-error`}>
-                              <Icon name="card" size={19} />
-                            </span>
-                            <div className="min-w-0 flex-1">
-                              <div className={TX_REASON}>{t.offerName}</div>
-                              <div className={TX_SUB}>{formatDateTime(t.createdAt)}</div>
-                            </div>
-                            <div className={`${TX_AMOUNT} text-primo-error`}>−{t.amount}</div>
-                          </li>
-                        ))}
-                      </ul>
-                      {spent.hasMore && (
-                        <button className={MORE_BTN} type="button" onClick={spent.loadMore}>
-                          Voir plus
-                        </button>
-                      )}
-                    </>
-                  )}
-                </section>
+                {histView === 'recus' && (
+                  <section className="mb-6">
+                    {received.items.length === 0 ? (
+                      <p className={MUTED}>Aucun jeton reçu pour l'instant — ça ne saurait tarder.</p>
+                    ) : (
+                      <>
+                        <ul className="m-0 flex list-none flex-col gap-2.5 p-0">
+                          {received.items.map((t) => (
+                            <li className={`${TX_ROW} border-l-[3px] border-l-primo-success`} key={t.id}>
+                              <ProfileAvatar
+                                photo={t.managerPhoto}
+                                initials={t.managerName.split(' ').filter(Boolean).map((w) => w[0]).slice(0, 2).join('').toUpperCase() || '?'}
+                                size={36}
+                              />
+                              <div className="min-w-0 flex-1">
+                                <div className={TX_REASON}>{t.reason}</div>
+                                <div className={TX_SUB}>de {t.managerName} · {formatDate(t.createdAt)}</div>
+                              </div>
+                              <div className={`${TX_AMOUNT} text-primo-success`}>+{t.amount}</div>
+                            </li>
+                          ))}
+                        </ul>
+                        {received.hasMore && (
+                          <button className={MORE_BTN} type="button" onClick={received.loadMore}>
+                            Voir plus
+                          </button>
+                        )}
+                      </>
+                    )}
+                  </section>
+                )}
+
+                {histView === 'depenses' && (
+                  <section className="mb-6">
+                    {spent.items.length === 0 ? (
+                      <p className={MUTED}>Aucune dépense pour l'instant. Le catalogue d'offres t'attend.</p>
+                    ) : (
+                      <>
+                        <ul className="m-0 flex list-none flex-col gap-2.5 p-0">
+                          {spent.items.map((t) => (
+                            <li className={`${TX_ROW} border-l-[3px] border-l-primo-error`} key={t.id}>
+                              <span className={`${TX_ICON} bg-primo-error-soft text-primo-error`}>
+                                <Icon name="card" size={19} />
+                              </span>
+                              <div className="min-w-0 flex-1">
+                                <div className={TX_REASON}>{t.offerName}</div>
+                                <div className={TX_SUB}>{formatDateTime(t.createdAt)}</div>
+                              </div>
+                              <div className={`${TX_AMOUNT} text-primo-error`}>−{t.amount}</div>
+                            </li>
+                          ))}
+                        </ul>
+                        {spent.hasMore && (
+                          <button className={MORE_BTN} type="button" onClick={spent.loadMore}>
+                            Voir plus
+                          </button>
+                        )}
+                      </>
+                    )}
+                  </section>
+                )}
               </>
             )
           )}
