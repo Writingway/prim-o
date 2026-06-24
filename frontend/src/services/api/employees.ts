@@ -24,3 +24,7 @@ export const getEmployeeReceived = (page = 1, limit = 10) =>
 // Historique paginé des dépenses.
 export const getEmployeeSpent = (page = 1, limit = 10) =>
   authRequest<Paginated<SpentToken>>('GET', `/employees/me/spent?page=${page}&limit=${limit}`);
+
+// Bascule manuelle « utilisé » d'un de mes codes (vert = dispo, rouge = utilisé).
+export const setSpentUsed = (id: string, used: boolean) =>
+  authRequest<{ id: string; used: boolean }>('PATCH', `/employees/me/spent/${id}`, { used });

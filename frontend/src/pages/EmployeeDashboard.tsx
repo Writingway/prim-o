@@ -8,8 +8,9 @@ import Icon from '@/components/ui/Icon';
 import Coin from '@/components/ui/Coin';
 import DashboardHero from '@/components/dashboard/DashboardHero';
 import OfferCatalog from '@/components/offers/OfferCatalog';
+import MyPromoCodes from '@/components/offers/MyPromoCodes';
 import { useEmployeeDashboard } from '@/hooks/useEmployeeDashboard';
-import { formatDate } from '@/lib/format';
+import { formatDate, formatDateTime } from '@/lib/format';
 import { HEADER_BTN_GHOST } from '@/components/layout/headerButtons';
 
 const WRAPPER = 'min-h-screen bg-primo-surface px-4 py-5 sm:px-5';
@@ -31,7 +32,7 @@ const MORE_BTN =
 const MOBILE_LOGOUT =
   'mt-2.5 flex w-full items-center justify-center gap-2.5 rounded-[14px] border-[1.5px] border-primo-error-line bg-white px-4 py-3.5 text-[15px] font-bold text-primo-error hover:bg-primo-error-soft lg:hidden';
 
-type EmployeeTab = 'offres' | 'historique' | 'profil';
+type EmployeeTab = 'offres' | 'codes' | 'historique' | 'profil';
 
 type EmployeeDashboardProps = {
   onLogout: () => void;
@@ -104,24 +105,31 @@ export default function EmployeeDashboard({ onLogout, firstName, profilePhoto }:
       <div className={WRAPPER}>
         <div className={CONTAINER}>
 
-          {/* ── Onglet Offres : solde compact + catalogue mis en avant ── */}
+          {/* ── Onglet Offres : solde + catalogue. Le catalogue n'est PAS derrière
+              le `loading` du dashboard : il gère son propre chargement. Sinon, à
+              l'achat, `onRedeemed` rerend en loading → OfferCatalog se démonte et
+              la célébration « Code débloqué » disparaît avant de s'afficher. ── */}
           {tab === 'offres' && (
-            loading ? loader
-            : error ? errorNote
-            : balance !== null && (
-              <>
-                {hero}
+            <>
+              {hero}
 
-                {/* Catalogue : mis en avant dès l'arrivée sur l'espace */}
-                <OfferCatalog
-                  isLoggedIn
-                  canRedeem
-                  heading="Offres partenaires"
-                  onRedeemed={reload}
-                  onSeeSpending={() => setTab('historique')}
-                />
-              </>
-            )
+              {/* Catalogue : mis en avant dès l'arrivée sur l'espace */}
+              <OfferCatalog
+                isLoggedIn
+                canRedeem
+                heading="Offres partenaires"
+                onRedeemed={reload}
+                onSeeSpending={() => setTab('codes')}
+              />
+            </>
+          )}
+
+          {/* ── Onglet Mes codes : codes promo achetés (copiables) ── */}
+          {tab === 'codes' && (
+            <>
+              {hero}
+              <MyPromoCodes />
+            </>
           )}
 
           {/* ── Onglet Historique : reçus + dépenses ── */}
@@ -175,7 +183,7 @@ export default function EmployeeDashboard({ onLogout, firstName, profilePhoto }:
                             </span>
                             <div className="min-w-0 flex-1">
                               <div className={TX_REASON}>{t.offerName}</div>
-                              <div className={TX_SUB}>code {t.promoCode} · {formatDate(t.createdAt)}</div>
+                              <div className={TX_SUB}>{formatDateTime(t.createdAt)}</div>
                             </div>
                             <div className={`${TX_AMOUNT} text-primo-error`}>−{t.amount}</div>
                           </li>

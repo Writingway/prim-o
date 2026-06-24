@@ -5,6 +5,7 @@ import Icon from '@/components/ui/Icon';
 import type { IconName } from '@/components/ui/Icon';
 import Coin from '@/components/ui/Coin';
 import { useConfirm } from '@/components/ui/ConfirmDialog';
+import tkn2 from '@/assets/primotoken/primo-tkn2.png';
 
 // Catalogue d'offres partenaires : grille + recherche/filtres + bottom sheet de
 // détail + célébration du code obtenu. Réutilisé par la LandingPage (visiteurs)
@@ -443,21 +444,19 @@ export default function OfferCatalog({
           </div>
 
           <div className="relative flex flex-1 flex-col items-center justify-center px-8 text-center">
-            <span
-              className="primo-coin flex items-center justify-center rounded-full text-primo-ink-900 animate-primo-float"
-              style={{
-                width: 118,
-                height: 118,
-                boxShadow:
-                  'inset 0 -8px 14px rgba(150,90,0,.45), inset 0 8px 12px rgba(255,255,255,.6), 0 24px 50px -10px rgba(232,148,23,.6)',
-              }}
+            <img
+              src={tkn2}
+              alt=""
+              width={118}
+              height={118}
+              className="animate-primo-float select-none"
+              style={{ filter: 'drop-shadow(0 24px 50px rgba(232,148,23,0.6))' }}
+              draggable={false}
               aria-hidden
-            >
-              <Icon name="check" size={56} strokeWidth={2.6} />
-            </span>
+            />
             <div className="mt-7 text-[28px] font-extrabold tracking-[-0.02em]">Code débloqué !</div>
             <p className="mt-2.5 text-[15px] text-white/70">
-              {revealed.amount} jetons débités · {revealed.offerName}
+              {revealed.amount} tokens débités · {revealed.offerName}
             </p>
 
             <div className="mt-8 w-full max-w-[320px] rounded-[18px] border-[1.5px] border-dashed border-primo-gold-bright/50 bg-white/[0.07] px-5 py-5">
@@ -487,9 +486,9 @@ export default function OfferCatalog({
                   setRevealed(null);
                   onSeeSpending();
                 }}
-                className="mx-auto block w-full max-w-[320px] rounded-[15px] border-[1.5px] border-white/25 bg-transparent px-4 py-3.5 text-base font-bold text-white hover:bg-white/10"
+                className="mx-auto flex w-full max-w-[320px] items-center justify-center gap-2 rounded-[15px] border-[1.5px] border-white/25 bg-transparent px-4 py-3.5 text-base font-bold text-white hover:bg-white/10"
               >
-                Voir mes dépenses
+                <Icon name="ticket" size={19} /> Voir mes codes
               </button>
             </div>
           )}

@@ -323,6 +323,7 @@ model Redemption {
   offerId     String   @db.Uuid
   promoCodeId String   @unique @db.Uuid      // 1 code = 1 redemption (garanti par DB)
   companyId   String   @db.Uuid
+  used        Boolean  @default(false)        // marqué « utilisé » manuellement par l'employé (chez le commerçant)
   createdAt   DateTime @default(now())
 
   employee  User         @relation(fields: [employeeId], references: [id])

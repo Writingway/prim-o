@@ -23,6 +23,7 @@ import { useConfirm } from '../components/ui/ConfirmDialog';
 import EnvelopeTile from '../components/allocation/EnvelopeTile';
 import RedistributionBlock from '../components/allocation/RedistributionBlock';
 import OfferCatalog from '../components/offers/OfferCatalog';
+import MyPromoCodes from '../components/offers/MyPromoCodes';
 import DashHistory from '../components/dashboard/DashHistory';
 import Icon from '../components/ui/Icon';
 import Coin from '../components/ui/Coin';
@@ -58,7 +59,7 @@ export default function ManagerDashboard({ onLogout, firstName, profilePhoto }: 
   const [inviteError, setInviteError] = useState('');
 
   const [activeTab, setActiveTab] =
-    useState<'accueil' | 'enveloppes' | 'offres' | 'employes' | 'profil'>('accueil');
+    useState<'accueil' | 'enveloppes' | 'offres' | 'codes' | 'employes' | 'profil'>('accueil');
   const [motifGroups, setMotifGroups] = useState<MotifCategoryGroup[]>([]);
   const [envelopes, setEnvelopes] = useState<ManagerEnvelope[]>([]);
   const [balances, setBalances] = useState<ManagerBalances | null>(null);
@@ -286,8 +287,12 @@ export default function ManagerDashboard({ onLogout, firstName, profilePhoto }: 
             canRedeem
             heading="Offres partenaires"
             onRedeemed={load}
+            onSeeSpending={() => setActiveTab('codes')}
           />
         )}
+
+        {/* ── Onglet Mes codes : codes promo achetés (copiables) ── */}
+        {activeTab === 'codes' && <MyPromoCodes />}
 
         {/* ── Onglet Employés : gestion d'équipe + historique ── */}
         {activeTab === 'employes' && (

@@ -96,6 +96,7 @@ export async function getEmployeeSpent(employeeId: string, page: number, limit: 
       select: {
         id: true,
         amount: true,
+        used: true,
         createdAt: true,
         offer: { select: { partnerName: true } },
         promoCode: { select: { code: true } },
@@ -108,6 +109,7 @@ export async function getEmployeeSpent(employeeId: string, page: number, limit: 
     items: rows.map((s) => ({
       id: s.id,
       amount: s.amount,
+      used: s.used,
       createdAt: s.createdAt,
       offerName: s.offer.partnerName,
       promoCode: s.promoCode.code,
@@ -116,4 +118,15 @@ export async function getEmployeeSpent(employeeId: string, page: number, limit: 
     page,
     hasMore: page * limit < total,
   };
+}
+
+// Bascule manuelle du statut « utilisé » d'un code, par son propriétaire.
+// On filtre sur employeeId pour garantir qu'on ne touche que SES redemptions.
+export async function setRedemptionUsed(employeeId: string, redemptionId: string, used: boolean) {
+  const result = await prisma.redemption.updateMany({
+    where: { id: redemptionId, employeeId },
+    data: { used },
+  });
+  if (result.count === 0) throw new Error('REDEMPTION_NOT_FOUND');
+  return { id: redemptionId, used };
 }

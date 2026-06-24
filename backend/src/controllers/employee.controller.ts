@@ -6,6 +6,7 @@ import {
   getEmployeeBalance,
   getEmployeeReceived,
   getEmployeeSpent,
+  setRedemptionUsed,
 } from '../services/employee.service';
 import { prisma } from '../lib/db';
 import { requireManagerOrOwner } from '../middleware/authz';
@@ -124,13 +125,38 @@ export async function getEmployeeSpentController(
   next: NextFunction
 ): Promise<void> {
   try {
-    const employeeId = requireEmployee(req, next);
-    if (!employeeId) return;
-
+    // « Mes achats » : auto-scopé par l'utilisateur courant → accessible à tout
+    // utilisateur authentifié (employé ET manager achètent des codes).
+    const userId = req.user!.id;
     const { page, limit } = parsePaging(req);
-    const result = await getEmployeeSpent(employeeId, page, limit);
+    const result = await getEmployeeSpent(userId, page, limit);
     res.status(200).json(result);
   } catch (err) {
+    next(err);
+  }
+}
+
+// PATCH /api/employees/me/spent/:id - bascule « utilisé » d'un code (propriétaire).
+export async function setRedemptionUsedController(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const userId = req.user!.id;
+    const id = req.params.id;
+    const used = req.body?.used;
+    if (typeof id !== 'string' || typeof used !== 'boolean') {
+      next(new AppError(400, 'Paramètres invalides (id, used booléen requis).'));
+      return;
+    }
+    const result = await setRedemptionUsed(userId, id, used);
+    res.status(200).json(result);
+  } catch (err) {
+    if (err instanceof Error && err.message === 'REDEMPTION_NOT_FOUND') {
+      next(new AppError(404, 'Code introuvable.'));
+      return;
+    }
     next(err);
   }
 }

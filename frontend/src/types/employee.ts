@@ -26,5 +26,6 @@ export type SpentToken = {
   amount: number;
   offerName: string;
   promoCode: string;
+  used: boolean;
   createdAt: string;
 };
