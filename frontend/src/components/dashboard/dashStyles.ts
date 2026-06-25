@@ -4,7 +4,7 @@
 
 /* ── Layout ── */
 export const DASH_WRAPPER = 'min-h-screen bg-primo-surface px-4 py-5';
-export const DASH_CONTAINER = 'mx-auto max-w-[760px]';
+export const DASH_CONTAINER = 'mx-auto';
 
 /* ── Chips récap (Owner / Manager) ── */
 export const DASH_STAT =
@@ -31,7 +31,7 @@ export const DASH_TAB =
 export const DASH_TAB_ACTIVE = 'border-b-primo-teal-strong text-primo-teal-strong';
 
 /* ── Liste lignes-cartes (employés / managers) ── */
-export const EMP_LIST = 'm-0 flex list-none flex-col gap-2.5 p-0';
+export const EMP_LIST = 'm-0 flex list-none flex-col gap-2.5 p-0 lg:grid lg:grid-cols-2 lg:items-start lg:gap-2.5';
 export const EMP_ITEM = 'rounded-[14px] border border-primo-line bg-white px-3.5 py-[13px]';
 export const EMP_ROW = 'flex items-center gap-3';
 export const EMP_AVATAR =
@@ -68,7 +68,7 @@ export const EMP_DELETE_BTN =
 /* ── Historique des transactions ── */
 export const HISTORY = 'mt-[26px]';
 export const HISTORY_TITLE = 'm-0 mb-3 text-base font-bold text-primo-ink';
-export const HISTORY_LIST = 'm-0 flex list-none flex-col gap-2 p-0';
+export const HISTORY_LIST = 'm-0 flex list-none flex-col gap-2 p-0 lg:grid lg:grid-cols-2 lg:items-start lg:gap-2';
 export const HISTORY_ROW =
   'flex items-center gap-3 rounded-[13px] border border-primo-line bg-white px-3.5 py-2.5 text-sm';
 export const HISTORY_EMP = 'min-w-[130px] font-bold text-primo-ink';

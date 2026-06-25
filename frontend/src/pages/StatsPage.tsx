@@ -14,7 +14,6 @@ import Layout from '../components/layout/Layout';
 import Icon from '../components/ui/Icon';
 import BottomNav from '../components/layout/BottomNav';
 import { NAV_ITEMS } from '../hooks/useBottomNav';
-import { HEADER_BTN_GHOST } from '../components/layout/headerButtons';
 
 type StatsPageProps = {
   onLogout: () => void;
@@ -357,7 +356,14 @@ export default function StatsPage({ onLogout, onBack, onNavTab }: StatsPageProps
   return (
     <Layout
       title="Prim'O — Statistiques"
-      chrome="app"
+      chrome="console"
+      hideConsoleMobileHeader
+      hideConsoleTopbar
+      nav={{
+        items: NAV_ITEMS.owner,
+        active: 'stats',
+        onSelect: (it) => { if (it.key !== 'stats') (onNavTab ? onNavTab(it.key) : onBack()); },
+      }}
       bottomNav={
         <BottomNav
           items={NAV_ITEMS.owner}
@@ -365,11 +371,14 @@ export default function StatsPage({ onLogout, onBack, onNavTab }: StatsPageProps
           onSelect={(it) => { if (it.key !== 'stats') (onNavTab ? onNavTab(it.key) : onBack()); }}
         />
       }
-      headerActions={
-        <>
-          <button className={HEADER_BTN_GHOST} type="button" onClick={onBack}>Dashboard</button>
-          <button className={HEADER_BTN_GHOST} type="button" onClick={onLogout}>Se déconnecter</button>
-        </>
+      sidebarFooter={
+        <button
+          type="button"
+          onClick={onLogout}
+          className="flex w-full items-center gap-2.5 rounded-[9px] px-3 py-2.5 text-[13px] font-semibold text-[#6BA8A2] transition hover:bg-white/5 hover:text-primo-error"
+        >
+          <Icon name="logout" size={16} strokeWidth={1.8} /> Se déconnecter
+        </button>
       }
     >
       <div className={C.wrapper}>

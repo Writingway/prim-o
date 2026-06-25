@@ -30,6 +30,13 @@ type LayoutProps = {
   nav?: LayoutNav;
   subtitle?: string;
   sidebarFooter?: ReactNode;
+  // 'console' sur mobile affiche ConsoleHeaderMobile. Les dashboards (employé/
+  // manager/owner) utilisent leur DashboardHero comme en-tête mobile : on
+  // supprime alors la barre console mobile pour ne pas doubler l'en-tête.
+  hideConsoleMobileHeader?: boolean;
+  // Masque le Topbar desktop (lg+) sans toucher au mobile. Les dashboards
+  // utilisent leur DashboardHero comme en-tête : pas besoin du bandeau Topbar.
+  hideConsoleTopbar?: boolean;
 };
 
 export default function Layout({
@@ -42,10 +49,12 @@ export default function Layout({
   nav,
   subtitle,
   sidebarFooter,
+  hideConsoleMobileHeader,
+  hideConsoleTopbar,
 }: LayoutProps) {
   if (chrome === 'console') {
     return (
-      <div className="flex h-[100dvh] overflow-hidden lg:flex">
+      <div className="flex min-h-[100dvh] flex-col lg:h-[100dvh] lg:flex-row lg:overflow-hidden">
         {/* Desktop (lg+) : sidebar verticale à gauche. */}
         {nav && (
           <Sidebar
@@ -59,10 +68,14 @@ export default function Layout({
         )}
         <div className="flex min-h-0 flex-1 flex-col">
           {/* Mobile (<lg) : header console (pendant du Topbar) — titre + sous-titre + actions. */}
-          <ConsoleHeaderMobile title={title} subtitle={subtitle} actions={headerActionsMobile} />
+          {!hideConsoleMobileHeader && (
+            <ConsoleHeaderMobile title={title} subtitle={subtitle} actions={headerActionsMobile} />
+          )}
           {/* Desktop (lg+) : topbar ; masquée en mobile. */}
-          <Topbar title={title} subtitle={subtitle} actions={headerActions} />
-          <main className="w-full flex-1 overflow-y-auto pb-24 lg:pb-0">{children}</main>
+          {!hideConsoleTopbar && (
+            <Topbar title={title} subtitle={subtitle} actions={headerActions} />
+          )}
+          <main className="w-full flex-1 pb-24 lg:overflow-y-auto lg:pb-0">{children}</main>
           {/* Mobile (<lg) : BottomNav depuis le MÊME objet nav que la Sidebar. */}
           {nav && bottomNav}
         </div>

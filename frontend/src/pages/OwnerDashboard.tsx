@@ -23,7 +23,6 @@ import SentEnvelopeTile from '../components/allocation/SentEnvelopeTile';
 import Icon from '../components/ui/Icon';
 import Coin from '../components/ui/Coin';
 import DashboardHero from '../components/dashboard/DashboardHero';
-import { HEADER_BTN_GHOST } from '../components/layout/headerButtons';
 import Avatar from '../components/dashboard/Avatar';
 import {
   DASH_WRAPPER, DASH_CONTAINER, DASH_INVITE, DASH_MSG, DASH_ERROR, DASH_RETRY,
@@ -219,7 +218,17 @@ export default function OwnerDashboard({ onLogout, onStats, firstName, profilePh
   return (
     <Layout
       title="Prim'O — Espace patron"
-      chrome="app"
+      chrome="console"
+      hideConsoleMobileHeader
+      hideConsoleTopbar
+      nav={{
+        items: NAV_ITEMS.owner,
+        active: activeTab,
+        onSelect: (it) => {
+          if (it.key === 'stats') { onStats?.(); return; }
+          setActiveTab(it.key as typeof activeTab);
+        },
+      }}
       bottomNav={
         <BottomNav
           items={NAV_ITEMS.owner}
@@ -230,13 +239,14 @@ export default function OwnerDashboard({ onLogout, onStats, firstName, profilePh
           }}
         />
       }
-      headerActions={
-        <>
-          {onStats && (
-            <button className={HEADER_BTN_GHOST} type="button" onClick={onStats}>Statistiques</button>
-          )}
-          <button className={HEADER_BTN_GHOST} type="button" onClick={handleLogout}>Se déconnecter</button>
-        </>
+      sidebarFooter={
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="flex w-full items-center gap-2.5 rounded-[9px] px-3 py-2.5 text-[13px] font-semibold text-[#6BA8A2] transition hover:bg-white/5 hover:text-primo-error"
+        >
+          <Icon name="logout" size={16} strokeWidth={1.8} /> Se déconnecter
+        </button>
       }
     >
     <div className={DASH_WRAPPER}>
@@ -295,6 +305,7 @@ export default function OwnerDashboard({ onLogout, onStats, firstName, profilePh
           <div className="mb-4 rounded-xl bg-primo-error-soft px-4 py-3 text-[13px] font-semibold text-primo-error">Paiement annulé.</div>
         )}
 
+        <div className="lg:grid lg:grid-cols-2 lg:items-start lg:gap-5">
         {/* Recharge du pool (Stripe) */}
         <div className="mb-4 rounded-2xl border border-primo-line bg-white p-4">
           <div className="mb-3 text-sm font-bold text-primo-ink">Recharger le pool</div>
@@ -335,6 +346,7 @@ export default function OwnerDashboard({ onLogout, onStats, firstName, profilePh
           {rechargeError && <p className="mt-2 text-[13px] text-primo-error">{rechargeError}</p>}
         </div>
 
+        <div>
         {/* CTA principal : aller allouer aux managers (cf. mockup F1) */}
         <button
           type="button"
@@ -361,6 +373,8 @@ export default function OwnerDashboard({ onLogout, onStats, firstName, profilePh
           </div>
         )}
         {inviteError && <p className={`${DASH_MSG} ${DASH_ERROR}`}>{inviteError}</p>}
+        </div>
+        </div>
           </>
         )}
 
