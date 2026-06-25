@@ -12,10 +12,11 @@ import OfferCatalog from '@/components/offers/OfferCatalog';
 import MyPromoCodes from '@/components/offers/MyPromoCodes';
 import { useEmployeeDashboard } from '@/hooks/useEmployeeDashboard';
 import { formatDate, formatDateTime } from '@/lib/format';
-import { HEADER_BTN_GHOST } from '@/components/layout/headerButtons';
+import { DASH_CONTAINER } from '@/components/dashboard/dashStyles';
 
 const WRAPPER = 'min-h-screen bg-primo-surface px-4 py-5 sm:px-5';
-const CONTAINER = 'mx-auto flex w-full max-w-[640px] flex-col';
+// Check for duplication of constant inside all the dashboard
+// const CONTAINER = 'mx-auto flex w-full max-w-[640px] flex-col lg:max-w-[1120px]';
 const NOTE = 'm-0 text-center text-[13px] text-primo-slate-soft';
 const ERROR_NOTE = 'm-0 rounded-xl bg-primo-error-soft px-4 py-3 text-center text-[13px] text-primo-error';
 const MUTED = 'text-sm font-medium text-primo-muted';
@@ -89,7 +90,14 @@ export default function EmployeeDashboard({ onLogout, firstName, profilePhoto }:
   return (
     <Layout
       title="Mon espace"
-      chrome="app"
+      subtitle={firstName ? `Bonjour, ${firstName}` : 'Espace employé'}
+      chrome="console"
+      hideConsoleMobileHeader
+      nav={{
+        items: NAV_ITEMS.employee,
+        active: tab,
+        onSelect: (it) => setTab(it.key as EmployeeTab),
+      }}
       bottomNav={
         <BottomNav
           items={NAV_ITEMS.employee}
@@ -97,14 +105,27 @@ export default function EmployeeDashboard({ onLogout, firstName, profilePhoto }:
           onSelect={(it) => setTab(it.key as EmployeeTab)}
         />
       }
-      headerActions={
-        <button className={HEADER_BTN_GHOST} type="button" onClick={handleLogout}>
-          Se déconnecter
-        </button>
+      sidebarFooter={
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2.5 rounded-[10px] bg-white/[.05] px-3 py-2.5">
+            <ProfileAvatar photo={heroPhoto} initials={heroInitials} size={34} />
+            <div className="min-w-0">
+              <div className="truncate text-[12.5px] font-bold text-[#D4EEEB]">{firstName ?? 'Mon compte'}</div>
+              <div className="text-[11px] text-[#3D7A74]">Employé</div>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="flex w-full items-center gap-2.5 rounded-[9px] px-3 py-2.5 text-[13px] font-semibold text-[#6BA8A2] transition hover:bg-white/5 hover:text-primo-error"
+          >
+            <Icon name="logout" size={16} strokeWidth={1.8} /> Se déconnecter
+          </button>
+        </div>
       }
     >
       <div className={WRAPPER}>
-        <div className={CONTAINER}>
+        <div className={DASH_CONTAINER}>  
 
           {/* ── Onglet Offres : solde + catalogue. Le catalogue n'est PAS derrière
               le `loading` du dashboard : il gère son propre chargement. Sinon, à
@@ -159,7 +180,7 @@ export default function EmployeeDashboard({ onLogout, firstName, profilePhoto }:
                       <p className={MUTED}>Aucun jeton reçu pour l'instant — ça ne saurait tarder.</p>
                     ) : (
                       <>
-                        <ul className="m-0 flex list-none flex-col gap-2.5 p-0">
+                        <ul className="m-0 flex list-none flex-col gap-2.5 p-0 lg:grid lg:grid-cols-2 lg:items-start lg:gap-2.5">
                           {received.items.map((t) => (
                             <li className={`${TX_ROW} border-l-[3px] border-l-primo-success`} key={t.id}>
                               <ProfileAvatar
@@ -191,7 +212,7 @@ export default function EmployeeDashboard({ onLogout, firstName, profilePhoto }:
                       <p className={MUTED}>Aucune dépense pour l'instant. Le catalogue d'offres t'attend.</p>
                     ) : (
                       <>
-                        <ul className="m-0 flex list-none flex-col gap-2.5 p-0">
+                        <ul className="m-0 flex list-none flex-col gap-2.5 p-0 lg:grid lg:grid-cols-2 lg:items-start lg:gap-2.5">
                           {spent.items.map((t) => (
                             <li className={`${TX_ROW} border-l-[3px] border-l-primo-error`} key={t.id}>
                               <span className={`${TX_ICON} bg-primo-error-soft text-primo-error`}>

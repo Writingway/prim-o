@@ -28,7 +28,6 @@ import DashHistory from '../components/dashboard/DashHistory';
 import Icon from '../components/ui/Icon';
 import Coin from '../components/ui/Coin';
 import DashboardHero from '../components/dashboard/DashboardHero';
-import { HEADER_BTN_GHOST } from '../components/layout/headerButtons';
 import Avatar from '../components/dashboard/Avatar';
 import {
   DASH_WRAPPER, DASH_CONTAINER, DASH_INVITE,
@@ -176,7 +175,14 @@ export default function ManagerDashboard({ onLogout, firstName, profilePhoto }: 
   return (
     <Layout
       title="Prim'O — Espace manager"
-      chrome="app"
+      chrome="console"
+      hideConsoleMobileHeader
+      hideConsoleTopbar
+      nav={{
+        items: NAV_ITEMS.manager,
+        active: activeTab,
+        onSelect: (it) => setActiveTab(it.key as typeof activeTab),
+      }}
       bottomNav={
         <BottomNav
           items={NAV_ITEMS.manager}
@@ -184,8 +190,14 @@ export default function ManagerDashboard({ onLogout, firstName, profilePhoto }: 
           onSelect={(it) => setActiveTab(it.key as typeof activeTab)}
         />
       }
-      headerActions={
-        <button className={HEADER_BTN_GHOST} type="button" onClick={handleLogout}>Se déconnecter</button>
+      sidebarFooter={
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="flex w-full items-center gap-2.5 rounded-[9px] px-3 py-2.5 text-[13px] font-semibold text-[#6BA8A2] transition hover:bg-white/5 hover:text-primo-error"
+        >
+          <Icon name="logout" size={16} strokeWidth={1.8} /> Se déconnecter
+        </button>
       }
     >
     <div className={DASH_WRAPPER}>

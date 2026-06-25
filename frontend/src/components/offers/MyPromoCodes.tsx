@@ -62,7 +62,6 @@ export default function MyPromoCodes() {
 
   return (
     <section>
-
       {loading ? (
         <p className="mt-8 text-center text-sm font-medium text-primo-muted">Chargement…</p>
       ) : error ? (
