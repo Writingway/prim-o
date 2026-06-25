@@ -37,6 +37,7 @@ export type StatsResponse = {
   blindSpotsByManager: ManagerBlindSpotsRow[];
   equityByManager: EquityRow[];
   velocityByManager: Array<{ managerId: string; avgDelaySeconds: number | null }>;
+  managerNames: Record<string, string>;
   leaderboardByMotif: MotifLeaderboardRow[];
   evolution: EvolutionPoint[];
 };
