@@ -33,6 +33,7 @@ const AVATAR_BG = [
   'bg-primo-success-soft text-primo-success',
   'bg-primo-mint text-primo-teal-dark',
 ];
+
 function avatarFor(name: string) {
   const initials = name.trim().slice(0, 2).toUpperCase() || '??';
   let hash = 0;
@@ -81,6 +82,7 @@ export default function AdminCompanies({ onFlash }: AdminCompaniesProps) {
   }, [page]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     load();
   }, [load]);
 

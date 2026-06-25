@@ -328,9 +328,9 @@ export default function StatsPage({ onLogout, onBack, onNavTab }: StatsPageProps
         setMotifLabel(map);
       }
     })().catch(() => { /* la résolution des noms restera partielle */ });
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadStats();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    }, []);
 
   const paramsWith = (employeeId: string) => ({
     ...(from ? { from } : {}),
@@ -362,13 +362,21 @@ export default function StatsPage({ onLogout, onBack, onNavTab }: StatsPageProps
       nav={{
         items: NAV_ITEMS.owner,
         active: 'stats',
-        onSelect: (it) => { if (it.key !== 'stats') (onNavTab ? onNavTab(it.key) : onBack()); },
+        onSelect: (it) => {
+          if (it.key === 'stats') return;
+          if (onNavTab) onNavTab(it.key);
+          else onBack();
+        },
       }}
       bottomNav={
         <BottomNav
           items={NAV_ITEMS.owner}
           active="stats"
-          onSelect={(it) => { if (it.key !== 'stats') (onNavTab ? onNavTab(it.key) : onBack()); }}
+          onSelect={(it) => { 
+            if (it.key === 'stats') return; 
+            if (onNavTab) onNavTab(it.key);
+            else onBack();
+          }}
         />
       }
       sidebarFooter={
