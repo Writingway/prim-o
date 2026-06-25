@@ -2,7 +2,8 @@ import type { Role } from '../types/types';
 import Layout from '../components/layout/Layout';
 import BottomNav from '../components/layout/BottomNav';
 import OfferCatalog from '../components/offers/OfferCatalog';
-import { HEADER_BTN_PRIMARY, HEADER_BTN_GHOST } from '../components/layout/headerButtons';
+import Icon from '../components/ui/Icon';
+import logo2 from '../assets/logos/logo_2.png';
 
 type LandingPageProps = {
   isLoggedIn: boolean;
@@ -13,22 +14,38 @@ type LandingPageProps = {
   onLogout: () => void;
 };
 
-// Page d'accueil / hub public : catalogue d'offres partenaires. Le même catalogue
-// est rendu dans l'espace employé (onglet Offres) via <OfferCatalog>, garantissant
-// une expérience identique des deux côtés.
+// Page d'accueil / hub public : catalogue d'offres partenaires. Header blanc
+// minimal : logo Prim'O centré + « S'identifier » à droite (→ route /auth).
+// Le même catalogue est rendu dans l'espace employé via <OfferCatalog>.
 export default function LandingPage({
   isLoggedIn,
   role,
   onLogin,
-  onRegister,
   onDashboard,
-  onLogout,
 }: LandingPageProps) {
-  // Achat réservé aux employés ET managers (le manager dépense sa rétribution).
   const canRedeem = isLoggedIn && (role === 'employee' || role === 'manager');
+
+  const header = (
+    <header className="sticky top-0 z-20 flex items-center justify-center border-b border-primo-line bg-white px-5 py-3.5 sm:px-8">
+      {/* Logo centré */}
+      <img src={logo2} alt="Prim'O" className="h-9 w-auto" />
+
+      {/* Collé à droite : icône profil + « S'identifier » → /auth */}
+      <button
+        type="button"
+        onClick={isLoggedIn ? onDashboard : onLogin}
+        aria-label={isLoggedIn ? 'Mon espace' : "S'identifier"}
+        className="absolute right-5 top-1/2 flex -translate-y-1/2 items-center gap-2 rounded-full border border-primo-line bg-white px-3.5 py-2 text-sm font-bold text-primo-ink transition hover:bg-primo-surface sm:right-8"
+      >
+        <Icon name="user" size={17} />
+        <span className="hidden sm:inline">{isLoggedIn ? 'Mon espace' : "S'identifier"}</span>
+      </button>
+    </header>
+  );
 
   return (
     <Layout
+      header={header}
       bottomNav={
         isLoggedIn ? (
           <BottomNav
@@ -42,27 +59,6 @@ export default function LandingPage({
             }}
           />
         ) : undefined
-      }
-      headerActions={
-        isLoggedIn ? (
-          <>
-            <button className={HEADER_BTN_PRIMARY} type="button" onClick={onDashboard}>
-              Mon tableau de bord
-            </button>
-            <button className={HEADER_BTN_GHOST} type="button" onClick={onLogout}>
-              Se déconnecter
-            </button>
-          </>
-        ) : (
-          <>
-            <button className={HEADER_BTN_GHOST} type="button" onClick={onLogin}>
-              Se connecter
-            </button>
-            <button className={HEADER_BTN_PRIMARY} type="button" onClick={onRegister}>
-              S'inscrire
-            </button>
-          </>
-        )
       }
     >
       <div className="min-h-screen bg-primo-surface">

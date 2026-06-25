@@ -33,7 +33,7 @@ export default function AuthPage({ onLoginSuccess, initialMode = 'login', onBack
             <Icon name="arrow-left" size={18} /> Retour
           </button>
         )}
-        <AuthBrand subtitle={mode === 'login' ? 'Connecte-toi pour retrouver tes jetons.' : 'Crée ton compte en moins d’une minute.'} />
+        <AuthBrand subtitle={mode === 'login' ? 'Connecte-toi pour retrouver tes tokens.' : 'Crée ton compte en moins d’une minute.'} />
 
         <AuthTabs mode={mode} onChange={setMode} />
 
