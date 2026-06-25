@@ -197,7 +197,11 @@ export async function listAttributionsController(
     const ctx = requireManagerOrOwner(req, next);
     if (!ctx) return;
 
-    const attributions = await listAttributionsByCompany(ctx.companyId);
+    // Un manager ne voit que ses propres attributions ; le patron garde la vue entreprise.
+    const attributions = await listAttributionsByCompany(
+      ctx.companyId,
+      ctx.role === 'MANAGER' ? ctx.userId : undefined,
+    );
     res.status(200).json({ attributions });
   } catch (err) {
     next(err);

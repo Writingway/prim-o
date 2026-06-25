@@ -275,11 +275,13 @@ export async function listCompanyManagers(companyId: string) {
 }
 
 // Historique des attributions d'une entreprise (récentes d'abord).
+// `managerId` optionnel = ne renvoyer que les attributions de CE manager (un manager ne
+// voit que les siennes ; le patron, sans filtre, garde la vue entreprise complète).
 // `reason` est dérivé du motif (le texte libre n'existe plus) pour rester compatible
 // avec l'affichage existant.
-export async function listAttributionsByCompany(companyId: string) {
+export async function listAttributionsByCompany(companyId: string, managerId?: string) {
   const rows = await prisma.attribution.findMany({
-    where: { companyId },
+    where: { companyId, ...(managerId ? { managerId } : {}) },
     orderBy: { createdAt: 'desc' },
     select: {
       id: true,
