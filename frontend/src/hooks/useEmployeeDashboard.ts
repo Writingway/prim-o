@@ -48,6 +48,7 @@ export function useEmployeeDashboard(onLogout: () => void) {
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     reload();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

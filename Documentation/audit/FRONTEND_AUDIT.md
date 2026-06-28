@@ -64,27 +64,24 @@ This separation (pages → components → hooks → services) is correct and eas
 
 ### 🔴 High
 
-- **ESLint does not lint TypeScript.** [eslint.config.js](eslint.config.js) only matches `**/*.{js,jsx}`. The entire `.ts`/`.tsx` source is **never linted**. `npm run lint` reports clean while checking almost nothing.
-  *Fix:* add `typescript-eslint`, match `**/*.{ts,tsx}`, enable `react-hooks` rules on TSX.
+- ✅ **DONE — ESLint now lints TypeScript.** [eslint.config.js](eslint.config.js) extends `typescript-eslint` recommended + `react-hooks` over `**/*.{ts,tsx}`. `npm run lint` covers the real source.
 
-- **No automated tests.** Zero unit/integration/e2e. The auth/refresh logic and route guards are exactly the kind of high-risk code that needs regression coverage.
-  *Fix:* start with Vitest + Testing Library on `client.ts` (refresh singleton, 401 retry) and the router guards.
+- ✅ **DONE — Vitest added, auth transport covered.** [client.test.ts](src/services/api/client.test.ts) locks the 5 subtle `authRequest` branches (refresh singleton, 401→refresh→retry, no-logout on 429/5xx, logout on auth-fail, no 2nd retry). [ErrorBoundary.test.tsx](src/components/ErrorBoundary.test.tsx) covers fallback + passthrough. `npm test` → 7 passing. Router guards still uncovered.
 
-- **No error boundary.** Any render-time throw blanks the whole app. No `ErrorBoundary` / `componentDidCatch` anywhere.
-  *Fix:* wrap the router/layout in a top-level error boundary with a recovery UI.
+- ✅ **DONE — Top-level error boundary.** [ErrorBoundary.tsx](src/components/ErrorBoundary.tsx) wraps `<App>` in [main.tsx](src/main.tsx); render throws show a recovery screen instead of a blank app. `componentDidCatch` is the hook-point for a logger (Sentry) later.
 
 ### 🟡 Medium
 
 - **Large multi-responsibility pages.** Top offenders:
-  | File | LOC |
-  |------|-----|
-  | [pages/StatsPage.tsx](src/pages/StatsPage.tsx) | 593 |
-  | [components/offers/OfferCatalog.tsx](src/components/offers/OfferCatalog.tsx) | 589 |
-  | [pages/OwnerDashboard.tsx](src/pages/OwnerDashboard.tsx) | 531 |
-  | [pages/AdminPage.tsx](src/pages/AdminPage.tsx) | 423 |
-  | [pages/ManagerDashboard.tsx](src/pages/ManagerDashboard.tsx) | 414 |
+  | File | LOC | Status |
+  |------|-----|--------|
+  | [pages/StatsPage.tsx](src/pages/StatsPage.tsx) | 519 | ✅ data logic extracted → [useStats.ts](src/hooks/useStats.ts) |
+  | [components/offers/OfferCatalog.tsx](src/components/offers/OfferCatalog.tsx) | 589 | pending |
+  | [pages/OwnerDashboard.tsx](src/pages/OwnerDashboard.tsx) | 531 | pending |
+  | [pages/AdminPage.tsx](src/pages/AdminPage.tsx) | 423 | pending |
+  | [pages/ManagerDashboard.tsx](src/pages/ManagerDashboard.tsx) | 414 | pending |
 
-  These mix data fetching, local state, and rendering. Extract data logic into hooks (the pattern already exists — `useEmployeeDashboard`, `useAdminOffers`) and split presentational sub-components.
+  These mix data fetching, local state, and rendering. Extract data logic into hooks (the pattern already exists — `useEmployeeDashboard`, `useAdminOffers`, now `useStats`) and split presentational sub-components.
 
 - **Hand-rolled data fetching.** `useState`/`useEffect` fetching across 13 files means manual loading/error/refetch/caching in each. As screens multiply this duplicates logic and invites race/stale bugs.
   *Consider:* TanStack Query (already in the TanStack ecosystem) for caching, dedupe, and retry — would also simplify the 30s identity cache.
@@ -101,13 +98,13 @@ This separation (pages → components → hooks → services) is correct and eas
 
 ## 5. Recommended Next Steps
 
-| Priority | Action | Effort |
-|----------|--------|--------|
-| 1 | Fix ESLint to cover `.ts`/`.tsx` + add `typescript-eslint` | S |
-| 2 | Add Vitest; cover `client.ts` refresh/retry + route guards | M |
-| 3 | Add top-level error boundary | S |
-| 4 | Extract fetch logic from 400+ LOC pages into hooks/subcomponents | M |
-| 5 | Evaluate TanStack Query to replace manual fetch effects | M |
-| 6 | Accessibility pass on dialogs, icon buttons, nav | M |
+| Priority | Action | Effort | Status |
+|----------|--------|--------|--------|
+| 1 | Fix ESLint to cover `.ts`/`.tsx` + add `typescript-eslint` | S | ✅ done |
+| 2 | Add Vitest; cover `client.ts` refresh/retry + route guards | M | ✅ `client.ts` done; route guards pending |
+| 3 | Add top-level error boundary | S | ✅ done |
+| 4 | Extract fetch logic from 400+ LOC pages into hooks/subcomponents | M | 🔶 StatsPage done; 4 pages left |
+| 5 | Evaluate TanStack Query to replace manual fetch effects | M | pending |
+| 6 | Accessibility pass on dialogs, icon buttons, nav | M | pending |
 
 **Bottom line:** architecture and auth are strong; close the testing/linting/error-handling gaps before adding more screens or developers.

@@ -11,6 +11,11 @@ export default defineConfig({
   resolve: {
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
   },
+  test: {
+    environment: 'node',   // client.ts is pure; bump to 'jsdom' for component tests
+    globals: true,
+  },
+
   server: {
     // Port dédié à Prim'O (5173 est souvent pris par un autre projet).
     // strictPort : échoue clairement au lieu de glisser sur un autre port en douce.

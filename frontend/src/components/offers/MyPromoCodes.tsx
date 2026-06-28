@@ -37,8 +37,8 @@ export default function MyPromoCodes() {
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     load(1);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const copy = (code: string) => {

@@ -106,19 +106,19 @@ export default function OwnerDashboard({ onLogout, onStats, firstName, profilePh
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Retour de Stripe : ?payment=success|cancel.
   useEffect(() => {
     const payment = new URLSearchParams(window.location.search).get('payment');
     if (payment === 'success' || payment === 'cancel') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setPaymentNotice(payment);
       window.history.replaceState({}, '', window.location.pathname);
       if (payment === 'success') setTimeout(() => { load(); }, 1500);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleLogout = async () => {
