@@ -27,6 +27,9 @@ type OfferCatalogProps = {
   onSeeSpending?: () => void;    // bouton « Voir mes dépenses » de la célébration
   heading?: string;
   className?: string;            // espacement géré par le parent (landing vs dashboard)
+  // Landing : sur desktop (≥ lg), grandes cartes carrées en 3 colonnes. Le mobile
+  // garde le format compact dans tous les cas.
+  largeDesktopCards?: boolean;
 };
 
 export default function OfferCatalog({
@@ -36,6 +39,7 @@ export default function OfferCatalog({
   onSeeSpending,
   heading = 'Offres partenaires',
   className = '',
+  largeDesktopCards = false,
 }: OfferCatalogProps) {
   const { confirm, confirmDialog } = useConfirm();
   const [offers, setOffers] = useState<Offer[]>([]);
@@ -146,6 +150,15 @@ export default function OfferCatalog({
 
   const selectedMeta = selected?.category ?? null;
 
+  // Landing desktop : 3 colonnes + vignette carrée (cartes plus grandes). Mobile
+  // inchangé. Sinon : grille compacte d'origine (espace employé).
+  const gridClass = largeDesktopCards
+    ? 'grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-3 lg:gap-5'
+    : 'grid grid-cols-1 gap-3.5 sm:grid-cols-2 xl:grid-cols-3';
+  const visualClass = largeDesktopCards
+    ? 'h-[104px] w-full lg:h-auto lg:aspect-square'
+    : 'h-[104px] w-full';
+
   return (
     <>
       <section className={className} aria-label={heading}>
@@ -192,10 +205,10 @@ export default function OfferCatalog({
           // Squelette : on annonce la vitrine plutôt qu'un texte gris.
           <div className="mt-6">
             <div className="h-[168px] w-full animate-pulse rounded-[24px] bg-primo-line/70" />
-            <div className="mt-5 grid grid-cols-1 gap-3.5 sm:grid-cols-2 xl:grid-cols-3">
+            <div className={`mt-5 ${gridClass}`}>
               {[0, 1, 2, 3].map((i) => (
                 <div key={i} className="animate-pulse overflow-hidden rounded-[22px] border border-primo-line bg-white">
-                  <div className="h-[104px] bg-primo-line/70" />
+                  <div className={largeDesktopCards ? 'h-[104px] bg-primo-line/70 lg:h-auto lg:aspect-square' : 'h-[104px] bg-primo-line/70'} />
                   <div className="space-y-2 p-3.5">
                     <div className="h-3.5 w-3/4 rounded bg-primo-line/70" />
                     <div className="h-3 w-1/3 rounded bg-primo-line/70" />
@@ -267,7 +280,7 @@ export default function OfferCatalog({
             })()}
 
             {/* Toutes les offres (paginées par paquets de PAGE_SIZE) */}
-            <div className="mt-6 grid grid-cols-1 gap-3.5 sm:grid-cols-2 xl:grid-cols-3">
+            <div className={`mt-6 ${gridClass}`}>
               {gridOffers.slice(0, visible).map((o, i) => {
                 const meta = o.category ?? { icon: 'gift', color: '#00a19a', label: '' };
                 return (
@@ -281,7 +294,7 @@ export default function OfferCatalog({
                     className="group flex animate-offer-in cursor-pointer flex-col overflow-hidden rounded-[22px] border border-primo-line bg-white outline-none transition-all duration-300 hover:-translate-y-1 hover:border-transparent hover:shadow-[0_18px_38px_-16px_rgba(6,48,45,0.32)] focus-visible:ring-2 focus-visible:ring-primo-teal focus-visible:ring-offset-2"
                   >
                     <div className="relative">
-                      <CategoryVisual meta={meta} className="h-[104px] w-full" watermark={108} avatar={32} />
+                      <CategoryVisual meta={meta} className={visualClass} watermark={108} avatar={32} />
                       {o.discountPercent > 0 && (
                         <DiscountBadge percent={o.discountPercent} className="absolute right-2.5 top-2.5" />
                       )}

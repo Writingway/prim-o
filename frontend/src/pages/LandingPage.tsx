@@ -66,7 +66,8 @@ export default function LandingPage({
           isLoggedIn={isLoggedIn}
           canRedeem={canRedeem}
           onSeeSpending={isLoggedIn ? onDashboard : undefined}
-          className="mx-auto max-w-[1000px] px-5 pb-24 pt-8 lg:pb-16"
+          largeDesktopCards
+          className="mx-auto max-w-[1100px] px-5 pb-24 pt-8 lg:pb-16"
         />
       </div>
     </Layout>

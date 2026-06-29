@@ -324,6 +324,7 @@ export default function ManagerDashboard({ onLogout, firstName, profilePhoto }: 
             heading="Offres partenaires"
             onRedeemed={load}
             onSeeSpending={() => setActiveTab('codes')}
+            largeDesktopCards
           />
         )}
 

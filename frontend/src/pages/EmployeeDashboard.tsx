@@ -138,6 +138,7 @@ export default function EmployeeDashboard({ onLogout, firstName, profilePhoto }:
               heading="Offres partenaires"
               onRedeemed={reload}
               onSeeSpending={() => setTab('codes')}
+              largeDesktopCards
             />
           )}
 
