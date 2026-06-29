@@ -9,6 +9,15 @@ export type CheckoutSession = Awaited<ReturnType<typeof stripe.checkout.sessions
 // Traite un paiement confirmé : crédite le pool + enregistre l'achat.
 // Idempotent : si le même paiement arrive 2 fois, le 2e est ignoré.
 export async function fulfillCheckout(session: CheckoutSession): Promise<void> {
+  // On ne crédite QUE si l'argent est réellement encaissé. Pour les moyens de
+  // paiement asynchrones (SEPA, Pix…), `checkout.session.completed` peut arriver
+  // en `unpaid` : l'encaissement effectif est notifié plus tard via
+  // `checkout.session.async_payment_succeeded`. Sortie silencieuse (pas d'erreur)
+  // → Stripe ne réessaie pas un event qui ne deviendra jamais payé tel quel.
+  if (session.payment_status !== 'paid') {
+    return;
+  }
+
   const companyId = session.metadata?.companyId;
   const createdById = session.metadata?.createdById;
   const tokenAmount = Number(session.metadata?.tokenAmount);
