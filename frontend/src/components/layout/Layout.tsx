@@ -16,6 +16,7 @@ type LayoutNav = {
 
 type LayoutProps = {
   title?: string;
+  header?: ReactNode;        // chrome 'public' : remplace le Header teal par défaut
   headerActions?: ReactNode; // transmis au Topbar desktop
   headerActionsMobile?: ReactNode; // boutons icônes du header console mobile
   children: ReactNode;       // le contenu de la page
@@ -41,6 +42,7 @@ type LayoutProps = {
 
 export default function Layout({
   title,
+  header,
   headerActions,
   headerActionsMobile,
   children,
@@ -96,7 +98,7 @@ export default function Layout({
   // elle s'affiche en MOBILE uniquement (lg:hidden) et le footer passe en desktop.
   return (
     <div className="flex min-h-[100dvh] flex-col">
-      <Header title={title}>{headerActions}</Header>
+      {header ?? <Header title={title}>{headerActions}</Header>}
       <main className={`w-full flex-1 ${bottomNav ? 'pb-24 lg:pb-0' : ''}`}>{children}</main>
       {bottomNav ? (
         <>

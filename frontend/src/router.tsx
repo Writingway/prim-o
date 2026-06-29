@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import {
   createRootRouteWithContext, createRoute, createRouter,
-  RouterProvider, Outlet, useNavigate, redirect,
+  Outlet, useNavigate, redirect,
 } from '@tanstack/react-router';
 import { getIdentity, normalizeRole, clearIdentityCache, type Identity } from './services/api/identity';
 import { setAccessToken, logout as apiLogout, registerSessionExpired } from './services/api';
@@ -229,6 +229,7 @@ const routeTree = rootRoute.addChildren([
   indexRoute, authRoute, dashboardRoute, statsRoute, adminRoute, onboardingRoute, billingReturnRoute,
 ]);
 
+// Router config module, not a component file — Fast Refresh N/A here.
 export const router = createRouter({
   routeTree,
   context: { identity: null },        // valeur initiale, écrasée par beforeLoad
@@ -241,5 +242,3 @@ registerSessionExpired(() => { clearIdentityCache(); router.invalidate(); });
 declare module '@tanstack/react-router' {
   interface Register { router: typeof router; }
 }
-
-export { RouterProvider };

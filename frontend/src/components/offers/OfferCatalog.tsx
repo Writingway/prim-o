@@ -52,6 +52,15 @@ export default function OfferCatalog({
   const [copied, setCopied] = useState(false);
   const [visible, setVisible] = useState(PAGE_SIZE);
 
+  // Reset pagination the moment search/category changes — during render,
+  // before paint, so there's no second render pass.
+  const resetKey = `${query}|${activeCat}`;
+  const [prevKey, setPrevKey] = useState(resetKey);
+  if (prevKey !== resetKey) {
+    setPrevKey(resetKey);
+    setVisible(PAGE_SIZE);
+  }
+
   useEffect(() => {
     let alive = true;
     listOffers()
@@ -91,11 +100,6 @@ export default function OfferCatalog({
   }, [offers]);
   const showFeatured = !!featured && activeCat === 'ALL' && query.trim() === '';
   const gridOffers = showFeatured && featured ? filtered.filter((o) => o.id !== featured.id) : filtered;
-
-  // Toute recherche / changement de catégorie repart de la 1re page.
-  useEffect(() => {
-    setVisible(PAGE_SIZE);
-  }, [query, activeCat]);
 
   const openDetail = (offer: Offer) => {
     setRedeemError('');

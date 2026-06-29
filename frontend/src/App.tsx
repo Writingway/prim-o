@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import LegalPage, { type LegalPageKey } from './pages/LegalPage';
-import { router, RouterProvider } from './router';
+import { RouterProvider } from '@tanstack/react-router';
+import { router } from './router';
 
 function legalFromHash(): LegalPageKey | null {
   const h = window.location.hash.replace('#', '');

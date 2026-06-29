@@ -64,7 +64,11 @@ export default function AdminCategories({ flash }: Props) {
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    load();
+  }, []);
+
 
   const openCreate = () => {
     setEditingId(null);

@@ -101,9 +101,9 @@ export default function ManagerDashboard({ onLogout, firstName, profilePhoto }: 
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    }, []);
 
   const handleDelete = async (e: Employee) => {
     const ok = await confirm({

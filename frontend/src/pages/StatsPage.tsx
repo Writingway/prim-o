@@ -1,19 +1,12 @@
-import { useEffect, useState } from 'react';
 import {
-  getStats,
-  listEmployees,
-  listManagers,
-  listMotifs,
-  type StatsResponse,
-  type CompanyManager,
   type MotifCategory,
   type EvolutionPoint,
 } from '../services/api';
-import type { Employee } from '../types/types';
 import Layout from '../components/layout/Layout';
 import Icon from '../components/ui/Icon';
 import BottomNav from '../components/layout/BottomNav';
 import { NAV_ITEMS } from '../hooks/useBottomNav';
+import { useStats } from '../hooks/useStats';
 
 type StatsPageProps = {
   onLogout: () => void;
@@ -267,6 +260,7 @@ function EvolutionSection({ evolution, evoMotif, onMotif, evoEmployee, onEmploye
 
 // Tableau de bord statistiques employeur (§3.2/§3.4) — OWNER only.
 export default function StatsPage({ onLogout, onBack, onNavTab }: StatsPageProps) {
+
   const [stats, setStats] = useState<StatsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -352,6 +346,15 @@ export default function StatsPage({ onLogout, onBack, onNavTab }: StatsPageProps
     loadStats(paramsWith(id));
   };
 
+  const {
+    stats, loading, error,
+    empName, evoMotif, evoEmployee, from, to,
+    nameOfEmp, nameOfMgr, labelOf,
+    loadStats, applyFilters, resetFilters, selectEvoEmployee,
+    setFrom, setTo, setEvoMotif,
+  } = useStats();
+
+
   return (
     <Layout
       title="Prim'O — Statistiques"
@@ -361,13 +364,21 @@ export default function StatsPage({ onLogout, onBack, onNavTab }: StatsPageProps
       nav={{
         items: NAV_ITEMS.owner,
         active: 'stats',
-        onSelect: (it) => { if (it.key !== 'stats') (onNavTab ? onNavTab(it.key) : onBack()); },
+        onSelect: (it) => {
+          if (it.key === 'stats') return;
+          if (onNavTab) onNavTab(it.key);
+          else onBack();
+        },
       }}
       bottomNav={
         <BottomNav
           items={NAV_ITEMS.owner}
           active="stats"
-          onSelect={(it) => { if (it.key !== 'stats') (onNavTab ? onNavTab(it.key) : onBack()); }}
+          onSelect={(it) => { 
+            if (it.key === 'stats') return; 
+            if (onNavTab) onNavTab(it.key);
+            else onBack();
+          }}
         />
       }
       sidebarFooter={

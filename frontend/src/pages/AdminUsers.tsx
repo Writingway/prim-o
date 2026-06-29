@@ -87,6 +87,7 @@ export default function AdminUsers({ onFlash }: AdminUsersProps) {
   }, [page, filters]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     load();
   }, [load]);
 
