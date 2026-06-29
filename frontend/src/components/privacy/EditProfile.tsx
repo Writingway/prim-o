@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 import { getMyProfile, updateMyProfile, forgotPassword } from '../../services/api';
 import Icon from '../ui/Icon';
 import type { IconName } from '../ui/Icon';
@@ -62,8 +63,6 @@ export default function EditProfile({ onPhotoChange, onEditingChange }: EditProf
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  const [pwdMsg, setPwdMsg] = useState('');
 
   const load = async () => {
     setLoading(true);
@@ -89,7 +88,6 @@ export default function EditProfile({ onPhotoChange, onEditingChange }: EditProf
     setEmail(profile.email);
     setEditPhoto((profile.profilePhoto as AvatarKey | null) ?? null);
     setError('');
-    setSuccess('');
     setEditing(true);
   };
 
@@ -116,7 +114,7 @@ export default function EditProfile({ onPhotoChange, onEditingChange }: EditProf
         setProfile(res.data.profile);
         setEditing(false);
         onPhotoChange?.(res.data.profile.profilePhoto);
-        setSuccess(
+        toast.success(
           payload.email
             ? 'Profil mis à jour. Ton nouvel email devra être vérifié.'
             : 'Profil mis à jour.',
@@ -139,12 +137,36 @@ export default function EditProfile({ onPhotoChange, onEditingChange }: EditProf
   // (lien par mail). On ne modifie jamais le mot de passe en direct ici.
   const handlePasswordReset = async () => {
     if (!profile) return;
-    setPwdMsg('');
-    await forgotPassword(profile.email);
-    setPwdMsg("Un email de réinitialisation t'a été envoyé. Vérifie ta boîte mail.");
+    try {
+      const res = await forgotPassword(profile.email);
+      if (!res.ok) {
+        toast.error("Impossible d'envoyer l'email de réinitialisation. Réessaie.");
+        return;
+      }
+      toast.success("Un email de réinitialisation t'a été envoyé. Vérifie ta boîte mail.");
+    } catch {
+      toast.error('Impossible de joindre le serveur.');
+    }
   };
 
-  if (loading || !profile) return null;
+  if (loading || !profile) {
+    return (
+      <section className={`${CARD} mb-3.5 p-5`} aria-busy="true">
+        {/* header avatar */}
+        <div className="flex flex-col items-center pb-1">
+          <div className="h-[78px] w-[78px] rounded-full bg-primo-line animate-pulse" />
+          <div className="mt-3.5 h-5 w-40 rounded bg-primo-line animate-pulse" />
+          <div className="mt-2 h-4 w-52 rounded bg-primo-line animate-pulse" />
+          <div className="mt-3 h-7 w-28 rounded-[20px] bg-primo-line animate-pulse" />
+        </div>
+        {/* 2 lignes réglages */}
+        <div className="mt-4 flex flex-col gap-2.5">
+          <div className="h-[58px] rounded-2xl bg-primo-line animate-pulse" />
+          <div className="h-[58px] rounded-2xl bg-primo-line animate-pulse" />
+        </div>
+      </section>
+    );
+  }
 
   const initials =
     `${profile.firstName?.[0] ?? ''}${profile.lastName?.[0] ?? ''}`.toUpperCase() ||
@@ -263,8 +285,6 @@ export default function EditProfile({ onPhotoChange, onEditingChange }: EditProf
         <Row icon="settings" label="Modifier mon profil" onClick={startEdit} />
         <Row icon="lock" label="Mot de passe" onClick={handlePasswordReset} />
       </div>
-      {success && <p className="mt-2.5 text-[13px] text-primo-success">{success}</p>}
-      {pwdMsg && <p className="mt-2.5 text-[13px] text-primo-success">{pwdMsg}</p>}
     </section>
   );
 }

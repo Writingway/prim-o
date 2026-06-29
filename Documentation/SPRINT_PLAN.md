@@ -1,6 +1,6 @@
 # Prim'O - Sprint Plan (Stage 4)
 
-> Sprints d'1 semaine · Équipe : Mario (PM/Backend), Mateo (Fullstack), Lucas (Frontend/UX)  
+> Sprints d'1 semaine · Équipe : Mario (PM/Backend), Mateo (Fullstack), Lucas (Frontend/UX)
 > Démarré le : 21/04/2026
 
 ---
