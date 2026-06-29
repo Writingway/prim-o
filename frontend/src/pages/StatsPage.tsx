@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   type MotifCategory,
   type EvolutionPoint,
@@ -260,92 +261,6 @@ function EvolutionSection({ evolution, evoMotif, onMotif, evoEmployee, onEmploye
 
 // Tableau de bord statistiques employeur (§3.2/§3.4) — OWNER only.
 export default function StatsPage({ onLogout, onBack, onNavTab }: StatsPageProps) {
-
-  const [stats, setStats] = useState<StatsResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-
-  // Référentiels (chargés une fois) pour résoudre id → nom et tag → libellé.
-  const [empName, setEmpName] = useState<Map<string, string>>(new Map());
-  const [mgrName, setMgrName] = useState<Map<string, string>>(new Map());
-  const [motifLabel, setMotifLabel] = useState<Map<string, string>>(new Map());
-
-  // Filtres période (bornes sur la date d'attribution).
-  const [from, setFrom] = useState('');
-  const [to, setTo] = useState('');
-  // Sélections de la courbe d'évolution (motif affiché + employé ciblé).
-  const [evoEmployee, setEvoEmployee] = useState('');
-  const [evoMotif, setEvoMotif] = useState('');
-  // Manager choisi dans la section « Angles morts » ('' = premier de la liste).
-  const [bsMgr, setBsMgr] = useState('');
-
-  const nameOfEmp = (id: string) => empName.get(id) ?? `${id.slice(0, 8)}…`;
-  const nameOfMgr = (id: string) => stats?.managerNames?.[id] ?? mgrName.get(id) ?? empName.get(id) ?? `${id.slice(0, 8)}…`;
-  const labelOf = (tag: string) => motifLabel.get(tag) ?? tag;
-
-  const loadStats = async (params?: { from?: string; to?: string; employeeId?: string }) => {
-    setLoading(true);
-    setError('');
-    try {
-      const res = await getStats(params);
-      if (res.status === 401) { setError('Session expirée, reconnecte-toi.'); return; }
-      if (res.status === 403) { setError('Accès réservé au patron.'); return; }
-      if (!res.ok || !res.data) { setError('Impossible de charger les statistiques.'); return; }
-      setStats(res.data);
-    } catch {
-      setError('Impossible de joindre le serveur. Le backend est-il lancé ?');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Référentiels + premières stats au montage.
-  useEffect(() => {
-    (async () => {
-      const [empRes, mgrRes, motifRes] = await Promise.all([
-        listEmployees(),
-        listManagers(),
-        listMotifs(),
-      ]);
-      if (empRes.ok && empRes.data) {
-        setEmpName(new Map(empRes.data.employees.map((e: Employee) => [e.id, `${e.firstName} ${e.lastName}`])));
-      }
-      if (mgrRes.ok && mgrRes.data) {
-        setMgrName(new Map(mgrRes.data.managers.map((m: CompanyManager) =>
-          [m.id, `${m.firstName ?? ''} ${m.lastName ?? ''}`.trim() || m.email])));
-      }
-      if (motifRes.ok && motifRes.data) {
-        const map = new Map<string, string>();
-        for (const cat of motifRes.data.categories)
-          for (const mo of cat.motifs) map.set(mo.tag, mo.label);
-        setMotifLabel(map);
-      }
-    })().catch(() => { /* la résolution des noms restera partielle */ });
-    loadStats();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const paramsWith = (employeeId: string) => ({
-    ...(from ? { from } : {}),
-    ...(to ? { to } : {}),
-    ...(employeeId ? { employeeId } : {}),
-  });
-
-  const applyFilters = () => loadStats(paramsWith(evoEmployee));
-
-  const resetFilters = () => {
-    setFrom('');
-    setTo('');
-    setEvoEmployee('');
-    loadStats();
-  };
-
-  // L'employé ne change que la courbe d'évolution (re-fetch scopé sur lui).
-  const selectEvoEmployee = (id: string) => {
-    setEvoEmployee(id);
-    loadStats(paramsWith(id));
-  };
-
   const {
     stats, loading, error,
     empName, evoMotif, evoEmployee, from, to,
@@ -354,6 +269,9 @@ export default function StatsPage({ onLogout, onBack, onNavTab }: StatsPageProps
     setFrom, setTo, setEvoMotif,
   } = useStats();
 
+  // Manager choisi dans la section « Angles morts » ('' = premier de la liste).
+  // State d'UI purement local (le hook ne gère que la donnée).
+  const [bsMgr, setBsMgr] = useState('');
 
   return (
     <Layout
