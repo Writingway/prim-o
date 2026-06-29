@@ -155,6 +155,7 @@ export interface StatsResponse {
   blindSpotsByManager: ManagerBlindSpotsRow[]; // §3.5 — angles morts PAR manager
   equityByManager: EquityRow[];                // équité + bénéficiaires priorisés par manager
   velocityByManager: Array<{ managerId: string; avgDelaySeconds: number | null }>; // allocation → 1ère distribution
+  managerNames: Record<string, string>;        // managerId → « Prénom Nom » (résolu côté serveur, inclut patron/managers supprimés)
   leaderboardByMotif: MotifLeaderboardRow[];   // §3.5 — top employés par motif (OWNER only)
   evolution: EvolutionPoint[];                 // §3.5 — évolution mensuelle par motif (filtrable par employeeId)
 }
