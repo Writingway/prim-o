@@ -107,7 +107,7 @@ export async function getStats(companyId: string, filters: StatsFilters): Promis
     set.add(row.motifId);
     usedByManager.set(row.managerId, set);
   }
-  const blindSpotsByManager = Array.from(usedByManager.entries()).map(([managerId, used]) => ({
+  const blindSpotsByManagerRaw = Array.from(usedByManager.entries()).map(([managerId, used]) => ({
     managerId,
     tags: activeMotifs.filter((m) => !used.has(m.id)).map((m) => m.tag),
   }));
@@ -126,7 +126,7 @@ export async function getStats(companyId: string, filters: StatsFilters): Promis
     recByManager.set(row.managerId, arr);
   }
 
-  const equityByManager = Array.from(recByManager.entries()).map(([managerId, recs]) => {
+  const equityByManagerRaw = Array.from(recByManager.entries()).map(([managerId, recs]) => {
     const totals = recs.map((r) => r.tokens);
     const n = totals.length;
     const sumAll = totals.reduce((s, v) => s + v, 0);
@@ -141,6 +141,32 @@ export async function getStats(companyId: string, filters: StatsFilters): Promis
 
   // 5) velocityByManager — délai moyen allocation -> 1ère distribution postérieure.
   const velocityByManager = await getVelocityByManager(companyId, filters.to);
+
+  // 5bis) Résolution des distributeurs présents dans les agrégats. Le PATRON distribue
+  // uniquement aux managers (allocations) : on l'exclut ici (rôle ≠ MANAGER) pour que les
+  // sections « par manager » ne montrent que de vrais managers (supprimés inclus). On résout
+  // aussi leurs noms — SANS filtrer deletedAt — sinon le front retombe sur l'UUID tronqué.
+  const distributorIds = new Set<string>([
+    ...blindSpotsByManagerRaw.map((r) => r.managerId),
+    ...equityByManagerRaw.map((r) => r.managerId),
+    ...velocityByManager.map((r) => r.managerId),
+  ]);
+  const distributorUsers = distributorIds.size
+    ? await prisma.user.findMany({
+        where: { id: { in: [...distributorIds] } },
+        select: { id: true, firstName: true, lastName: true, email: true, role: true },
+      })
+    : [];
+  const isManager = new Set(distributorUsers.filter((u) => u.role === 'MANAGER').map((u) => u.id));
+  const managerNames: Record<string, string> = {};
+  for (const u of distributorUsers) {
+    if (!isManager.has(u.id)) continue; // patron exclu de l'affichage « par manager »
+    managerNames[u.id] = `${u.firstName ?? ''} ${u.lastName ?? ''}`.trim() || u.email;
+  }
+  // On ne garde que les vrais managers dans les agrégats issus des attributions
+  // (la vélocité vient des allocations : déjà 100 % managers).
+  const blindSpotsByManager = blindSpotsByManagerRaw.filter((r) => isManager.has(r.managerId));
+  const equityByManager = equityByManagerRaw.filter((r) => isManager.has(r.managerId));
 
   // 6) leaderboardByMotif (bump v1.2) — top 3 employés par motif (« le meilleur dans quoi »), OWNER only.
   // Réutilise motifByEmployee (déjà chargé pour topMotifTag) : aucune requête supplémentaire.
@@ -178,6 +204,7 @@ export async function getStats(companyId: string, filters: StatsFilters): Promis
     blindSpotsByManager,
     equityByManager,
     velocityByManager,
+    managerNames,
     leaderboardByMotif,
     evolution,
   };

@@ -83,9 +83,6 @@ const C = {
   chipOk:
     'inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-primo-success-soft px-2.5 py-1 text-[0.74rem] font-semibold text-primo-success',
   chipCloud: 'flex flex-wrap gap-1.5',
-  // Angles morts par manager
-  bsmRow: `flex items-start gap-3 px-1 py-2.5 ${DIVIDER}`,
-  bsmName: 'min-w-[130px] pt-0.5 font-bold text-primo-ink',
   // Équité
   eqRow: `px-1 py-2.5 ${DIVIDER}`,
   eqHead: 'grid grid-cols-[130px_1fr_auto] items-center gap-2.5',
@@ -263,6 +260,92 @@ function EvolutionSection({ evolution, evoMotif, onMotif, evoEmployee, onEmploye
 
 // Tableau de bord statistiques employeur (§3.2/§3.4) — OWNER only.
 export default function StatsPage({ onLogout, onBack, onNavTab }: StatsPageProps) {
+
+  const [stats, setStats] = useState<StatsResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  // Référentiels (chargés une fois) pour résoudre id → nom et tag → libellé.
+  const [empName, setEmpName] = useState<Map<string, string>>(new Map());
+  const [mgrName, setMgrName] = useState<Map<string, string>>(new Map());
+  const [motifLabel, setMotifLabel] = useState<Map<string, string>>(new Map());
+
+  // Filtres période (bornes sur la date d'attribution).
+  const [from, setFrom] = useState('');
+  const [to, setTo] = useState('');
+  // Sélections de la courbe d'évolution (motif affiché + employé ciblé).
+  const [evoEmployee, setEvoEmployee] = useState('');
+  const [evoMotif, setEvoMotif] = useState('');
+  // Manager choisi dans la section « Angles morts » ('' = premier de la liste).
+  const [bsMgr, setBsMgr] = useState('');
+
+  const nameOfEmp = (id: string) => empName.get(id) ?? `${id.slice(0, 8)}…`;
+  const nameOfMgr = (id: string) => stats?.managerNames?.[id] ?? mgrName.get(id) ?? empName.get(id) ?? `${id.slice(0, 8)}…`;
+  const labelOf = (tag: string) => motifLabel.get(tag) ?? tag;
+
+  const loadStats = async (params?: { from?: string; to?: string; employeeId?: string }) => {
+    setLoading(true);
+    setError('');
+    try {
+      const res = await getStats(params);
+      if (res.status === 401) { setError('Session expirée, reconnecte-toi.'); return; }
+      if (res.status === 403) { setError('Accès réservé au patron.'); return; }
+      if (!res.ok || !res.data) { setError('Impossible de charger les statistiques.'); return; }
+      setStats(res.data);
+    } catch {
+      setError('Impossible de joindre le serveur. Le backend est-il lancé ?');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Référentiels + premières stats au montage.
+  useEffect(() => {
+    (async () => {
+      const [empRes, mgrRes, motifRes] = await Promise.all([
+        listEmployees(),
+        listManagers(),
+        listMotifs(),
+      ]);
+      if (empRes.ok && empRes.data) {
+        setEmpName(new Map(empRes.data.employees.map((e: Employee) => [e.id, `${e.firstName} ${e.lastName}`])));
+      }
+      if (mgrRes.ok && mgrRes.data) {
+        setMgrName(new Map(mgrRes.data.managers.map((m: CompanyManager) =>
+          [m.id, `${m.firstName ?? ''} ${m.lastName ?? ''}`.trim() || m.email])));
+      }
+      if (motifRes.ok && motifRes.data) {
+        const map = new Map<string, string>();
+        for (const cat of motifRes.data.categories)
+          for (const mo of cat.motifs) map.set(mo.tag, mo.label);
+        setMotifLabel(map);
+      }
+    })().catch(() => { /* la résolution des noms restera partielle */ });
+    loadStats();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const paramsWith = (employeeId: string) => ({
+    ...(from ? { from } : {}),
+    ...(to ? { to } : {}),
+    ...(employeeId ? { employeeId } : {}),
+  });
+
+  const applyFilters = () => loadStats(paramsWith(evoEmployee));
+
+  const resetFilters = () => {
+    setFrom('');
+    setTo('');
+    setEvoEmployee('');
+    loadStats();
+  };
+
+  // L'employé ne change que la courbe d'évolution (re-fetch scopé sur lui).
+  const selectEvoEmployee = (id: string) => {
+    setEvoEmployee(id);
+    loadStats(paramsWith(id));
+  };
+
   const {
     stats, loading, error,
     empName, evoMotif, evoEmployee, from, to,
@@ -270,6 +353,7 @@ export default function StatsPage({ onLogout, onBack, onNavTab }: StatsPageProps
     loadStats, applyFilters, resetFilters, selectEvoEmployee,
     setFrom, setTo, setEvoMotif,
   } = useStats();
+
 
   return (
     <Layout
@@ -399,39 +483,34 @@ export default function StatsPage({ onLogout, onBack, onNavTab }: StatsPageProps
                 )}
               </section>
 
-              {/* ── Angles morts ── */}
+              {/* ── Angles morts : motifs jamais utilisés par le manager choisi ── */}
               <section className={C.section}>
                 <h2 className={C.title}><Icon name="alert" size={18} className="text-primo-warn-strong" /> Angles morts <small>(motifs jamais utilisés)</small></h2>
-                {stats.blindSpots.length === 0 ? (
-                  <p className={C.msg}>Aucun angle mort : tous les motifs ont été utilisés.</p>
-                ) : (
-                  <div className={C.chipCloud}>
-                    {stats.blindSpots.map((tag) => <span className={C.chipWarn} key={tag}>{labelOf(tag)}</span>)}
-                  </div>
-                )}
-              </section>
-
-              {/* ── Angles morts PAR manager ── */}
-              <section className={C.section}>
-                <h2 className={C.title}><Icon name="alert" size={18} className="text-primo-warn-strong" /> Angles morts par manager <small>(motifs jamais utilisés)</small></h2>
                 {stats.blindSpotsByManager.length === 0 ? (
                   <p className={C.msg}>Aucune distribution par un manager sur la période.</p>
-                ) : (
-                  <ul className={C.list}>
-                    {stats.blindSpotsByManager.map((m) => (
-                      <li className={C.bsmRow} key={m.managerId}>
-                        <span className={C.bsmName}>{nameOfMgr(m.managerId)}</span>
-                        {m.tags.length === 0 ? (
-                          <span className={C.chipOk}><Icon name="check" size={13} strokeWidth={2.4} /> couvre tous les motifs</span>
-                        ) : (
-                          <span className={C.chipCloud}>
-                            {m.tags.map((tag) => <span className={C.chipWarn} key={tag}>{labelOf(tag)}</span>)}
-                          </span>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                )}
+                ) : (() => {
+                  const sel = stats.blindSpotsByManager.find((m) => m.managerId === bsMgr) ?? stats.blindSpotsByManager[0];
+                  return (
+                    <>
+                      <div className={C.evoControls}>
+                        <label>Manager&nbsp;
+                          <select value={sel.managerId} onChange={(e) => setBsMgr(e.target.value)}>
+                            {stats.blindSpotsByManager.map((m) => (
+                              <option key={m.managerId} value={m.managerId}>{nameOfMgr(m.managerId)}</option>
+                            ))}
+                          </select>
+                        </label>
+                      </div>
+                      {sel.tags.length === 0 ? (
+                        <span className={C.chipOk}><Icon name="check" size={13} strokeWidth={2.4} /> couvre tous les motifs</span>
+                      ) : (
+                        <div className={C.chipCloud}>
+                          {sel.tags.map((tag) => <span className={C.chipWarn} key={tag}>{labelOf(tag)}</span>)}
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
               </section>
 
               {/* ── Équité : concentration + qui le manager priorise ── */}
