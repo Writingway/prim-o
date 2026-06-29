@@ -29,8 +29,12 @@ export function useStats() {
   const [evoEmployee, setEvoEmployee] = useState('');
   const [evoMotif, setEvoMotif] = useState('');
 
-  const nameOfEmp = (id: string) => empName.get(id) ?? `${id.slice(0, 8)}…`;
-  const nameOfMgr = (id: string) => mgrName.get(id) ?? empName.get(id) ?? `${id.slice(0, 8)}…`;
+  // Repli neutre quand le nom est inconnu : on n'expose JAMAIS l'identifiant.
+  // `stats.managerNames` (fourni par le backend) couvre aussi le patron qui
+  // attribue directement, sans quoi il apparaîtrait « Manager inconnu ».
+  const nameOfEmp = (id: string) => empName.get(id) ?? 'Employé inconnu';
+  const nameOfMgr = (id: string) =>
+    stats?.managerNames?.[id] ?? mgrName.get(id) ?? empName.get(id) ?? 'Manager inconnu';
   const labelOf = (tag: string) => motifLabel.get(tag) ?? tag;
 
   const loadStats = async (params?: { from?: string; to?: string; employeeId?: string }) => {

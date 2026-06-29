@@ -43,9 +43,12 @@ function Row({ icon, label, onClick }: { icon: IconName; label: string; onClick:
 type EditProfileProps = {
   // Rafraîchit l'avatar du hero du dashboard en direct après enregistrement.
   onPhotoChange?: (photo: string | null) => void;
+  // Prévient le parent de l'ouverture/fermeture du formulaire d'édition
+  // (ex. masquer la section Confidentialité pendant l'édition).
+  onEditingChange?: (editing: boolean) => void;
 };
 
-export default function EditProfile({ onPhotoChange }: EditProfileProps) {
+export default function EditProfile({ onPhotoChange, onEditingChange }: EditProfileProps) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
@@ -73,6 +76,11 @@ export default function EditProfile({ onPhotoChange }: EditProfileProps) {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     load();
   }, []);
+
+  // Tient le parent informé de l'état d'édition (pour masquer la Confidentialité).
+  useEffect(() => {
+    onEditingChange?.(editing);
+  }, [editing, onEditingChange]);
 
   const startEdit = () => {
     if (!profile) return;

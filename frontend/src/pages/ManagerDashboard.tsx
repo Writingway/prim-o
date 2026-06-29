@@ -47,6 +47,8 @@ export default function ManagerDashboard({ onLogout, firstName, profilePhoto }: 
   const { confirm, confirmDialog } = useConfirm();
   // Avatar du hero, maj en direct depuis le profil.
   const [heroPhoto, setHeroPhoto] = useState<string | null>(profilePhoto ?? null);
+  // Masque la section Confidentialité pendant l'édition du profil.
+  const [editingProfile, setEditingProfile] = useState(false);
   const heroInitials = (firstName?.[0] ?? '?').toUpperCase();
   const [employees, setEmployees] = useState<Employee[] | null>(null);
   const [company, setCompany] = useState<Company | null>(null);
@@ -395,8 +397,8 @@ export default function ManagerDashboard({ onLogout, firstName, profilePhoto }: 
         {/* ── Onglet Profil ── */}
         {activeTab === 'profil' && (
           <>
-            <EditProfile onPhotoChange={setHeroPhoto} />
-            <PrivacySection onAccountDeleted={onLogout} />
+            <EditProfile onPhotoChange={setHeroPhoto} onEditingChange={setEditingProfile} />
+            {!editingProfile && <PrivacySection onAccountDeleted={onLogout} />}
             <button
               type="button"
               className="mt-2.5 flex w-full items-center justify-center gap-2.5 rounded-[14px] border-[1.5px] border-primo-error-line bg-white px-4 py-3.5 text-[15px] font-bold text-primo-error hover:bg-primo-error-soft lg:hidden"
