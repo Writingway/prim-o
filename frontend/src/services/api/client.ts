@@ -6,6 +6,13 @@ const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 export type ApiResult<T = unknown> = { ok: boolean; status: number; data: T | null };
 
+// Construit l'URL d'un asset servi par le backend (ex. photo d'offre).
+// Le backend renvoie un chemin relatif « /uploads/… » ; on le préfixe par
+// l'origine de l'API (proxifiée par Vite en dev).
+export function assetUrl(path: string): string {
+  return `${API_URL}${path}`;
+}
+
 // ─── Propriété du token ──────────────────────────────────────────
 // client.ts est propriétaire de l'accessToken (en mémoire uniquement,
 // jamais en localStorage). App le pose au login, refresh() le
@@ -29,8 +36,11 @@ export function registerSessionExpired(cb: () => void): void {
 // On ne jette pas d'exception sur les erreurs HTTP : on renvoie le statut
 // pour que les formulaires affichent le bon message (400, 404, 409...).
 async function rawRequest<T = unknown>(method: string, path: string, body?: unknown): Promise<ApiResult<T>> {
+  // FormData (upload de fichier) : on NE pose PAS de Content-Type, le navigateur
+  // génère « multipart/form-data; boundary=… » lui-même.
+  const isForm = body instanceof FormData;
   const headers: Record<string, string> = {};
-  if (body !== undefined) headers['Content-Type'] = 'application/json';
+  if (body !== undefined && !isForm) headers['Content-Type'] = 'application/json';
   if (currentToken) headers.Authorization = `Bearer ${currentToken}`;
 
   const res = await fetch(`${API_URL}${path}`, {
@@ -42,7 +52,7 @@ async function rawRequest<T = unknown>(method: string, path: string, body?: unkn
     // backend répond 304 sans corps → res.ok=false, data=null → faux "Impossible
     // de charger". On veut toujours un 200 + corps frais sur une API authentifiée.
     cache: 'no-store',
-    body: body === undefined ? undefined : JSON.stringify(body),
+    body: body === undefined ? undefined : isForm ? body : JSON.stringify(body),
   });
 
   let data: T | null = null;

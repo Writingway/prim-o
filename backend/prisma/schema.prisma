@@ -297,6 +297,7 @@ model PartnerOffer {
   cost        Int                              // prix en tokens
   discountPercent  Int
   categoryId  String        @db.Uuid
+  imageUrl    String?                          // photo uploadée (chemin /uploads/offers/…) ; null = vignette catégorie
   isActive    Boolean       @default(true)
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt

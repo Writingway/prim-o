@@ -2,7 +2,7 @@
 // Le découpage par domaine est interne ; les composants ne changent pas.
 
 export type { ApiResult } from "./client";
-export { setAccessToken, registerSessionExpired, refresh } from "./client";
+export { setAccessToken, registerSessionExpired, refresh, assetUrl } from "./client";
 
 export * from "./auth";
 export * from "./offers";

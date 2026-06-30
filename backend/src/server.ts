@@ -5,6 +5,7 @@ import cors from 'cors';
 import rateLimit from 'express-rate-limit';
 import morgan from 'morgan';
 import { config } from './config';
+import { UPLOADS_DIR } from './lib/upload';
 import { errorHandler } from './middleware/error.middleware';
 import authRouter from './routes/auth.routes';
 import employeeRouter from './routes/employee.routes';
@@ -67,6 +68,10 @@ app.use(cookieParser());
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', env: config.NODE_ENV });
 });
+
+// Fichiers uploadés (photos d'offres) servis en statique. Public (vitrine landing).
+// Sous /api/uploads pour passer par le proxy Vite en dev (qui ne route que /api).
+app.use('/api/uploads', express.static(UPLOADS_DIR));
 
 app.use('/api/auth', authRouter);
 app.use('/api/me', privacyRouter);

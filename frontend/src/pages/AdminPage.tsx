@@ -17,6 +17,7 @@ import { usePromoCodes } from '@/hooks/usePromoCodes';
 import { HEADER_BTN_GHOST, HEADER_BTN_ICON, HEADER_BTN_ICON_DANGER } from '@/components/layout/headerButtons';
 import AdminOverview from '@/components/admin/AdminOverview';
 import AdminCategories from '@/components/admin/AdminCategories';
+import OfferImageField from '@/components/admin/OfferImageField';
 import { listAdminCategories } from '@/services/api/categories';
 import {
   ADMIN_ACTIONS,
@@ -235,6 +236,14 @@ export default function AdminPage({ onLogout, onBack }: AdminPageProps) {
                       ))}
                     </select>
                   </label>
+                </div>
+                <div className="mt-4">
+                  <OfferImageField
+                    imageFile={offerForm.imageFile}
+                    currentImageUrl={offerForm.currentImageUrl}
+                    onPick={offerForm.pickImage}
+                    onClear={offerForm.clearImage}
+                  />
                 </div>
                 {offerForm.formError && <p className={ADMIN_FORM_ERROR}>{offerForm.formError}</p>}
                 <div className={ADMIN_FORM_ACTIONS}>

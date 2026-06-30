@@ -24,3 +24,14 @@ export const updateOffer = (offerId: string, payload: Partial<OfferWritePayload>
 // Désactive une offre (soft delete, admin).
 export const deactivateOffer = (offerId: string) =>
   authRequest<{ offer: Offer }>('DELETE', `/admin/offers/${offerId}`);
+
+// Upload de la photo d'une offre (admin). Multipart : champ « image ».
+export const uploadOfferImage = (offerId: string, file: File) => {
+  const form = new FormData();
+  form.append('image', file);
+  return authRequest<{ offer: Offer }>('PATCH', `/admin/offers/${offerId}/image`, form);
+};
+
+// Retire la photo d'une offre (admin).
+export const deleteOfferImage = (offerId: string) =>
+  authRequest<{ offer: Offer }>('DELETE', `/admin/offers/${offerId}/image`);
