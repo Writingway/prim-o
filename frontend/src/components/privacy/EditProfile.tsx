@@ -6,7 +6,8 @@ import type { IconName } from '../ui/Icon';
 import ProfileAvatar from '../ui/ProfileAvatar';
 import { AVATARS, type AvatarKey } from '../../lib/avatars';
 
-// Profil employé (cf. README B4) : en-tête avatar + badges, puis lignes de réglages.
+// Profil employé (cf. README B4) : en-tête avatar + badges, puis lignes de
+// réglages dépliables (accordéon, même pattern que « Confidentialité & données »).
 const CARD = 'rounded-2xl border border-primo-line bg-white';
 const FIELD = 'flex flex-col gap-[5px]';
 const LABEL = 'text-[13px] font-semibold text-primo-slate';
@@ -20,6 +21,8 @@ const ROW =
   'flex w-full items-center gap-3 rounded-2xl border border-primo-line bg-white px-4 py-3.5 text-left transition hover:bg-primo-surface';
 const ROW_ICON =
   'flex h-9 w-9 flex-none items-center justify-center rounded-[10px] bg-primo-mint text-primo-teal-strong';
+// Panneau dépliable sous une ligne (même style que PrivacySection).
+const PANEL = 'mt-2.5 rounded-2xl border border-primo-line bg-white px-4 py-4';
 
 type Profile = {
   email: string;
@@ -29,14 +32,32 @@ type Profile = {
   profilePhoto: string | null;
 };
 
-function Row({ icon, label, onClick }: { icon: IconName; label: string; onClick: () => void }) {
+// Quelle ligne du profil est dépliée (une seule à la fois).
+type OpenSection = 'profile' | 'password' | null;
+
+// Ligne-bouton d'accordéon : chevron qui pivote quand le panneau est ouvert.
+function AccordionRow({
+  icon,
+  label,
+  open,
+  onClick,
+}: {
+  icon: IconName;
+  label: string;
+  open: boolean;
+  onClick: () => void;
+}) {
   return (
-    <button className={ROW} type="button" onClick={onClick}>
+    <button className={ROW} type="button" onClick={onClick} aria-expanded={open}>
       <span className={ROW_ICON}>
         <Icon name={icon} size={19} />
       </span>
       <span className="flex-1 text-[15px] font-semibold text-primo-ink">{label}</span>
-      <Icon name="chevron-right" size={20} className="flex-none text-primo-muted" />
+      <Icon
+        name="chevron-down"
+        size={20}
+        className={`flex-none text-primo-muted transition-transform ${open ? 'rotate-180' : ''}`}
+      />
     </button>
   );
 }
@@ -44,15 +65,13 @@ function Row({ icon, label, onClick }: { icon: IconName; label: string; onClick:
 type EditProfileProps = {
   // Rafraîchit l'avatar du hero du dashboard en direct après enregistrement.
   onPhotoChange?: (photo: string | null) => void;
-  // Prévient le parent de l'ouverture/fermeture du formulaire d'édition
-  // (ex. masquer la section Confidentialité pendant l'édition).
-  onEditingChange?: (editing: boolean) => void;
 };
 
-export default function EditProfile({ onPhotoChange, onEditingChange }: EditProfileProps) {
+export default function EditProfile({ onPhotoChange }: EditProfileProps) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [editing, setEditing] = useState(false);
+  // Section dépliée (accordéon). 'profile' = formulaire d'édition, 'password' = reset.
+  const [openSection, setOpenSection] = useState<OpenSection>(null);
   // Avatar choisi dans le formulaire d'édition (enregistré avec « Enregistrer »).
   const [editPhoto, setEditPhoto] = useState<AvatarKey | null>(null);
 
@@ -63,6 +82,7 @@ export default function EditProfile({ onPhotoChange, onEditingChange }: EditProf
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [pwdSending, setPwdSending] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -76,19 +96,24 @@ export default function EditProfile({ onPhotoChange, onEditingChange }: EditProf
     load();
   }, []);
 
-  // Tient le parent informé de l'état d'édition (pour masquer la Confidentialité).
-  useEffect(() => {
-    onEditingChange?.(editing);
-  }, [editing, onEditingChange]);
-
-  const startEdit = () => {
+  // Ouvre/ferme le formulaire d'édition. À l'ouverture, pré-remplit les champs.
+  const toggleProfile = () => {
+    if (openSection === 'profile') {
+      setOpenSection(null);
+      return;
+    }
     if (!profile) return;
     setFirstName(profile.firstName ?? '');
     setLastName(profile.lastName ?? '');
     setEmail(profile.email);
     setEditPhoto((profile.profilePhoto as AvatarKey | null) ?? null);
     setError('');
-    setEditing(true);
+    setOpenSection('profile');
+  };
+
+  // Ouvre/ferme le panneau mot de passe (l'email part sur clic explicite du bouton).
+  const togglePassword = () => {
+    setOpenSection((s) => (s === 'password' ? null : 'password'));
   };
 
   const handleSave = async () => {
@@ -102,7 +127,7 @@ export default function EditProfile({ onPhotoChange, onEditingChange }: EditProf
     if (editPhoto !== (profile.profilePhoto ?? null)) payload.profilePhoto = editPhoto;
 
     if (Object.keys(payload).length === 0) {
-      setEditing(false); // rien n'a changé → on referme simplement
+      setOpenSection(null); // rien n'a changé → on referme simplement
       return;
     }
 
@@ -112,7 +137,7 @@ export default function EditProfile({ onPhotoChange, onEditingChange }: EditProf
       const res = await updateMyProfile(payload);
       if (res.ok && res.data && 'profile' in res.data) {
         setProfile(res.data.profile);
-        setEditing(false);
+        setOpenSection(null);
         onPhotoChange?.(res.data.profile.profilePhoto);
         toast.success(
           payload.email
@@ -137,6 +162,7 @@ export default function EditProfile({ onPhotoChange, onEditingChange }: EditProf
   // (lien par mail). On ne modifie jamais le mot de passe en direct ici.
   const handlePasswordReset = async () => {
     if (!profile) return;
+    setPwdSending(true);
     try {
       const res = await forgotPassword(profile.email);
       if (!res.ok) {
@@ -146,6 +172,8 @@ export default function EditProfile({ onPhotoChange, onEditingChange }: EditProf
       toast.success("Un email de réinitialisation t'a été envoyé. Vérifie ta boîte mail.");
     } catch {
       toast.error('Impossible de joindre le serveur.');
+    } finally {
+      setPwdSending(false);
     }
   };
 
@@ -175,81 +203,13 @@ export default function EditProfile({ onPhotoChange, onEditingChange }: EditProf
   const fullName =
     [profile.firstName, profile.lastName].filter(Boolean).join(' ') || 'Mon profil';
 
-  if (editing) {
-    return (
-      <section className={`${CARD} mb-3.5 p-5`}>
-        <h2 className="mb-4 text-base font-bold text-primo-ink">Modifier mon profil</h2>
-        <div className="flex flex-col gap-3">
-          <div className={FIELD}>
-            <label className={LABEL} htmlFor="edit-firstName">Prénom</label>
-            <input id="edit-firstName" className={INPUT} type="text" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
-          </div>
-          <div className={FIELD}>
-            <label className={LABEL} htmlFor="edit-lastName">Nom</label>
-            <input id="edit-lastName" className={INPUT} type="text" value={lastName} onChange={(e) => setLastName(e.target.value)} />
-          </div>
-          <div className={FIELD}>
-            <label className={LABEL} htmlFor="edit-email">Email</label>
-            <input id="edit-email" className={INPUT} type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-          </div>
-
-          {/* Photo de profil : avatars prédéfinis (ou initiales). */}
-          <div className={FIELD}>
-            <label className={LABEL}>Photo de profil</label>
-            <div className="grid grid-cols-4 gap-2.5 sm:grid-cols-7">
-              {AVATARS.map((a) => (
-                <button
-                  key={a.key}
-                  type="button"
-                  onClick={() => setEditPhoto(a.key)}
-                  className={`relative rounded-full transition ${
-                    editPhoto === a.key ? 'ring-2 ring-primo-teal ring-offset-2' : 'hover:opacity-90'
-                  }`}
-                  aria-label={`Avatar ${a.key}`}
-                >
-                  <ProfileAvatar photo={a.key} size={52} className="w-full" />
-                  {editPhoto === a.key && (
-                    <span className="absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-primo-teal text-white ring-2 ring-white">
-                      <Icon name="check" size={12} strokeWidth={2.6} />
-                    </span>
-                  )}
-                </button>
-              ))}
-              {/* Retour aux initiales */}
-              <button
-                type="button"
-                onClick={() => setEditPhoto(null)}
-                className={`rounded-full transition ${
-                  !editPhoto ? 'ring-2 ring-primo-teal ring-offset-2' : 'hover:opacity-90'
-                }`}
-                aria-label="Initiales (aucun avatar)"
-              >
-                <ProfileAvatar photo={null} initials={initials} size={52} className="w-full" />
-              </button>
-            </div>
-          </div>
-
-          <div className="mt-1 flex flex-wrap gap-2.5">
-            <button className={BTN_PRIMARY} type="button" onClick={handleSave} disabled={saving}>
-              {saving ? 'Enregistrement…' : 'Enregistrer'}
-            </button>
-            <button className={BTN_SECONDARY} type="button" onClick={() => setEditing(false)} disabled={saving}>
-              Annuler
-            </button>
-          </div>
-          {error && <p className="mt-1 text-[13px] text-primo-error">{error}</p>}
-        </div>
-      </section>
-    );
-  }
-
   return (
     <section className="mb-3.5">
-      {/* En-tête profil */}
+      {/* En-tête profil (toujours visible) */}
       <div className="mb-4 flex flex-col items-center text-center">
         <button
           type="button"
-          onClick={startEdit}
+          onClick={toggleProfile}
           className="relative rounded-full outline-none focus-visible:ring-2 focus-visible:ring-primo-teal focus-visible:ring-offset-2"
           aria-label="Modifier mon profil"
         >
@@ -280,10 +240,102 @@ export default function EditProfile({ onPhotoChange, onEditingChange }: EditProf
         </div>
       </div>
 
-      {/* Lignes de réglages */}
+      {/* Lignes de réglages (accordéon) */}
       <div className="flex flex-col gap-2.5">
-        <Row icon="settings" label="Modifier mon profil" onClick={startEdit} />
-        <Row icon="lock" label="Mot de passe" onClick={handlePasswordReset} />
+        {/* ── Modifier mon profil ── */}
+        <div>
+          <AccordionRow
+            icon="settings"
+            label="Modifier mon profil"
+            open={openSection === 'profile'}
+            onClick={toggleProfile}
+          />
+          {openSection === 'profile' && (
+            <div className={PANEL}>
+              <div className="flex flex-col gap-3">
+                <div className={FIELD}>
+                  <label className={LABEL} htmlFor="edit-firstName">Prénom</label>
+                  <input id="edit-firstName" className={INPUT} type="text" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+                </div>
+                <div className={FIELD}>
+                  <label className={LABEL} htmlFor="edit-lastName">Nom</label>
+                  <input id="edit-lastName" className={INPUT} type="text" value={lastName} onChange={(e) => setLastName(e.target.value)} />
+                </div>
+                <div className={FIELD}>
+                  <label className={LABEL} htmlFor="edit-email">Email</label>
+                  <input id="edit-email" className={INPUT} type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+                </div>
+
+                {/* Photo de profil : avatars prédéfinis (ou initiales). */}
+                <div className={FIELD}>
+                  <label className={LABEL}>Photo de profil</label>
+                  <div className="grid grid-cols-4 gap-2.5 sm:grid-cols-7">
+                    {AVATARS.map((a) => (
+                      <button
+                        key={a.key}
+                        type="button"
+                        onClick={() => setEditPhoto(a.key)}
+                        className={`relative rounded-full transition ${
+                          editPhoto === a.key ? 'ring-2 ring-primo-teal ring-offset-2' : 'hover:opacity-90'
+                        }`}
+                        aria-label={`Avatar ${a.key}`}
+                      >
+                        <ProfileAvatar photo={a.key} size={52} className="w-full" />
+                        {editPhoto === a.key && (
+                          <span className="absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-primo-teal text-white ring-2 ring-white">
+                            <Icon name="check" size={12} strokeWidth={2.6} />
+                          </span>
+                        )}
+                      </button>
+                    ))}
+                    {/* Retour aux initiales */}
+                    <button
+                      type="button"
+                      onClick={() => setEditPhoto(null)}
+                      className={`rounded-full transition ${
+                        !editPhoto ? 'ring-2 ring-primo-teal ring-offset-2' : 'hover:opacity-90'
+                      }`}
+                      aria-label="Initiales (aucun avatar)"
+                    >
+                      <ProfileAvatar photo={null} initials={initials} size={52} className="w-full" />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="mt-1 flex flex-wrap gap-2.5">
+                  <button className={BTN_PRIMARY} type="button" onClick={handleSave} disabled={saving}>
+                    {saving ? 'Enregistrement…' : 'Enregistrer'}
+                  </button>
+                  <button className={BTN_SECONDARY} type="button" onClick={() => setOpenSection(null)} disabled={saving}>
+                    Annuler
+                  </button>
+                </div>
+                {error && <p className="mt-1 text-[13px] text-primo-error">{error}</p>}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* ── Mot de passe ── */}
+        <div>
+          <AccordionRow
+            icon="lock"
+            label="Mot de passe"
+            open={openSection === 'password'}
+            onClick={togglePassword}
+          />
+          {openSection === 'password' && (
+            <div className={PANEL}>
+              <p className="mb-3 text-[13px] text-primo-gray">
+                Pour changer ton mot de passe, on t'envoie un lien de réinitialisation
+                sécurisé par email. Tu choisiras ton nouveau mot de passe depuis ce lien.
+              </p>
+              <button className={BTN_PRIMARY} type="button" onClick={handlePasswordReset} disabled={pwdSending}>
+                {pwdSending ? 'Envoi…' : 'Envoyer le lien de réinitialisation'}
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </section>
   );

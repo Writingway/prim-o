@@ -26,6 +26,11 @@ yarn-error.log*
 backend/src/generated/
 backend/prisma/*.db
 
+# Fichiers uploadés au runtime (photos d'offres) : on garde l'arborescence
+# (le .gitkeep) mais jamais le contenu uploadé.
+backend/uploads/offers/*
+!backend/uploads/offers/.gitkeep
+
 # Coverage / tests
 coverage/
 

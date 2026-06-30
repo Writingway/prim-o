@@ -16,6 +16,8 @@ export type Offer = {
   discountPercent: number;
   category: Category;
   isActive: boolean;
+  // Photo uploadée par l'admin (chemin /uploads/offers/…) ; null/absent = vignette catégorie.
+  imageUrl?: string | null;
   // Stock de codes promo (présent uniquement dans la liste admin).
   availableCodes?: number;
   usedCodes?: number;

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { listOffers, redeemOffer } from '@/services/api';
+import { listOffers, redeemOffer, assetUrl } from '@/services/api';
 import { listCategories } from '@/services/api/categories';
 import type { Offer, Category } from '@/types/types';
 import Icon from '@/components/ui/Icon';
@@ -27,6 +27,9 @@ type OfferCatalogProps = {
   onSeeSpending?: () => void;    // bouton « Voir mes dépenses » de la célébration
   heading?: string;
   className?: string;            // espacement géré par le parent (landing vs dashboard)
+  // Landing : sur desktop (≥ lg), grandes cartes carrées en 3 colonnes. Le mobile
+  // garde le format compact dans tous les cas.
+  largeDesktopCards?: boolean;
 };
 
 export default function OfferCatalog({
@@ -36,6 +39,7 @@ export default function OfferCatalog({
   onSeeSpending,
   heading = 'Offres partenaires',
   className = '',
+  largeDesktopCards = false,
 }: OfferCatalogProps) {
   const { confirm, confirmDialog } = useConfirm();
   const [offers, setOffers] = useState<Offer[]>([]);
@@ -146,6 +150,15 @@ export default function OfferCatalog({
 
   const selectedMeta = selected?.category ?? null;
 
+  // Landing desktop : 3 colonnes + vignette carrée (cartes plus grandes). Mobile
+  // inchangé. Sinon : grille compacte d'origine (espace employé).
+  const gridClass = largeDesktopCards
+    ? 'grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-3 lg:gap-5'
+    : 'grid grid-cols-1 gap-3.5 sm:grid-cols-2 xl:grid-cols-3';
+  const visualClass = largeDesktopCards
+    ? 'h-[104px] w-full lg:h-auto lg:aspect-square'
+    : 'h-[104px] w-full';
+
   return (
     <>
       <section className={className} aria-label={heading}>
@@ -192,10 +205,10 @@ export default function OfferCatalog({
           // Squelette : on annonce la vitrine plutôt qu'un texte gris.
           <div className="mt-6">
             <div className="h-[168px] w-full animate-pulse rounded-[24px] bg-primo-line/70" />
-            <div className="mt-5 grid grid-cols-1 gap-3.5 sm:grid-cols-2 xl:grid-cols-3">
+            <div className={`mt-5 ${gridClass}`}>
               {[0, 1, 2, 3].map((i) => (
                 <div key={i} className="animate-pulse overflow-hidden rounded-[22px] border border-primo-line bg-white">
-                  <div className="h-[104px] bg-primo-line/70" />
+                  <div className={largeDesktopCards ? 'h-[104px] bg-primo-line/70 lg:h-auto lg:aspect-square' : 'h-[104px] bg-primo-line/70'} />
                   <div className="space-y-2 p-3.5">
                     <div className="h-3.5 w-3/4 rounded bg-primo-line/70" />
                     <div className="h-3 w-1/3 rounded bg-primo-line/70" />
@@ -239,7 +252,7 @@ export default function OfferCatalog({
                   onClick={() => openDetail(featured)}
                   className="group relative mt-6 block w-full overflow-hidden rounded-[26px] text-left shadow-[0_22px_50px_-22px_rgba(6,48,45,0.55)] outline-none transition-transform duration-300 hover:-translate-y-1 focus-visible:ring-2 focus-visible:ring-primo-teal focus-visible:ring-offset-2"
                 >
-                  <CategoryVisual meta={meta} className="aspect-[16/9] w-full sm:aspect-[21/8]" watermark={220} />
+                  <CategoryVisual meta={meta} className="aspect-[16/9] w-full sm:aspect-[21/8]" watermark={220} imageUrl={featured.imageUrl} />
                   {/* Voile sombre en bas pour asseoir le texte sur l'image. */}
                   <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-black/15 to-transparent" />
 
@@ -267,7 +280,7 @@ export default function OfferCatalog({
             })()}
 
             {/* Toutes les offres (paginées par paquets de PAGE_SIZE) */}
-            <div className="mt-6 grid grid-cols-1 gap-3.5 sm:grid-cols-2 xl:grid-cols-3">
+            <div className={`mt-6 ${gridClass}`}>
               {gridOffers.slice(0, visible).map((o, i) => {
                 const meta = o.category ?? { icon: 'gift', color: '#00a19a', label: '' };
                 return (
@@ -281,7 +294,7 @@ export default function OfferCatalog({
                     className="group flex animate-offer-in cursor-pointer flex-col overflow-hidden rounded-[22px] border border-primo-line bg-white outline-none transition-all duration-300 hover:-translate-y-1 hover:border-transparent hover:shadow-[0_18px_38px_-16px_rgba(6,48,45,0.32)] focus-visible:ring-2 focus-visible:ring-primo-teal focus-visible:ring-offset-2"
                   >
                     <div className="relative">
-                      <CategoryVisual meta={meta} className="h-[104px] w-full" watermark={108} avatar={32} />
+                      <CategoryVisual meta={meta} className={visualClass} watermark={108} avatar={32} imageUrl={o.imageUrl} />
                       {o.discountPercent > 0 && (
                         <DiscountBadge percent={o.discountPercent} className="absolute right-2.5 top-2.5" />
                       )}
@@ -339,6 +352,7 @@ export default function OfferCatalog({
               className="flex h-[88px] w-[88px] items-center justify-center rounded-[26px] shadow-[0_14px_30px_-12px_rgba(6,48,45,0.4)]"
               watermark={96}
               avatar={44}
+              imageUrl={selected.imageUrl}
             />
             <h3 className="mt-[18px] text-[26px] font-extrabold tracking-[-0.02em] text-primo-ink">
               {selected.partnerName}
@@ -496,12 +510,24 @@ function CategoryVisual({
   className = '',
   watermark = 84,
   avatar = 0,
+  imageUrl,
 }: {
   meta: { icon: string; grad?: string; color?: string };
   className?: string;
   watermark?: number;
   avatar?: number;
+  imageUrl?: string | null;
 }) {
+  // Photo uploadée (déjà recadrée carré par l'admin) : `object-cover` la fait
+  // remplir n'importe quel cadre (carré, bannière, mini) sans déformation.
+  if (imageUrl) {
+    return (
+      <div className={`relative overflow-hidden bg-primo-line ${className}`}>
+        <img src={assetUrl(imageUrl)} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover" />
+      </div>
+    );
+  }
+
   const bgStyle = meta.color
     ? { background: `linear-gradient(135deg, ${meta.color}dd 0%, ${meta.color}88 100%)` }
     : undefined;

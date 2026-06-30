@@ -50,8 +50,6 @@ export default function EmployeeDashboard({ onLogout, firstName, profilePhoto }:
   const [tab, setTab] = useState<EmployeeTab>('historique');
   // Avatar du hero, maj en direct quand on l'enregistre dans le profil.
   const [heroPhoto, setHeroPhoto] = useState<string | null>(profilePhoto ?? null);
-  // Masque la section Confidentialité pendant l'édition du profil.
-  const [editingProfile, setEditingProfile] = useState(false);
   const heroInitials = (firstName?.[0] ?? '?').toUpperCase();
   const [histView, setHistView] = useState<'recus' | 'depenses'>('recus');
 
@@ -140,6 +138,7 @@ export default function EmployeeDashboard({ onLogout, firstName, profilePhoto }:
               heading="Offres partenaires"
               onRedeemed={reload}
               onSeeSpending={() => setTab('codes')}
+              largeDesktopCards
             />
           )}
 
@@ -244,8 +243,8 @@ export default function EmployeeDashboard({ onLogout, firstName, profilePhoto }:
           {/* ── Onglet Profil ── */}
           {tab === 'profil' && (
             <>
-              <EditProfile onPhotoChange={setHeroPhoto} onEditingChange={setEditingProfile} />
-              {!editingProfile && <PrivacySection onAccountDeleted={onLogout} />}
+              <EditProfile onPhotoChange={setHeroPhoto} />
+              <PrivacySection onAccountDeleted={onLogout} />
               <button type="button" className={MOBILE_LOGOUT} onClick={handleLogout}>
                 <Icon name="logout" size={19} /> Se déconnecter
               </button>

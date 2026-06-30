@@ -3,6 +3,9 @@ import {
   createOfferController,
   updateOfferController,
   deactivateOfferController,
+  uploadOfferImageMiddleware,
+  uploadOfferImageController,
+  deleteOfferImageController,
 } from '../controllers/offer.controller';
 import {
   listAllCategoriesController, createCategoryController,
@@ -30,6 +33,10 @@ const router = Router();
 router.post('/offers', createOfferController);
 router.patch('/offers/:id', updateOfferController);
 router.delete('/offers/:id', deactivateOfferController);
+
+// Photo d'une offre : upload (multipart, champ « image ») / suppression.
+router.patch('/offers/:id/image', uploadOfferImageMiddleware, uploadOfferImageController);
+router.delete('/offers/:id/image', deleteOfferImageController);
 
 // Codes promo d'une offre : liste (lecture) + ajout en lot.
 router.get('/offers/:offerId/promo-codes', listPromoCodesController);
