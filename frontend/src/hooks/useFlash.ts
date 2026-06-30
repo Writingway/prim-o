@@ -1,14 +1,14 @@
-import { useState } from 'react';
+import { toast } from 'sonner';
 
 // Message de confirmation transitoire (remplace les alert() natifs).
-// Réutilisable : tout écran qui veut un toast léger « action OK ».
+// Délègue désormais au système de toast global (sonner) : affichage hors flux,
+// a11y (aria-live) et empilement gérés au même endroit. `notice` reste exposé
+// (toujours '') pour compat ascendante — les `{notice && <p>}` résiduels ne
+// rendent plus rien et peuvent être retirés écran par écran.
 export function useFlash(durationMs = 3000) {
-  const [notice, setNotice] = useState('');
-
   const flash = (msg: string) => {
-    setNotice(msg);
-    setTimeout(() => setNotice(''), durationMs);
+    toast.success(msg, { duration: durationMs });
   };
 
-  return { notice, flash };
+  return { notice: '', flash };
 }
