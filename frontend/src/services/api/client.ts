@@ -6,11 +6,12 @@ const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 export type ApiResult<T = unknown> = { ok: boolean; status: number; data: T | null };
 
-// Construit l'URL d'un asset servi par le backend (ex. photo d'offre).
-// Le backend renvoie un chemin relatif « /uploads/… » ; on le préfixe par
-// l'origine de l'API (proxifiée par Vite en dev).
+// Construit l'URL d'un asset (ex. photo d'offre). Une URL absolue (image
+// externe, ex. seed Unsplash) est renvoyée telle quelle ; un chemin relatif
+// « /uploads/… » (upload admin) est préfixé par l'origine de l'API (proxifiée
+// par Vite en dev).
 export function assetUrl(path: string): string {
-  return `${API_URL}${path}`;
+  return /^https?:\/\//.test(path) ? path : `${API_URL}${path}`;
 }
 
 // ─── Propriété du token ──────────────────────────────────────────

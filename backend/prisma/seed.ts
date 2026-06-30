@@ -208,21 +208,33 @@ async function main() {
     return id
   }
 
+  // Visuels thématiques libres de droits (Unsplash, licence sans attribution),
+  // recadrés carré pour coller au cadre des cartes du catalogue.
+  const u = (id: string) => `https://images.unsplash.com/photo-${id}?w=800&h=800&fit=crop&q=80`
+  const IMG = {
+    amazon: u('1556742049-0cfed4f6a45d'),   // colis / e-commerce
+    netflix: u('1574375927938-d5a98e8ffe85'), // cinéma / pop-corn
+    uberEats: u('1568901346375-23c9450c58cd'), // burger / repas
+    spotify: u('1511671782779-c97d3d27a1d4'),  // casque / musique
+    decathlon: u('1538805060514-97d9cc17730c'), // running / sport
+    sncf: u('1474487548417-781cb71495f3'),     // train / voyage
+  }
+
   const amazon = await prisma.partnerOffer.create({
-    data: { partnerName: 'Amazon', cost: 20, discountPercent: 50, categoryId: need('shopping'), isActive: true },
+    data: { partnerName: 'Amazon', cost: 20, discountPercent: 50, categoryId: need('shopping'), isActive: true, imageUrl: IMG.amazon },
   })
 
   const netflix = await prisma.partnerOffer.create({
-    data: { partnerName: 'Netflix', cost: 15, discountPercent: 30, categoryId: need('culture'), isActive: true },
+    data: { partnerName: 'Netflix', cost: 15, discountPercent: 30, categoryId: need('culture'), isActive: true, imageUrl: IMG.netflix },
   })
 
   // Offres supplémentaires pour étoffer la vitrine
   await prisma.partnerOffer.createMany({
     data: [
-      { partnerName: 'Uber Eats', cost: 12, discountPercent: 25, categoryId: need('food'), isActive: true },
-      { partnerName: 'Spotify', cost: 10, discountPercent: 40, categoryId: need('culture'), isActive: true },
-      { partnerName: 'Decathlon', cost: 18, discountPercent: 20, categoryId: need('wellness'), isActive: true },
-      { partnerName: 'SNCF Connect', cost: 25, discountPercent: 15, categoryId: need('travel'), isActive: true },
+      { partnerName: 'Uber Eats', cost: 12, discountPercent: 25, categoryId: need('food'), isActive: true, imageUrl: IMG.uberEats },
+      { partnerName: 'Spotify', cost: 10, discountPercent: 40, categoryId: need('culture'), isActive: true, imageUrl: IMG.spotify },
+      { partnerName: 'Decathlon', cost: 18, discountPercent: 20, categoryId: need('wellness'), isActive: true, imageUrl: IMG.decathlon },
+      { partnerName: 'SNCF Connect', cost: 25, discountPercent: 15, categoryId: need('travel'), isActive: true, imageUrl: IMG.sncf },
     ],
   })
 
