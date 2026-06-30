@@ -518,9 +518,8 @@ function CategoryVisual({
   avatar?: number;
   imageUrl?: string | null;
 }) {
-  // Photo uploadée : une seule image, `object-cover` la fait remplir n'importe
-  // quel cadre (carré, bannière, mini) sans déformation. Le cadre garde ses
-  // dimensions (className) → s'adapte à toutes les tailles de cartes.
+  // Photo uploadée (déjà recadrée carré par l'admin) : `object-cover` la fait
+  // remplir n'importe quel cadre (carré, bannière, mini) sans déformation.
   if (imageUrl) {
     return (
       <div className={`relative overflow-hidden bg-primo-line ${className}`}>

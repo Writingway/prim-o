@@ -239,7 +239,6 @@ export default function AdminPage({ onLogout, onBack }: AdminPageProps) {
                 </div>
                 <div className="mt-4">
                   <OfferImageField
-                    imageFile={offerForm.imageFile}
                     currentImageUrl={offerForm.currentImageUrl}
                     onPick={offerForm.pickImage}
                     onClear={offerForm.clearImage}
