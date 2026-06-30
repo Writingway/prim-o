@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 import { getMyProfile, updateMyProfile, forgotPassword } from '../../services/api';
 import Icon from '../ui/Icon';
 import type { IconName } from '../ui/Icon';
@@ -7,6 +8,7 @@ import { AVATARS, type AvatarKey } from '../../lib/avatars';
 
 // Profil employé (cf. README B4) : en-tête avatar + badges, puis lignes de
 // réglages dépliables (accordéon, même pattern que « Confidentialité & données »).
+const CARD = 'rounded-2xl border border-primo-line bg-white';
 const FIELD = 'flex flex-col gap-[5px]';
 const LABEL = 'text-[13px] font-semibold text-primo-slate';
 const INPUT =
@@ -80,8 +82,6 @@ export default function EditProfile({ onPhotoChange }: EditProfileProps) {
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  const [pwdMsg, setPwdMsg] = useState('');
   const [pwdSending, setPwdSending] = useState(false);
 
   const load = async () => {
@@ -108,13 +108,11 @@ export default function EditProfile({ onPhotoChange }: EditProfileProps) {
     setEmail(profile.email);
     setEditPhoto((profile.profilePhoto as AvatarKey | null) ?? null);
     setError('');
-    setSuccess('');
     setOpenSection('profile');
   };
 
   // Ouvre/ferme le panneau mot de passe (l'email part sur clic explicite du bouton).
   const togglePassword = () => {
-    setPwdMsg('');
     setOpenSection((s) => (s === 'password' ? null : 'password'));
   };
 
@@ -141,7 +139,7 @@ export default function EditProfile({ onPhotoChange }: EditProfileProps) {
         setProfile(res.data.profile);
         setOpenSection(null);
         onPhotoChange?.(res.data.profile.profilePhoto);
-        setSuccess(
+        toast.success(
           payload.email
             ? 'Profil mis à jour. Ton nouvel email devra être vérifié.'
             : 'Profil mis à jour.',
@@ -165,16 +163,38 @@ export default function EditProfile({ onPhotoChange }: EditProfileProps) {
   const handlePasswordReset = async () => {
     if (!profile) return;
     setPwdSending(true);
-    setPwdMsg('');
     try {
-      await forgotPassword(profile.email);
-      setPwdMsg("Un email de réinitialisation t'a été envoyé. Vérifie ta boîte mail.");
+      const res = await forgotPassword(profile.email);
+      if (!res.ok) {
+        toast.error("Impossible d'envoyer l'email de réinitialisation. Réessaie.");
+        return;
+      }
+      toast.success("Un email de réinitialisation t'a été envoyé. Vérifie ta boîte mail.");
+    } catch {
+      toast.error('Impossible de joindre le serveur.');
     } finally {
       setPwdSending(false);
     }
   };
 
-  if (loading || !profile) return null;
+  if (loading || !profile) {
+    return (
+      <section className={`${CARD} mb-3.5 p-5`} aria-busy="true">
+        {/* header avatar */}
+        <div className="flex flex-col items-center pb-1">
+          <div className="h-[78px] w-[78px] rounded-full bg-primo-line animate-pulse" />
+          <div className="mt-3.5 h-5 w-40 rounded bg-primo-line animate-pulse" />
+          <div className="mt-2 h-4 w-52 rounded bg-primo-line animate-pulse" />
+          <div className="mt-3 h-7 w-28 rounded-[20px] bg-primo-line animate-pulse" />
+        </div>
+        {/* 2 lignes réglages */}
+        <div className="mt-4 flex flex-col gap-2.5">
+          <div className="h-[58px] rounded-2xl bg-primo-line animate-pulse" />
+          <div className="h-[58px] rounded-2xl bg-primo-line animate-pulse" />
+        </div>
+      </section>
+    );
+  }
 
   const initials =
     `${profile.firstName?.[0] ?? ''}${profile.lastName?.[0] ?? ''}`.toUpperCase() ||
@@ -313,12 +333,10 @@ export default function EditProfile({ onPhotoChange }: EditProfileProps) {
               <button className={BTN_PRIMARY} type="button" onClick={handlePasswordReset} disabled={pwdSending}>
                 {pwdSending ? 'Envoi…' : 'Envoyer le lien de réinitialisation'}
               </button>
-              {pwdMsg && <p className="mt-2.5 text-[13px] text-primo-success">{pwdMsg}</p>}
             </div>
           )}
         </div>
       </div>
-      {success && <p className="mt-2.5 text-[13px] text-primo-success">{success}</p>}
     </section>
   );
 }

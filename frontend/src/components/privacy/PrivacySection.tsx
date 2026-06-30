@@ -87,9 +87,9 @@ export default function PrivacySection({ onAccountDeleted }: PrivacySectionProps
         </span>
         <span className="flex-1 text-[15px] font-semibold text-primo-ink">Confidentialité &amp; données</span>
         <Icon
-          name="chevron-down"
+          name="chevron-right"
           size={20}
-          className={`flex-none text-primo-muted transition-transform ${open ? 'rotate-180' : ''}`}
+          className={`flex-none text-primo-muted transition-transform ${open ? 'rotate-90' : ''}`}
         />
       </button>
 

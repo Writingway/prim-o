@@ -80,13 +80,21 @@ This separation (pages → components → hooks → services) is correct and eas
   | [pages/OwnerDashboard.tsx](src/pages/OwnerDashboard.tsx) | 531 | pending |
   | [pages/AdminPage.tsx](src/pages/AdminPage.tsx) | 423 | pending |
   | [pages/ManagerDashboard.tsx](src/pages/ManagerDashboard.tsx) | 414 | pending |
+  | [components/privacy/EditProfile.tsx](src/components/privacy/EditProfile.tsx) | 270 | pending |
 
-  These mix data fetching, local state, and rendering. Extract data logic into hooks (the pattern already exists — `useEmployeeDashboard`, `useAdminOffers`, now `useStats`) and split presentational sub-components.
+  These mix data fetching, local state, and rendering. Extract data logic into hooks (the pattern already exists — `useEmployeeDashboard`, `useAdminOffers`, now `useStats`) and split presentational sub-components. `EditProfile` additionally carries two full render modes (read view + edit form) plus profile fetch, avatar state, and password-reset in one file — split into `useProfile` (data) + `ProfileView` / `ProfileForm`, leaving `EditProfile` as the `editing ? <Form/> : <View/>` switch. The `if (editing) return` switch itself is idiomatic React and **not** a defect — only the file's accumulated responsibilities are.
 
 - **Hand-rolled data fetching.** `useState`/`useEffect` fetching across 13 files means manual loading/error/refetch/caching in each. As screens multiply this duplicates logic and invites race/stale bugs.
   *Consider:* TanStack Query (already in the TanStack ecosystem) for caching, dedupe, and retry — would also simplify the 30s identity cache.
 
 - **Single Tailwind-only design, no test of responsive logic.** `useIsDesktop` drives branching render (mobile splash vs desktop landing). This desktop/mobile fork is untested and was the subject of recent churn (per git history) — prime candidate for at least a smoke test.
+
+- ✅ **DONE — Silent failure on password reset fixed.** [EditProfile.tsx](src/components/privacy/EditProfile.tsx) `handlePasswordReset` now wraps `forgotPassword` in `try/catch`, checks `res.ok`, and surfaces a real error path (`toast.error`) instead of always claiming the mail was sent. (The reset-by-mail flow itself was already a sound security choice — only the missing error handling was the issue.)
+
+- 🔶 **PARTIAL — Notification / toast system (sonner).** Global provider in place and central lever pulled; mechanical per-screen replacement remains.
+  - **Done:** `sonner` installed; `<Toaster richColors position="top-center" />` mounted in [main.tsx](src/main.tsx); [EditProfile.tsx](src/components/privacy/EditProfile.tsx) success + reset messages moved to `toast.*` (inline `<p>` + `success`/`pwdMsg` state removed → no more layout shift); [useFlash.ts](src/hooks/useFlash.ts) now delegates to `toast.success` (returns `notice: ''` for back-compat), so its 5 consumers (`useOfferForm`, `useAdminOffers`, `usePromoCodes`, `AdminCategories`, `AdminPage`) emit real toasts with no change on their side.
+  - **Remaining:** ~12 files still render inline `<p className="text-primo-error/success">` (48 lines, ~15–20 distinct message states). Cartography by file: EmployeeDashboard (9), StatsPage / OwnerDashboard / MyPromoCodes (5), AdminPage / AdminCompanies / AdminOverview (4), AdminUsers / PrivacySection / OfferCatalog (3), ManagerDashboard (2), AdminLedgers (1). Almost all are transient (load/action feedback) → `toast`; field-validation errors (very few) stay inline.
+  - **Rule going forward:** transient "action OK/failed" → `toast`; validation error glued to a field → stays inline. Migrate incrementally, one screen per PR. Suggested order: EmployeeDashboard → MyPromoCodes/OfferCatalog → Owner/Manager/Stats → Admin; PrivacySection is the quick next step to finish the profile page.
 
 ### 🟢 Low / Polish
 
@@ -106,5 +114,6 @@ This separation (pages → components → hooks → services) is correct and eas
 | 4 | Extract fetch logic from 400+ LOC pages into hooks/subcomponents | M | 🔶 StatsPage done; 4 pages left |
 | 5 | Evaluate TanStack Query to replace manual fetch effects | M | pending |
 | 6 | Accessibility pass on dialogs, icon buttons, nav | M | pending |
+| 7 | Add global toast/notification system; replace inline `<p>` + `flash`/`setError` | S–M | 🔶 sonner provider + useFlash + EditProfile done; ~12 screens left |
 
 **Bottom line:** architecture and auth are strong; close the testing/linting/error-handling gaps before adding more screens or developers.
