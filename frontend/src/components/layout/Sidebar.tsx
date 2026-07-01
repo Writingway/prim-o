@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import Icon from '@/components/ui/Icon';
 import type { NavItem } from '@/hooks/useBottomNav';
+import logo3 from '@/assets/logos/logo_3.png';
 
 export type NavSection = { label?: string; items: NavItem[] };
 
@@ -36,18 +37,13 @@ export default function Sidebar({ items, sections, active, onSelect, footer, sub
 
   return (
     <aside className="hidden w-[244px] shrink-0 flex-col bg-[#0B2B28] text-white lg:flex">
-      <div className="flex items-center gap-2.5 px-5 pb-7 pt-6">
-        <span className="flex h-8 w-8 flex-none items-center justify-center rounded-[8px] bg-primo-gold text-primo-ink-900">
-          <Icon name="star" size={16} />
-        </span>
-        <div>
-          <div className="text-base font-extrabold leading-none tracking-[-0.01em]">Prim'O</div>
-          {subtitle && (
-            <div className="mt-0.5 text-[10px] font-semibold uppercase tracking-[.06em] text-[#3D7A74]">
-              {subtitle}
-            </div>
-          )}
-        </div>
+      <div className="flex flex-col items-center gap-1.5 px-5 pb-7 pt-6">
+        <img src={logo3} alt="Prim'O" className="w-[110px] object-contain" />
+        {subtitle && (
+          <div className="text-[10px] font-semibold uppercase tracking-[.06em] text-[#3D7A74]">
+            {subtitle}
+          </div>
+        )}
       </div>
 
       <nav className="flex flex-1 flex-col gap-5 px-[14px] pb-4">

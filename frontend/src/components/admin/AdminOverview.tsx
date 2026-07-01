@@ -66,7 +66,7 @@ export default function AdminOverview({
     setLoading(true);
     setError('');
     try {
-      // 1re page (limit max 100) : sert l'aperçu + amorce le calcul exact des jetons.
+      // 1re page (limit max 100) : sert l'aperçu + amorce le calcul exact des tokens.
       const first = await listAdminCompanies(1, 100);
       if (!first.ok || !first.data) {
         if (first.status === 401) onAuthExpired();
@@ -76,7 +76,7 @@ export default function AdminOverview({
       setCompanies(first.data.items);
       setTotal(first.data.total);
 
-      // Jetons en circulation = somme exacte sur TOUTES les entreprises.
+      // Tokens en circulation = somme exacte sur TOUTES les entreprises.
       // Pages restantes récupérées en parallèle (backend plafonne limit à 100).
       const pages = Math.ceil(first.data.total / 100);
       const rest =

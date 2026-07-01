@@ -54,26 +54,9 @@
   --color-primo-warn-soft: #fff8ec;
   --color-primo-warn-soft2: #fbefd2;
 
-  /* Catégories d'offres (icône + fond teinté) */
+  /* Couleur de catégorie encore utilisée (confetti). Les autres couleurs de
+     catégorie viennent désormais de la DB (champ Category.color). */
   --color-primo-cat-food: #e5784a;
-  --color-primo-cat-food-soft: #fff1ec;
-  --color-primo-cat-shop: #3f7fcb;
-  --color-primo-cat-shop-soft: #e8f0fb;
-  --color-primo-cat-culture: #7c5cd0;
-  --color-primo-cat-culture-soft: #efe9fb;
-  --color-primo-cat-travel: #2e84c8;
-  --color-primo-cat-travel-soft: #e5f2fb;
-  --color-primo-cat-wellness: #d24e86;
-  --color-primo-cat-wellness-soft: #fde8f0;
-
-  /* Teintes sombres de catégorie — point bas des dégradés de vignette.
-     Donnent de la profondeur aux tuiles sans sortir de la charte. */
-  --color-primo-cat-food-deep: #b8431f;
-  --color-primo-cat-shop-deep: #2557a0;
-  --color-primo-cat-culture-deep: #5435a8;
-  --color-primo-cat-travel-deep: #1a5e9c;
-  --color-primo-cat-wellness-deep: #a82c63;
-  --color-primo-cat-other-deep: #00827c;
 
   --font-sans: 'Poppins', system-ui, 'Segoe UI', Roboto, sans-serif;
 
@@ -84,11 +67,6 @@
   --animate-sheet-up: sheet-up 0.22s cubic-bezier(0.16, 1, 0.3, 1);
   /* Entrée orchestrée du catalogue : voile + montée douce, décalée par carte. */
   --animate-offer-in: offer-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-
-/* Logo « pièce » or — dégradé radial réutilisable. */
-@utility primo-coin {
-  background: radial-gradient(circle at 34% 28%, #ffdd7c, #ffb72e 56%, #e08c12);
 }
 
 /* Scroll horizontal sans barre grise visible (carrousels, filtres). */
@@ -132,20 +110,9 @@
 }
 
 :root {
-  /* Tokens charte « réimaginée » v1.1 (alignés sur @theme). */
-  --primo-teal: #00a19a;
-  --primo-teal-dark: #00827c;
-  --primo-teal-soft: #e3f4f2;
+  /* Seules vars legacy encore référencées dans ce fichier (color + body bg). */
   --primo-ink: #0b2422;
   --primo-bg: #ffffff;
-  --primo-surface: #f3f7f6;
-
-  /* Neutres / état. */
-  --primo-gray: #5c7370;
-  --primo-gray-light: #90a5a2;
-  --primo-border: #e3ecea;
-  --primo-error: #e5484d;
-  --primo-success: #0e9f6e;
 
   font-family: 'Poppins', system-ui, 'Segoe UI', Roboto, sans-serif;
   color: var(--primo-ink);

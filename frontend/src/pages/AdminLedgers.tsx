@@ -24,9 +24,9 @@ const TAB_INACTIVE = 'inline-flex rounded-full border border-primo-line bg-primo
 const TAB_ACTIVE = 'inline-flex rounded-full border border-primo-teal bg-primo-teal-soft px-4 py-1.5 text-sm font-semibold transition text-primo-teal-dark';
 
 const SUBTITLE: Record<Ledger, string> = {
-  attributions: 'Historique des attributions de jetons par les managers',
-  redemptions: 'Historique des échanges de jetons contre des offres',
-  purchases: 'Historique des achats de jetons via Stripe',
+  attributions: 'Historique des attributions de tokens par les managers',
+  redemptions: 'Historique des échanges de tokens contre des offres',
+  purchases: 'Historique des achats de tokens via Stripe',
 };
 
 export default function AdminLedgers() {

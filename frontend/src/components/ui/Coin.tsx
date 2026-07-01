@@ -1,7 +1,7 @@
 import coinSrc from '@/assets/primotoken/primo-tkn1.png';
 
-// Pièce-jeton Prim'O : rendu 3D officiel (src/assets/primotoken/primo-tkn1.png, importé
-// → vérifié au build + hashé par Vite). Élément signature, réservé au jeton /
+// Pièce-token Prim'O : rendu 3D officiel (src/assets/primotoken/primo-tkn1.png, importé
+// → vérifié au build + hashé par Vite). Élément signature, réservé au token /
 // récompense. `float` pour les écrans de célébration. L'image porte déjà ses
 // reflets et son ombre.
 type Props = {

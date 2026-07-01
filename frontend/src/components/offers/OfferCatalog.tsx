@@ -113,8 +113,8 @@ export default function OfferCatalog({
   const handleRedeem = async (offer: Offer) => {
     setRedeemError('');
     const ok = await confirm({
-      title: `Échanger ${offer.cost} jetons ?`,
-      message: `Obtenir un code « ${offer.partnerName} » en échange de ${offer.cost} jetons ?`,
+      title: `Échanger ${offer.cost} tokens ?`,
+      message: `Obtenir un code « ${offer.partnerName} » en échange de ${offer.cost} tokens ?`,
       confirmLabel: 'Échanger',
     });
     if (!ok) return;
@@ -407,7 +407,7 @@ export default function OfferCatalog({
                 disabled={!selected.available || redeeming}
                 onClick={() => handleRedeem(selected)}
               >
-                {redeeming ? '…' : `Échanger ${selected.cost} jetons`}
+                {redeeming ? '…' : `Échanger ${selected.cost} tokens`}
               </button>
             ) : (
               <p className="mt-[22px] text-center text-[13px] text-primo-muted">
@@ -567,7 +567,7 @@ function DiscountBadge({ percent, className = '' }: { percent: number; className
   );
 }
 
-// Prix exprimé en jetons (pièce 3D + nombre), unité homogène dans tout le catalogue.
+// Prix exprimé en tokens (pièce 3D + nombre), unité homogène dans tout le catalogue.
 function TokenPrice({ cost, size = 17, text = 'text-sm' }: { cost: number; size?: number; text?: string }) {
   return (
     <span className="flex items-center gap-1.5">

@@ -277,7 +277,7 @@ export default function OwnerDashboard({ onLogout, onStats, firstName, profilePh
               <Coin size={40} />
               <span className="text-[44px] font-extrabold leading-none tracking-[-0.03em]">{company?.tokenBalance ?? '—'}</span>
             </div>
-            <div className="mt-1.5 text-[13px] text-white/65">jetons disponibles à allouer</div>
+            <div className="mt-1.5 text-[13px] text-white/65">tokens disponibles à allouer</div>
           </div>
 
           <div className="mt-3 grid grid-cols-3 gap-3">
@@ -312,7 +312,7 @@ export default function OwnerDashboard({ onLogout, onStats, firstName, profilePh
           <form className="flex flex-wrap items-center gap-2.5" onSubmit={handleRecharge}>
             <input
               className="w-[150px] flex-1 rounded-[13px] border-[1.5px] border-primo-line bg-primo-surface px-3.5 py-3 text-[15px] font-bold text-primo-ink focus:border-primo-teal focus:shadow-[0_0_0_3px_rgba(0,161,154,0.12)] focus:outline-none"
-              type="number" min="1" step="1" placeholder="Nb de jetons"
+              type="number" min="1" step="1" placeholder="Nb de tokens"
               value={rechargeAmount}
               onChange={(e) => setRechargeAmount(e.target.value)}
             />
@@ -412,7 +412,7 @@ export default function OwnerDashboard({ onLogout, onStats, firstName, profilePh
                     <option value="" disabled>Choisir un manager…</option>
                     {managers.map((m) => (
                       <option key={m.id} value={m.id}>
-                        {m.firstName} {m.lastName} — {m.balance} jetons
+                        {m.firstName} {m.lastName} — {m.balance} tokens
                       </option>
                     ))}
                   </select>
@@ -425,7 +425,7 @@ export default function OwnerDashboard({ onLogout, onStats, firstName, profilePh
                     <Avatar initials={`${selected.firstName?.[0] ?? ''}${selected.lastName?.[0] ?? ''}`.toUpperCase()} />
                     <div className={EMP_MAIN}>
                       <div className={EMP_NAME}>{selected.firstName} {selected.lastName}</div>
-                      <div className={EMP_SUB}>Enveloppe actuelle · {selected.balance} jetons</div>
+                      <div className={EMP_SUB}>Enveloppe actuelle · {selected.balance} tokens</div>
                     </div>
                   </div>
                 )}
@@ -487,7 +487,7 @@ export default function OwnerDashboard({ onLogout, onStats, firstName, profilePh
                       disabled={allocSubmitting}
                     >
                       <Icon name="send" size={16} />
-                      {allocSubmitting ? '…' : `Allouer ${Number(allocAmount) > 0 ? Number(allocAmount) : 0} jetons`}
+                      {allocSubmitting ? '…' : `Allouer ${Number(allocAmount) > 0 ? Number(allocAmount) : 0} tokens`}
                     </button>
                     {allocError && <p className={`${EMP_ATTRIB_ERROR} mt-2`}>{allocError}</p>}
                   </div>
