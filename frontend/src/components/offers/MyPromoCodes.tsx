@@ -94,7 +94,7 @@ export default function MyPromoCodes() {
 
           {shown.length === 0 ? (
             <p className="mt-8 text-center text-sm font-medium text-primo-muted">
-              {view === 'available' ? "Aucun code pour l'instant. Échange tes jetons dans les Offres." : 'Aucun code utilisé pour l\'instant.'}
+              {view === 'available' ? "Aucun code pour l'instant. Échange tes tokens dans les Offres." : 'Aucun code utilisé pour l\'instant.'}
             </p>
           ) : (
             <ul className="m-0 flex list-none flex-col gap-3 p-0">

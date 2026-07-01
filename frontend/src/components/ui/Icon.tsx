@@ -49,7 +49,7 @@ const STROKE: Partial<Record<IconName, ReactNode>> = {
   'arrow-up': <path d="M12 19V5M5 12l7-7 7 7" />,
 };
 
-// Étoile pleine = logo « pièce » (jeton / récompense).
+// Étoile pleine = logo « pièce » (token / récompense).
 const STAR = <path d="M12 3.2l2.4 5.2 5.7.6-4.2 3.9 1.1 5.6L12 16l-5 2.5 1.1-5.6L3.9 9l5.7-.6L12 3.2Z" />;
 
 type Props = Omit<SVGProps<SVGSVGElement>, 'name'> & {
