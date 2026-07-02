@@ -1,0 +1,6 @@
+/* Point d'entrée CSS de la vitrine : réutilise la charte Prim'O de l'app.
+   @source : la racine Vite étant landing/, Tailwind ne scannerait pas ../src
+   tout seul — on déclare explicitement les deux arbres à scanner. */
+@import '../src/index.css';
+@source '../src';
+@source '.';

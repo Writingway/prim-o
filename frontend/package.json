@@ -6,7 +6,9 @@
   "test": "vitest",
   "scripts": {
     "dev": "vite",
+    "dev:landing": "vite landing",
     "build": "tsc -b && vite build",
+    "build:landing": "tsc -b && vite build landing",
     "lint": "eslint .",
     "preview": "vite preview"
   },
