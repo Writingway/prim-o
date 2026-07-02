@@ -1,0 +1,5 @@
+{
+  "buildCommand": "npm run build:landing",
+  "outputDirectory": "landing/dist",
+  "rewrites": [{ "source": "/(.*)", "destination": "/" }]
+}
