@@ -21,7 +21,7 @@ export const FORM = 'flex flex-col gap-3';
 export const INPUT =
   'rounded-[13px] border-[1.5px] border-primo-line bg-white px-3.5 py-3 text-[15px] text-primo-ink placeholder:text-primo-muted transition focus:border-primo-teal focus:shadow-[0_0_0_3px_rgba(0,161,154,0.12)] focus:outline-none';
 export const SUBMIT =
-  'mt-1 cursor-pointer rounded-[14px] border-0 bg-primo-teal py-3.5 text-base font-bold text-white shadow-[0_12px_26px_-8px_rgba(0,161,154,0.6)] transition hover:bg-primo-teal-strong disabled:cursor-not-allowed disabled:opacity-60';
+  'mt-1 cursor-pointer rounded-[14px] border-0 bg-primo-teal py-3.5 p-6 text-base font-bold text-white shadow-[0_12px_26px_-8px_rgba(0,161,154,0.6)] transition hover:bg-primo-teal-strong disabled:cursor-not-allowed disabled:opacity-60';
 
 export const ERROR = 'm-0 text-sm text-primo-error';
 export const SUCCESS =

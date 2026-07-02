@@ -55,10 +55,10 @@ export default function ResetPasswordPage({ token, onDone }: ResetPasswordPagePr
         <AuthBrand subtitle="Choisis un nouveau mot de passe." />
 
         {success ? (
-          <>
+          <div className="flex flex-col gap-3 items-center">
             <p className={SUCCESS}>Mot de passe réinitialisé. Tu peux te connecter.</p>
             <button className={SUBMIT} type="button" onClick={onDone}>Aller à la connexion</button>
-          </>
+          </div>
         ) : (
           <form className={FORM} onSubmit={handleSubmit}>
             <input
