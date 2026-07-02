@@ -1,7 +1,6 @@
 /* Charte graphique PRIM'O appliquée globalement.
    Principale : #00A19A (teal). Secondaire : #000000. Fond : #FFFFFF.
    Police principale : Poppins. Mobile-first. */
-@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500&display=swap');
 @import 'tailwindcss';
 
 /* Tailwind v4 @theme : palette charte « réimaginée » v1.1 (teal + or, Poppins).
