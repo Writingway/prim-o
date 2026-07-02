@@ -9,7 +9,7 @@ type Opts = {
   onAuthExpired: () => void;
 };
 
-// Couche data du panneau Offres admin : liste + stats + activation/désactivation.
+// Data layer for the admin Offers panel: list + stats + activate/deactivate.
 export function useAdminOffers({ confirm, flash, onAuthExpired }: Opts) {
   const [offers, setOffers] = useState<Offer[] | null>(null);
   const [stats, setStats] = useState<AdminStats | null>(null);
@@ -41,7 +41,8 @@ export function useAdminOffers({ confirm, flash, onAuthExpired }: Opts) {
     reload();
     }, []);
 
-  // Désactivation = soft delete dédié ; réactivation = update isActive.
+  // Deactivation goes through the dedicated soft-delete endpoint; reactivation is a plain
+  // isActive update.
   const toggleActive = async (offer: Offer) => {
     const ok = await confirm({
       title: offer.isActive ? 'Désactiver cette offre ?' : 'Réactiver cette offre ?',

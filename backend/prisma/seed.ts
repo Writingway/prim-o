@@ -3,13 +3,13 @@ import bcrypt from 'bcrypt'
 
 const prisma = new PrismaClient()
 
-// Coût bcrypt conforme CLAUDE.md (>= 12)
+// Bcrypt cost per CLAUDE.md (>= 12).
 const hash = (pwd: string) => bcrypt.hash(pwd, 12)
 
 async function main() {
   console.log('🌱 Seeding database...')
 
-  // Vider dans l'ordre (FK oblige)
+  // Wipe tables in FK-safe order.
   await prisma.redemption.deleteMany()
   await prisma.attribution.deleteMany()
   await prisma.allocation.deleteMany()
@@ -24,7 +24,6 @@ async function main() {
   await prisma.user.deleteMany()
   await prisma.company.deleteMany()
 
-  // ── Catégories (Phase 1 — entité Category) ────────────────
   const categoryDefs = [
     { slug: 'food',     label: 'Restauration', icon: 'coffee', color: '#e5784a', sortOrder: 0 },
     { slug: 'shopping', label: 'Shopping',     icon: 'gift',   color: '#7c5cbf', sortOrder: 1 },
@@ -42,23 +41,21 @@ async function main() {
     })
   }
 
-  // ── Admin ─────────────────────────────────────────────────
   const admin = await prisma.user.create({
     data: {
       email: 'admin@primo.fr',
       passwordHash: await hash('password123'),
       role: 'ADMIN',
       isEmailVerified: true,
-      // companyId null : seul l'ADMIN n'a pas d'entreprise
+      // companyId stays null: the ADMIN is the only user without a company.
     },
   })
 
-  // ── Entreprises (pool initial à 0, crédité ensuite par l'admin) ──
+  // Companies start with an empty pool; the admin credits it just below.
   const acme = await prisma.company.create({ data: { name: 'Acme', status: 'APPROVED' } })
   const testco = await prisma.company.create({ data: { name: 'TestCo', status: 'APPROVED' } })
 
-  // ── Recharge du pool par l'admin (D2 : ledger d'achats) ───
-  // Le pool est alimenté UNIQUEMENT via CompanyTokenPurchase + increment.
+  // The pool is only ever funded through the D2 purchase ledger: CompanyTokenPurchase + increment.
   await prisma.$transaction([
     prisma.companyTokenPurchase.create({
       data: { amount: 100, note: 'Crédit initial', companyId: acme.id, createdById: admin.id },
@@ -70,7 +67,7 @@ async function main() {
     prisma.company.update({ where: { id: testco.id }, data: { tokenBalance: { increment: 100 } } }),
   ])
 
-  // ── Managers (pas de solde : le solde vit sur Company) ────
+  // Owners carry no token balance of their own; the pool lives on Company.tokenBalance.
   const bossAcme = await prisma.user.create({
     data: {
       email: 'boss@acme.fr',
@@ -95,7 +92,6 @@ async function main() {
     },
   })
 
-  // Manager
   const managerAcme = await prisma.user.create({
     data: {
       email: 'manager@acme.fr',
@@ -120,7 +116,6 @@ async function main() {
     },
   })
 
-  // ── Employés ──────────────────────────────────────────────
   const jean = await prisma.user.create({
     data: {
       email: 'jean.dupont@acme.fr',
@@ -145,25 +140,21 @@ async function main() {
     },
   })
 
-  // ── Motifs officiels v1.1 (§3.5) : 13 motifs, 4 catégories ──
-  // Liste figée gérée par l'ADMIN (custom employeur = V2). tag = clé stats stable.
+  // Official v1.1 motifs (§3.5): 13 motifs across 4 categories. The list is frozen and
+  // ADMIN-managed (employer-defined motifs come in V2).
   await prisma.motif.createMany({
     data: [
-      // Comportements individuels
       { tag: 'PONCTUALITE_PRESENCE', label: 'Ponctualité & présence', category: 'COMPORTEMENTS_INDIVIDUELS', compliment: "Toujours là, toujours à l'heure", sortOrder: 1 },
       { tag: 'PRISE_INITIATIVE', label: "Prise d'initiative", category: 'COMPORTEMENTS_INDIVIDUELS', compliment: "Tu n'as pas attendu qu'on te le demande", sortOrder: 2 },
       { tag: 'QUALITE_EXECUTION', label: "Qualité d'exécution", category: 'COMPORTEMENTS_INDIVIDUELS', compliment: "C'est fait, et c'est bien fait", sortOrder: 3 },
       { tag: 'AUTONOMIE', label: 'Autonomie', category: 'COMPORTEMENTS_INDIVIDUELS', compliment: 'Tu gères, et ça se voit', sortOrder: 4 },
-      // Relation client
       { tag: 'ATTITUDE_ACCUEIL_CLIENT', label: 'Attitude & accueil client', category: 'RELATION_CLIENT', compliment: "Tu as mis le client à l'aise dès le premier regard", sortOrder: 5 },
       { tag: 'GESTION_SITUATION_DIFFICILE', label: 'Gestion situation difficile', category: 'RELATION_CLIENT', compliment: 'Tu as géré avec calme et professionnalisme', sortOrder: 6 },
       { tag: 'FIDELISATION_CLIENT', label: 'Fidélisation client', category: 'RELATION_CLIENT', compliment: 'Ce client reviendra grâce à toi', sortOrder: 7 },
       { tag: 'VENTE_ADDITIONNELLE', label: 'Vente additionnelle', category: 'RELATION_CLIENT', compliment: 'Tu as su proposer au bon moment', sortOrder: 8 },
-      // Esprit collectif
       { tag: 'ENTRAIDE_COOPERATION', label: 'Entraide & coopération', category: 'ESPRIT_COLLECTIF', compliment: "Tu as tiré l'équipe vers le haut", sortOrder: 9 },
       { tag: 'TRANSMISSION_COMPETENCES', label: 'Transmission de compétences', category: 'ESPRIT_COLLECTIF', compliment: "Tu as pris le temps d'expliquer - c'est rare", sortOrder: 10 },
       { tag: 'POLYVALENCE_ACCEPTEE', label: 'Polyvalence acceptée', category: 'ESPRIT_COLLECTIF', compliment: "Tu as dit oui quand on avait besoin", sortOrder: 11 },
-      // Engagement
       { tag: 'PRESENCE_SITUATION_TENDUE', label: 'Présence en situation tendue', category: 'ENGAGEMENT', compliment: "Tu étais là quand c'était difficile", sortOrder: 12 },
       { tag: 'RESPECT_PROCESS_HYGIENE', label: 'Respect des process & hygiène', category: 'ENGAGEMENT', compliment: 'Rien ne traîne, tout est carré', sortOrder: 13 },
     ],
@@ -171,8 +162,8 @@ async function main() {
   const motifQualite = await prisma.motif.findUniqueOrThrow({ where: { tag: 'QUALITE_EXECUTION' } })
   const motifVente = await prisma.motif.findUniqueOrThrow({ where: { tag: 'VENTE_ADDITIONNELLE' } })
 
-  // ── Attributions (débit pool Acme + crédit employé, invariant respecté) ──
-  // jean +30, marie +50 → pool Acme : 500 - 80 = 420
+  // Attributions debit the company pool and credit the employees in one transaction (ledger invariant).
+  // jean +30, marie +50, so the Acme pool ends at 100 - 80 = 20.
   await prisma.$transaction([
     prisma.attribution.create({
       data: {
@@ -197,9 +188,7 @@ async function main() {
     prisma.company.update({ where: { id: acme.id }, data: { tokenBalance: { decrement: 80 } } }),
   ])
 
-  // ── Offres partenaires (catégorie via relation Category) ───
-  // L'enum OfferCategory a été supprimé : chaque offre référence une Category
-  // par son id (résolu depuis les catégories créées plus haut).
+  // Each offer references a Category row by id, resolved from the categories seeded above.
   const cats = await prisma.category.findMany({ select: { id: true, slug: true } })
   const catId = new Map(cats.map((c) => [c.slug, c.id]))
   const need = (slug: string): string => {
@@ -208,16 +197,16 @@ async function main() {
     return id
   }
 
-  // Visuels thématiques libres de droits (Unsplash, licence sans attribution),
-  // recadrés carré pour coller au cadre des cartes du catalogue.
+  // Royalty-free thematic photos (Unsplash, no-attribution license), cropped square to fit the
+  // catalogue card frame.
   const u = (id: string) => `https://images.unsplash.com/photo-${id}?w=800&h=800&fit=crop&q=80`
   const IMG = {
-    amazon: u('1556742049-0cfed4f6a45d'),   // colis / e-commerce
-    netflix: u('1574375927938-d5a98e8ffe85'), // cinéma / pop-corn
-    uberEats: u('1568901346375-23c9450c58cd'), // burger / repas
-    spotify: u('1511671782779-c97d3d27a1d4'),  // casque / musique
-    decathlon: u('1538805060514-97d9cc17730c'), // running / sport
-    sncf: u('1474487548417-781cb71495f3'),     // train / voyage
+    amazon: u('1556742049-0cfed4f6a45d'),   // Parcel / e-commerce.
+    netflix: u('1574375927938-d5a98e8ffe85'), // Cinema / popcorn.
+    uberEats: u('1568901346375-23c9450c58cd'), // Burger / meal.
+    spotify: u('1511671782779-c97d3d27a1d4'),  // Headphones / music.
+    decathlon: u('1538805060514-97d9cc17730c'), // Running / sport.
+    sncf: u('1474487548417-781cb71495f3'),     // Train / travel.
   }
 
   const amazon = await prisma.partnerOffer.create({
@@ -228,7 +217,7 @@ async function main() {
     data: { partnerName: 'Netflix', cost: 15, discountPercent: 30, categoryId: need('culture'), isActive: true, imageUrl: IMG.netflix },
   })
 
-  // Offres supplémentaires pour étoffer la vitrine
+  // Extra offers to flesh out the catalogue.
   await prisma.partnerOffer.createMany({
     data: [
       { partnerName: 'Uber Eats', cost: 12, discountPercent: 25, categoryId: need('food'), isActive: true, imageUrl: IMG.uberEats },
@@ -238,7 +227,6 @@ async function main() {
     ],
   })
 
-  // ── Codes promo ───────────────────────────────────────────
   await prisma.promoCode.createMany({
     data: [
       { code: 'AMAZON-SEED-001', offerId: amazon.id },

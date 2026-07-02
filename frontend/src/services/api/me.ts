@@ -1,5 +1,5 @@
-// RGPD - données personnelles de l'utilisateur connecté (art. 15, 16, 17, 20).
-// Réutilise le transport authentifié de client.ts (401 → refresh → retry).
+// GDPR — the logged-in user's personal data (art. 15, 16, 17, 20).
+// Reuses the authenticated transport from client.ts (401 → refresh → retry).
 import { authRequest } from './client';
 
 type MyProfile = {
@@ -11,24 +11,24 @@ type MyProfile = {
   profilePhoto: string | null;
 };
 
-// Export de toutes mes données (art. 15 & 20). Le backend renvoie un JSON ;
-// le composant en fait un fichier téléchargeable.
+// Export of all my data (art. 15 & 20). The backend returns JSON; the component turns it into
+// a downloadable file.
 export function exportMyData() {
   return authRequest<Record<string, unknown>>('GET', '/me/export');
 }
 
-// Suppression (anonymisation) de mon compte, confirmée par mot de passe (art. 17).
-// 204 attendu en succès ; 401 si le mot de passe est incorrect.
+// Account deletion (anonymization), confirmed by password (art. 17).
+// Expects 204 on success; 401 when the password is wrong.
 export function deleteMyAccount(password: string) {
   return authRequest('DELETE', '/me', { password });
 }
 
-// Profil courant (pré-remplit la rectification).
+// Current profile (pre-fills the rectification form).
 export function getMyProfile() {
   return authRequest<{ profile: MyProfile }>('GET', '/me');
 }
 
-// Rectification du profil (art. 16). N'envoie que les champs modifiés.
+// Profile rectification (art. 16). Send only the fields that changed.
 export function updateMyProfile(payload: {
   firstName?: string;
   lastName?: string;

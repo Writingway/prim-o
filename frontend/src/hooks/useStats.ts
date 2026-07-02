@@ -9,29 +9,30 @@ import {
 } from '../services/api';
 import type { Employee } from '../types/types';
 
-// Tableau de bord statistiques employeur (§3.2/§3.4) — logique data extraite
-// de StatsPage : référentiels (id→nom, tag→libellé), fetch des stats, filtres
-// période + sélection de la courbe d'évolution. La page ne fait plus que rendre.
+// Employer statistics dashboard (§3.2/§3.4) — data logic extracted from StatsPage: reference
+// maps (id → name, tag → label), stats fetching, period filters and evolution-chart selection.
+// The page itself only renders.
 export function useStats() {
   const [stats, setStats] = useState<StatsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Référentiels (chargés une fois) pour résoudre id → nom et tag → libellé.
+  // Reference maps (loaded once) to resolve id → name and tag → label.
   const [empName, setEmpName] = useState<Map<string, string>>(new Map());
   const [mgrName, setMgrName] = useState<Map<string, string>>(new Map());
   const [motifLabel, setMotifLabel] = useState<Map<string, string>>(new Map());
 
-  // Filtres période (bornes sur la date d'attribution).
+  // Period filters (bounds on the attribution date).
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
-  // Sélections de la courbe d'évolution (motif affiché + employé ciblé).
+  // Evolution-chart selections: which motif (domain term for a bonus reason) is plotted, and for
+  // which employee.
   const [evoEmployee, setEvoEmployee] = useState('');
   const [evoMotif, setEvoMotif] = useState('');
 
-  // Repli neutre quand le nom est inconnu : on n'expose JAMAIS l'identifiant.
-  // `stats.managerNames` (fourni par le backend) couvre aussi le patron qui
-  // attribue directement, sans quoi il apparaîtrait « Manager inconnu ».
+  // Neutral fallback when a name is unknown: NEVER expose the raw identifier.
+  // `stats.managerNames` (provided by the backend) also covers the owner granting bonuses
+  // directly, who would otherwise show up as « Manager inconnu ».
   const nameOfEmp = (id: string) => empName.get(id) ?? 'Employé inconnu';
   const nameOfMgr = (id: string) =>
     stats?.managerNames?.[id] ?? mgrName.get(id) ?? empName.get(id) ?? 'Manager inconnu';
@@ -53,7 +54,7 @@ export function useStats() {
     }
   };
 
-  // Référentiels + premières stats au montage.
+  // Load the reference maps and the first stats on mount.
   useEffect(() => {
     (async () => {
       const [empRes, mgrRes, motifRes] = await Promise.all([
@@ -74,7 +75,7 @@ export function useStats() {
           for (const mo of cat.motifs) map.set(mo.tag, mo.label);
         setMotifLabel(map);
       }
-    })().catch(() => { /* la résolution des noms restera partielle */ });
+    })().catch(() => { /* name resolution just stays partial */ });
     // eslint-disable-next-line react-hooks/set-state-in-effect
     loadStats();
   }, []);
@@ -94,7 +95,7 @@ export function useStats() {
     loadStats();
   };
 
-  // L'employé ne change que la courbe d'évolution (re-fetch scopé sur lui).
+  // Changing the employee only affects the evolution chart (re-fetch scoped to that employee).
   const selectEvoEmployee = (id: string) => {
     setEvoEmployee(id);
     loadStats(paramsWith(id));

@@ -167,7 +167,6 @@ export default function AdminCategories({ flash }: Props) {
 
   return (
     <div className="rounded-2xl border border-primo-line bg-white p-5 lg:p-6">
-      {/* Header */}
       <div className="mb-5 flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2.5">
           <h2 className="text-[17px] font-extrabold tracking-[-0.01em] text-primo-ink">Catégories</h2>
@@ -182,7 +181,7 @@ export default function AdminCategories({ flash }: Props) {
         )}
       </div>
 
-      {/* Create / Edit form */}
+      {/* One form serves both create and edit; editingId decides which. */}
       {showForm && (
         <form className="rounded-2xl border border-primo-line bg-white p-5 mb-5" onSubmit={handleSubmit}>
           <h2 className="text-[15px] font-extrabold text-primo-ink mb-4">
@@ -201,6 +200,7 @@ export default function AdminCategories({ flash }: Props) {
               />
             </label>
 
+            {/* The slug is fixed at creation and never editable afterwards. */}
             {!editingId && (
               <label className="flex flex-col gap-1.5 text-sm font-medium text-primo-gray">
                 Slug *
@@ -275,7 +275,6 @@ export default function AdminCategories({ flash }: Props) {
         </form>
       )}
 
-      {/* List */}
       {loading ? (
         <p className={ADMIN_MSG}>Chargement…</p>
       ) : categories.length === 0 ? (

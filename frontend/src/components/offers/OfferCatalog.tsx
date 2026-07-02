@@ -8,27 +8,30 @@ import Coin from '@/components/ui/Coin';
 import { useConfirm } from '@/components/ui/ConfirmDialog';
 import tkn2 from '@/assets/primotoken/primo-tkn2.png';
 
-// Catalogue d'offres partenaires : grille + recherche/filtres + bottom sheet de
-// détail + célébration du code obtenu. Réutilisé par la LandingPage (visiteurs)
-// ET par la section « Offres » de l'espace employé — une seule source, donc une
-// expérience identique quel que soit l'endroit. Cf. README C1/C2/C3.
+// Partner offer catalog: grid + search/filters + detail bottom sheet + code-reveal celebration.
+// Reused by the LandingPage (visitors) AND the employee area's « Offres » section — one source,
+// so the experience is identical in both places. See README C1/C2/C3.
 const CTA_PRIMARY =
   'w-full rounded-2xl border-0 bg-primo-teal px-4 py-4 text-base font-bold text-white shadow-[0_12px_26px_-8px_rgba(0,161,154,0.6)] transition hover:bg-primo-teal-strong disabled:opacity-60';
 
-// Pagination de la grille : on rend par paquets, « Voir plus » étend la fenêtre.
+// Grid pagination: render in batches; « Voir plus » extends the window.
 const PAGE_SIZE = 8;
 
 type Revealed = { code: string; offerName: string; amount: number };
 
 type OfferCatalogProps = {
   isLoggedIn: boolean;
-  canRedeem: boolean;            // employé ou manager
-  onRedeemed?: () => void;       // rafraîchit le parent (solde/historique) après un échange
-  onSeeSpending?: () => void;    // bouton « Voir mes dépenses » de la célébration
+  // True for employees and managers — the only roles allowed to redeem.
+  canRedeem: boolean;
+  // Lets the parent refresh balance/history after a redemption.
+  onRedeemed?: () => void;
+  // Wired to the celebration screen's « Voir mes codes » button; the button is hidden when absent.
+  onSeeSpending?: () => void;
   heading?: string;
-  className?: string;            // espacement géré par le parent (landing vs dashboard)
-  // Landing : sur desktop (≥ lg), grandes cartes carrées en 3 colonnes. Le mobile
-  // garde le format compact dans tous les cas.
+  // Spacing is owned by the parent (landing vs dashboard).
+  className?: string;
+  // Landing only: on desktop (≥ lg), large square cards in 3 columns. Mobile keeps the compact
+  // format in all cases.
   largeDesktopCards?: boolean;
 };
 
@@ -95,8 +98,8 @@ export default function OfferCatalog({
     );
   }, [offers, query, activeCat]);
 
-  // « À la une » : le meilleur bon plan dispo, mis en avant en haut du catalogue
-  // (uniquement sur la vue d'accueil — masqué dès qu'on filtre ou recherche).
+  // Featured pick: the best available deal (highest discount), showcased at the top of the
+  // catalog. Default view only — hidden as soon as the user filters or searches.
   const featured = useMemo(() => {
     const pool = offers.filter((o) => o.available);
     if (pool.length === 0) return null;
@@ -150,8 +153,8 @@ export default function OfferCatalog({
 
   const selectedMeta = selected?.category ?? null;
 
-  // Landing desktop : 3 colonnes + vignette carrée (cartes plus grandes). Mobile
-  // inchangé. Sinon : grille compacte d'origine (espace employé).
+  // Landing desktop: 3 columns with square visuals (larger cards), mobile unchanged.
+  // Otherwise the original compact grid (employee area).
   const gridClass = largeDesktopCards
     ? 'grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-3 lg:gap-5'
     : 'grid grid-cols-1 gap-3.5 sm:grid-cols-2 xl:grid-cols-3';
@@ -163,7 +166,6 @@ export default function OfferCatalog({
     <>
       <section className={className} aria-label={heading}>
 
-        {/* Recherche */}
         <div className="mt-4 flex items-center gap-2.5 rounded-[16px] border-[1.5px] border-primo-line bg-white px-3.5 py-3 transition focus-within:border-primo-teal focus-within:ring-2 focus-within:ring-primo-teal/15">
           <Icon name="search" size={19} className="flex-none text-primo-muted" />
           <input
@@ -175,7 +177,7 @@ export default function OfferCatalog({
           />
         </div>
 
-        {/* Catégories : cercle icône + nom dessous (scroll horizontal sans barre) */}
+        {/* Category filter rail — horizontally scrollable, scrollbar hidden. */}
         {categories.length > 0 && (
           <div className="no-scrollbar mt-4 flex gap-3.5 overflow-x-auto pb-1">
             <CategoryPill
@@ -202,7 +204,7 @@ export default function OfferCatalog({
         )}
 
         {loading ? (
-          // Squelette : on annonce la vitrine plutôt qu'un texte gris.
+          // Skeleton previews the storefront layout instead of a grey loading message.
           <div className="mt-6">
             <div className="h-[168px] w-full animate-pulse rounded-[24px] bg-primo-line/70" />
             <div className={`mt-5 ${gridClass}`}>
@@ -218,7 +220,7 @@ export default function OfferCatalog({
             </div>
           </div>
         ) : filtered.length === 0 ? (
-          // Empty state : invitation à agir, jamais un cul-de-sac.
+          // Empty state invites an action — never a dead end.
           <div className="mt-8 flex flex-col items-center rounded-[24px] border border-dashed border-primo-line bg-white px-6 py-12 text-center">
             <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primo-mint text-primo-teal-strong">
               <Icon name={offers.length === 0 ? 'gift' : 'search'} size={26} />
@@ -243,7 +245,7 @@ export default function OfferCatalog({
           </div>
         ) : (
           <>
-            {/* À la une : le meilleur bon plan du moment, en carte plein-cadre. */}
+            {/* Featured deal, full-bleed card. */}
             {showFeatured && featured && (() => {
               const meta = featured.category ?? { icon: 'gift', color: '#00a19a', label: '' };
               return (
@@ -253,7 +255,7 @@ export default function OfferCatalog({
                   className="group relative mt-6 block w-full overflow-hidden rounded-[26px] text-left shadow-[0_22px_50px_-22px_rgba(6,48,45,0.55)] outline-none transition-transform duration-300 hover:-translate-y-1 focus-visible:ring-2 focus-visible:ring-primo-teal focus-visible:ring-offset-2"
                 >
                   <CategoryVisual meta={meta} className="aspect-[16/9] w-full sm:aspect-[21/8]" watermark={220} imageUrl={featured.imageUrl} />
-                  {/* Voile sombre en bas pour asseoir le texte sur l'image. */}
+                  {/* Dark bottom gradient keeps the overlaid text legible. */}
                   <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-black/15 to-transparent" />
 
                   <span className="absolute left-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-white/95 px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.08em] text-primo-ink-900 backdrop-blur-sm">
@@ -279,7 +281,7 @@ export default function OfferCatalog({
               );
             })()}
 
-            {/* Toutes les offres (paginées par paquets de PAGE_SIZE) */}
+            {/* Offer grid. */}
             <div className={`mt-6 ${gridClass}`}>
               {gridOffers.slice(0, visible).map((o, i) => {
                 const meta = o.category ?? { icon: 'gift', color: '#00a19a', label: '' };
@@ -319,7 +321,6 @@ export default function OfferCatalog({
               })}
             </div>
 
-            {/* Pagination : « Voir plus » étend la fenêtre. */}
             {gridOffers.length > visible && (
               <div className="mt-6 flex flex-col items-center gap-2">
                 <button
@@ -336,7 +337,7 @@ export default function OfferCatalog({
         )}
       </section>
 
-      {/* Détail d'une offre — bottom sheet (C2) */}
+      {/* Offer detail — bottom sheet (C2). */}
       {selected && selectedMeta && (
         <div
           className="fixed inset-0 z-[1000] flex items-end justify-center bg-black/55 p-0 sm:items-center sm:p-4"
@@ -420,10 +421,10 @@ export default function OfferCatalog({
         </div>
       )}
 
-      {/* Révélation du code obtenu — célébration (C3) */}
+      {/* Code reveal — celebration screen (C3). */}
       {revealed && (
         <div className="fixed inset-0 z-[1000] flex flex-col overflow-hidden bg-gradient-to-b from-primo-hero-from via-primo-ink-900 to-primo-ink-950 text-white">
-          {/* Confettis statiques */}
+          {/* Static confetti. */}
           <span className="pointer-events-none absolute left-[12%] top-[14%] h-[9px] w-[9px] rotate-[20deg] rounded-[2px] bg-primo-gold-bright" />
           <span className="pointer-events-none absolute right-[16%] top-[18%] h-2 w-2 rounded-full bg-primo-teal-100" />
           <span className="pointer-events-none absolute left-[18%] top-[26%] h-3.5 w-[7px] -rotate-[25deg] rounded-[3px] bg-primo-cat-food" />
@@ -500,11 +501,9 @@ export default function OfferCatalog({
   );
 }
 
-// ── Briques de présentation ─────────────────────────────────────────────────
-
-// Vignette de catégorie : dégradé diagonal + glyph filigrane géant débordant +
-// liseré lumineux en haut. `size` pilote l'avatar net au premier plan.
-// Accepte soit une couleur dynamique (inline style) soit un grad Tailwind (legacy).
+// Category visual: diagonal gradient, oversized watermark glyph bleeding out of the frame,
+// light sheen on top. `avatar` > 0 adds a crisp foreground icon. Background comes from either
+// a dynamic `color` (inline style) or a legacy Tailwind `grad` class.
 function CategoryVisual({
   meta,
   className = '',
@@ -518,8 +517,8 @@ function CategoryVisual({
   avatar?: number;
   imageUrl?: string | null;
 }) {
-  // Photo uploadée (déjà recadrée carré par l'admin) : `object-cover` la fait
-  // remplir n'importe quel cadre (carré, bannière, mini) sans déformation.
+  // Uploaded photo (already cropped square by the admin): `object-cover` makes it fill any
+  // frame (square, banner, thumbnail) without distortion.
   if (imageUrl) {
     return (
       <div className={`relative overflow-hidden bg-primo-line ${className}`}>
@@ -535,9 +534,9 @@ function CategoryVisual({
 
   return (
     <div className={`relative overflow-hidden ${bgClass} ${className}`} style={bgStyle}>
-      {/* Voile lumineux en haut à gauche : donne de la matière au dégradé. */}
+      {/* Top-left light sheen gives the flat gradient some depth. */}
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_90%_at_15%_0%,rgba(255,255,255,0.28),transparent_55%)]" />
-      {/* Filigrane : l'icône de catégorie en très grand, débordant du cadre. */}
+      {/* Watermark: the category icon, oversized and bleeding out of the frame. */}
       <Icon
         name={meta.icon as IconName}
         size={watermark}
@@ -555,7 +554,7 @@ function CategoryVisual({
   );
 }
 
-// Badge réduction « ticket » or : le déclencheur de désir, réservé au % de remise.
+// Gold discount badge — the eye-catcher, reserved for the discount percentage alone.
 function DiscountBadge({ percent, className = '' }: { percent: number; className?: string }) {
   return (
     <span
@@ -567,7 +566,7 @@ function DiscountBadge({ percent, className = '' }: { percent: number; className
   );
 }
 
-// Prix exprimé en tokens (pièce 3D + nombre), unité homogène dans tout le catalogue.
+// Price in tokens (coin + number) — the single unit used across the whole catalog.
 function TokenPrice({ cost, size = 17, text = 'text-sm' }: { cost: number; size?: number; text?: string }) {
   return (
     <span className="flex items-center gap-1.5">
@@ -577,8 +576,9 @@ function TokenPrice({ cost, size = 17, text = 'text-sm' }: { cost: number; size?
   );
 }
 
-// Filtre catégorie : cercle coloré (icône) + nom dessous. Actif = cercle vif,
-// nom en gras ; inactif = cercle teinté doux. Couleur appliquée via inline style.
+// Category filter pill: colored icon circle with the label below. Active: solid circle, bold
+// label; inactive: soft tint via the '22' hex-alpha suffix. Colors are dynamic, hence inline
+// styles.
 function CategoryPill({
   active,
   icon,

@@ -29,19 +29,20 @@ import {
 
 const router = Router();
 
-// Mutations réservées à l'admin.
+// Mounted at /api/admin behind requireAuth + requireAdmin (see server.ts), so routes here carry
+// no per-route guards.
 router.post('/offers', createOfferController);
 router.patch('/offers/:id', updateOfferController);
 router.delete('/offers/:id', deactivateOfferController);
 
-// Photo d'une offre : upload (multipart, champ « image ») / suppression.
+// Offer photo: multipart upload (field "image") and deletion.
 router.patch('/offers/:id/image', uploadOfferImageMiddleware, uploadOfferImageController);
 router.delete('/offers/:id/image', deleteOfferImageController);
 
-// Codes promo d'une offre : liste (lecture) + ajout en lot.
+// Promo codes for an offer: list and batch add.
 router.get('/offers/:offerId/promo-codes', listPromoCodesController);
 router.post('/offers/:offerId/promo-codes', addPromoCodesController);
-// Suppression d'un code (uniquement s'il est encore disponible).
+// A code can only be deleted while it is still available (not yet handed out).
 router.delete('/promo-codes/:id', deletePromoCodeController);
 
 // Soft-delete a company and everything tied to it.
@@ -61,7 +62,6 @@ router.get('/attributions', listAttributionsController);
 router.get('/redemptions', listRedemptionsController);
 router.get('/purchases', listPurchasesController);
 
-// Category CRUD (admin)
 router.get('/categories', listAllCategoriesController);
 router.post('/categories', createCategoryController);
 router.patch('/categories/:id', updateCategoryController);

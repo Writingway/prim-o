@@ -1,6 +1,6 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-// Poppins auto-hébergée (RGPD : pas d'appel au CDN Google, l'IP ne sort pas).
+// Self-hosted Poppins (GDPR: no call to Google's CDN, so the visitor's IP never leaks).
 import '@fontsource/poppins/400.css'
 import '@fontsource/poppins/500.css'
 import '@fontsource/poppins/600.css'

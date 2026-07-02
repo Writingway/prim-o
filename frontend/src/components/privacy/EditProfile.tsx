@@ -6,8 +6,8 @@ import type { IconName } from '../ui/Icon';
 import ProfileAvatar from '../ui/ProfileAvatar';
 import { AVATARS, type AvatarKey } from '../../lib/avatars';
 
-// Profil employé (cf. README B4) : en-tête avatar + badges, puis lignes de
-// réglages dépliables (accordéon, même pattern que « Confidentialité & données »).
+// Employee profile (see README B4): avatar header + badges, then expandable settings
+// rows (accordion, same pattern as the "Confidentialité & données" section).
 const CARD = 'rounded-2xl border border-primo-line bg-white';
 const FIELD = 'flex flex-col gap-[5px]';
 const LABEL = 'text-[13px] font-semibold text-primo-slate';
@@ -21,7 +21,7 @@ const ROW =
   'flex w-full items-center gap-3 rounded-2xl border border-primo-line bg-white px-4 py-3.5 text-left transition hover:bg-primo-surface';
 const ROW_ICON =
   'flex h-9 w-9 flex-none items-center justify-center rounded-[10px] bg-primo-mint text-primo-teal-strong';
-// Panneau dépliable sous une ligne (même style que PrivacySection).
+// Expandable panel under a row (same style as PrivacySection).
 const PANEL = 'mt-2.5 rounded-2xl border border-primo-line bg-white px-4 py-4';
 
 type Profile = {
@@ -32,10 +32,9 @@ type Profile = {
   profilePhoto: string | null;
 };
 
-// Quelle ligne du profil est dépliée (une seule à la fois).
+// Which profile row is expanded (only one at a time).
 type OpenSection = 'profile' | 'password' | null;
 
-// Ligne-bouton d'accordéon : chevron qui pivote quand le panneau est ouvert.
 function AccordionRow({
   icon,
   label,
@@ -63,19 +62,18 @@ function AccordionRow({
 }
 
 type EditProfileProps = {
-  // Rafraîchit l'avatar du hero du dashboard en direct après enregistrement.
+  // Lets the dashboard hero refresh its avatar immediately after saving.
   onPhotoChange?: (photo: string | null) => void;
 };
 
 export default function EditProfile({ onPhotoChange }: EditProfileProps) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
-  // Section dépliée (accordéon). 'profile' = formulaire d'édition, 'password' = reset.
   const [openSection, setOpenSection] = useState<OpenSection>(null);
-  // Avatar choisi dans le formulaire d'édition (enregistré avec « Enregistrer »).
+  // Avatar picked in the edit form (only persisted when saving).
   const [editPhoto, setEditPhoto] = useState<AvatarKey | null>(null);
 
-  // Champs du formulaire (pré-remplis à l'ouverture).
+  // Form fields, pre-filled when the panel opens.
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
@@ -96,7 +94,7 @@ export default function EditProfile({ onPhotoChange }: EditProfileProps) {
     load();
   }, []);
 
-  // Ouvre/ferme le formulaire d'édition. À l'ouverture, pré-remplit les champs.
+  // Toggle the edit form; on open, pre-fill the fields from the current profile.
   const toggleProfile = () => {
     if (openSection === 'profile') {
       setOpenSection(null);
@@ -111,7 +109,7 @@ export default function EditProfile({ onPhotoChange }: EditProfileProps) {
     setOpenSection('profile');
   };
 
-  // Ouvre/ferme le panneau mot de passe (l'email part sur clic explicite du bouton).
+  // Toggle the password panel (the reset email is only sent on the explicit button click).
   const togglePassword = () => {
     setOpenSection((s) => (s === 'password' ? null : 'password'));
   };
@@ -119,7 +117,7 @@ export default function EditProfile({ onPhotoChange }: EditProfileProps) {
   const handleSave = async () => {
     if (!profile) return;
 
-    // On n'envoie QUE les champs réellement modifiés (mise à jour partielle).
+    // Send ONLY the fields that actually changed (partial update).
     const payload: { firstName?: string; lastName?: string; email?: string; profilePhoto?: string | null } = {};
     if (firstName !== (profile.firstName ?? '')) payload.firstName = firstName;
     if (lastName !== (profile.lastName ?? '')) payload.lastName = lastName;
@@ -127,7 +125,7 @@ export default function EditProfile({ onPhotoChange }: EditProfileProps) {
     if (editPhoto !== (profile.profilePhoto ?? null)) payload.profilePhoto = editPhoto;
 
     if (Object.keys(payload).length === 0) {
-      setOpenSection(null); // rien n'a changé → on referme simplement
+      setOpenSection(null); // nothing changed: just close the panel
       return;
     }
 
@@ -158,8 +156,8 @@ export default function EditProfile({ onPhotoChange }: EditProfileProps) {
     }
   };
 
-  // Changement de mot de passe : on passe par le même flux que « oublié »
-  // (lien par mail). On ne modifie jamais le mot de passe en direct ici.
+  // Password change goes through the same flow as "forgot password" (emailed link).
+  // The password is never changed directly here.
   const handlePasswordReset = async () => {
     if (!profile) return;
     setPwdSending(true);
@@ -180,14 +178,14 @@ export default function EditProfile({ onPhotoChange }: EditProfileProps) {
   if (loading || !profile) {
     return (
       <section className={`${CARD} mb-3.5 p-5`} aria-busy="true">
-        {/* header avatar */}
+        {/* Avatar header skeleton. */}
         <div className="flex flex-col items-center pb-1">
           <div className="h-[78px] w-[78px] rounded-full bg-primo-line animate-pulse" />
           <div className="mt-3.5 h-5 w-40 rounded bg-primo-line animate-pulse" />
           <div className="mt-2 h-4 w-52 rounded bg-primo-line animate-pulse" />
           <div className="mt-3 h-7 w-28 rounded-[20px] bg-primo-line animate-pulse" />
         </div>
-        {/* 2 lignes réglages */}
+        {/* Two settings-row skeletons. */}
         <div className="mt-4 flex flex-col gap-2.5">
           <div className="h-[58px] rounded-2xl bg-primo-line animate-pulse" />
           <div className="h-[58px] rounded-2xl bg-primo-line animate-pulse" />
@@ -205,7 +203,7 @@ export default function EditProfile({ onPhotoChange }: EditProfileProps) {
 
   return (
     <section className="mb-3.5">
-      {/* En-tête profil (toujours visible) */}
+      {/* Profile header (always visible). */}
       <div className="mb-4 flex flex-col items-center text-center">
         <button
           type="button"
@@ -240,9 +238,9 @@ export default function EditProfile({ onPhotoChange }: EditProfileProps) {
         </div>
       </div>
 
-      {/* Lignes de réglages (accordéon) */}
+      {/* Settings rows (accordion). */}
       <div className="flex flex-col gap-2.5">
-        {/* ── Modifier mon profil ── */}
+        {/* Edit-profile section. */}
         <div>
           <AccordionRow
             icon="settings"
@@ -266,7 +264,7 @@ export default function EditProfile({ onPhotoChange }: EditProfileProps) {
                   <input id="edit-email" className={INPUT} type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
                 </div>
 
-                {/* Photo de profil : avatars prédéfinis (ou initiales). */}
+                {/* Profile photo: predefined avatars, or initials as fallback. */}
                 <div className={FIELD}>
                   <label className={LABEL}>Photo de profil</label>
                   <div className="grid grid-cols-4 gap-2.5 sm:grid-cols-7">
@@ -288,7 +286,7 @@ export default function EditProfile({ onPhotoChange }: EditProfileProps) {
                         )}
                       </button>
                     ))}
-                    {/* Retour aux initiales */}
+                    {/* Back to initials (no avatar). */}
                     <button
                       type="button"
                       onClick={() => setEditPhoto(null)}
@@ -316,7 +314,7 @@ export default function EditProfile({ onPhotoChange }: EditProfileProps) {
           )}
         </div>
 
-        {/* ── Mot de passe ── */}
+        {/* Password section. */}
         <div>
           <AccordionRow
             icon="lock"

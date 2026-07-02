@@ -1,13 +1,13 @@
 import type { Request, NextFunction } from 'express';
 import { AppError } from './error.middleware';
 
-// Contexte appelant validé : tout est issu du token, jamais du body.
+// Validated caller context: everything comes from the token, never from the body.
 export type ManagerContext = { userId: string; role: 'MANAGER' | 'OWNER'; companyId: string };
 
-// Garde commun aux routes "espace entreprise" : MANAGER et OWNER y accèdent.
-// OWNER est un sur-ensemble du MANAGER (tout ce que fait le manager + l'achat de tokens).
-// Renvoie { userId, role, companyId } validés, ou null après avoir signalé
-// l'erreur via next() - même idiome que requireEmployee().
+// Shared guard for "company space" routes: MANAGER and OWNER both get in. OWNER is a superset
+// of MANAGER (everything a manager can do, plus token purchase). Returns the validated
+// { userId, role, companyId }, or null after reporting the error via next() — same idiom as
+// requireEmployee().
 export function requireManagerOrOwner(req: Request, next: NextFunction): ManagerContext | null {
   if (req.user?.role !== 'MANAGER' && req.user?.role !== 'OWNER') {
     next(new AppError(403, 'Accès réservé aux managers et patrons.'));
@@ -18,13 +18,13 @@ export function requireManagerOrOwner(req: Request, next: NextFunction): Manager
     next(new AppError(403, 'Aucune entreprise associée.'));
     return null;
   }
-  // role narrowé en 'MANAGER' | 'OWNER' par le guard ci-dessus.
+  // role is narrowed to 'MANAGER' | 'OWNER' by the guard above.
   return { userId: req.user.id, role: req.user.role, companyId };
 }
 
-// Garde back-office employeur : OWNER uniquement (§3.2). L'ADMIN plateforme n'a pas de
-// companyId → exclu. Même idiome que requireManagerOrOwner : renvoie le contexte ou null
-// après avoir signalé l'erreur via next().
+// Employer back-office guard: OWNER only (§3.2). The platform ADMIN has no companyId and is
+// therefore excluded. Same idiom as requireManagerOrOwner: returns the context, or null after
+// reporting the error via next().
 export type OwnerContext = { userId: string; companyId: string };
 
 export function requireOwner(req: Request, next: NextFunction): OwnerContext | null {

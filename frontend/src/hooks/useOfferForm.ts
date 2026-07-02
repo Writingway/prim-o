@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { createOffer, updateOffer, uploadOfferImage, deleteOfferImage } from '@/services/api';
 import type { Offer } from '@/types/types';
 
-// Form vide pour une nouvelle offre.
 const emptyForm = { partnerName: '', cost: '', discountPercent: '', categoryId: '' };
 
 type Opts = {
@@ -10,15 +9,15 @@ type Opts = {
   flash: (msg: string) => void;
 };
 
-// Panneau de création/édition d'offre. editingId === null → création.
+// Offer create/edit panel. editingId === null means create mode.
 export function useOfferForm({ reload, flash }: Opts) {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [formError, setFormError] = useState('');
   const [saving, setSaving] = useState(false);
-  // Photo : fichier choisi (à uploader), image actuelle (édition), et marqueur
-  // de suppression. L'upload se fait APRÈS la création/màj de l'offre (flux 2 temps).
+  // Image state: picked file (to upload), current image (edit mode), and removal flag.
+  // The upload happens AFTER the offer create/update (two-step flow).
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [currentImageUrl, setCurrentImageUrl] = useState<string | null>(null);
   const [removeImage, setRemoveImage] = useState(false);
@@ -29,13 +28,13 @@ export function useOfferForm({ reload, flash }: Opts) {
     setRemoveImage(false);
   };
 
-  // L'utilisateur sélectionne un fichier (remplace l'aperçu actuel).
+  // Picking a file replaces the current preview and cancels any pending removal.
   const pickImage = (file: File | null) => {
     setImageFile(file);
     if (file) setRemoveImage(false);
   };
 
-  // Retire l'image : annule la sélection et, en édition, marque l'existante à supprimer.
+  // Remove the image: drop the selection and, in edit mode, flag the existing one for deletion.
   const clearImage = () => {
     setImageFile(null);
     setRemoveImage(!!currentImageUrl);
@@ -102,8 +101,8 @@ export function useOfferForm({ reload, flash }: Opts) {
         return;
       }
 
-      // Étape 2 (photo) : sur l'id de l'offre créée/éditée. L'offre est déjà
-      // enregistrée → un échec ici n'annule pas l'offre, on le signale juste.
+      // Step 2 (image), keyed on the created/edited offer id. The offer is already saved, so a
+      // failure here does not roll it back — we only surface a warning.
       const offerId = editingId ?? res.data?.offer.id;
       let imageWarning = '';
       if (offerId) {

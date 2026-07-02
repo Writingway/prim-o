@@ -2,18 +2,17 @@ import { stripe } from '../lib/stripe';
 import { prisma } from '../lib/db';
 import { Prisma } from '@prisma/client';
 
-// Type de la session Checkout, dérivé directement de l'instance Stripe.
-// (Stripe v22 n'expose plus le namespace Stripe.Checkout.Session.)
+// Checkout session type derived from the Stripe client instance, because Stripe v22 no longer
+// exposes the Stripe.Checkout.Session namespace.
 export type CheckoutSession = Awaited<ReturnType<typeof stripe.checkout.sessions.retrieve>>;
 
-// Traite un paiement confirmé : crédite le pool + enregistre l'achat.
-// Idempotent : si le même paiement arrive 2 fois, le 2e est ignoré.
+// Fulfills a confirmed payment: credits the company pool and records the purchase. Idempotent —
+// a redelivered event for the same payment is a no-op.
 export async function fulfillCheckout(session: CheckoutSession): Promise<void> {
-  // On ne crédite QUE si l'argent est réellement encaissé. Pour les moyens de
-  // paiement asynchrones (SEPA, Pix…), `checkout.session.completed` peut arriver
-  // en `unpaid` : l'encaissement effectif est notifié plus tard via
-  // `checkout.session.async_payment_succeeded`. Sortie silencieuse (pas d'erreur)
-  // → Stripe ne réessaie pas un event qui ne deviendra jamais payé tel quel.
+  // Only credit once the money is actually captured. With async payment methods (SEPA, Pix, ...)
+  // `checkout.session.completed` can arrive while the session is still `unpaid`; the capture is
+  // signalled later by `checkout.session.async_payment_succeeded`. Return without erroring so
+  // Stripe does not keep retrying an event that will never become paid in this form.
   if (session.payment_status !== 'paid') {
     return;
   }
@@ -28,7 +27,8 @@ export async function fulfillCheckout(session: CheckoutSession): Promise<void> {
 
   try {
     await prisma.$transaction(async (tx) => {
-      // 1) Enregistre l'achat AVEC l'id de session (@unique).
+      // The @unique stripeSessionId makes this insert the idempotency guard: a replayed event
+      // aborts the transaction with P2002 before the balance is touched.
       await tx.companyTokenPurchase.create({
         data: {
           amount: tokenAmount,
@@ -38,14 +38,13 @@ export async function fulfillCheckout(session: CheckoutSession): Promise<void> {
           stripeSessionId: session.id,
         },
       });
-      // 2) Crédite le pool de l'entreprise.
       await tx.company.update({
         where: { id: companyId },
         data: { tokenBalance: { increment: tokenAmount } },
       });
     });
   } catch (err) {
-    // P2002 = violation d'unicité → paiement DÉJÀ crédité → on ignore.
+    // P2002 (unique violation) means this payment was already credited — swallow the redelivery.
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
       return;
     }

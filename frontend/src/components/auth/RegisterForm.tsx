@@ -7,8 +7,8 @@ import PasswordStrength from './PasswordStrength';
 type ValidationErrorBody = { details?: Array<{ message: string }> };
 
 type RegisterFormProps = {
-  // Inscription SANS auto-login : vérification email requise. Le parent affiche
-  // un message « vérifie ton email » et bascule sur l'onglet connexion.
+  // Registration does NOT auto-login: email verification is required first. The parent
+  // shows a "check your email" message and switches to the login tab.
   onSuccess: () => void;
 };
 

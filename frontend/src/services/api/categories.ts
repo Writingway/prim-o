@@ -2,11 +2,11 @@ import { authRequest } from './client';
 import type { Category } from '@/types/types';
 
 // Public endpoint: active categories with >=1 active offer.
-// Monté sous offerRouter (/api/offers) côté back → chemin /offers/categories.
+// Mounted under offerRouter (/api/offers) on the backend, hence the /offers/categories path.
 export const listCategories = () =>
   authRequest<{ categories: Category[] }>('GET', '/offers/categories');
 
-// Admin: all categories including inactive
+// Admin: all categories, including inactive ones.
 export const listAdminCategories = () =>
   authRequest<{ categories: Category[] }>('GET', '/admin/categories');
 

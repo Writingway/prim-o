@@ -8,9 +8,8 @@ interface SendEmailInput {
   html: string;
 }
 
-// Envoi d'un email transactionnel via Brevo.
-// Mode dev : sans BREVO_API_KEY, on logge au lieu d'envoyer → tout le
-// flow est testable sans compte Brevo.
+// Send a transactional email via Brevo. Dev mode: without BREVO_API_KEY the email is logged
+// instead of sent, so the whole flow is testable without a Brevo account.
 export async function sendEmail({ to, subject, html }: SendEmailInput): Promise<void> {
   if (!config.BREVO_API_KEY) {
     console.log(`[mail:dev] BREVO_API_KEY absente → email NON envoyé à ${to}`);
@@ -40,9 +39,8 @@ export async function sendEmail({ to, subject, html }: SendEmailInput): Promise<
   }
 }
 
-// Construit + envoie l'email de vérification. Le lien pointe vers le
-// backend (consommation one-time côté serveur), qui redirige ensuite
-// vers le front.
+// Build and send the verification email. The link targets the BACKEND (the token is consumed
+// one-time server-side), which then redirects to the frontend.
 export async function sendVerificationEmail(to: string, rawToken: string): Promise<void> {
   const link = `${config.API_URL}/api/auth/verify-email?token=${encodeURIComponent(rawToken)}`;
   const html = `
@@ -54,8 +52,8 @@ export async function sendVerificationEmail(to: string, rawToken: string): Promi
   await sendEmail({ to, subject: "Vérifie ton adresse email - Prim'O", html });
 }
 
-// Construit + envoie l'email de réinitialisation. Le lien pointe vers le
-// FRONT (l'utilisateur doit saisir un nouveau mot de passe), pas le backend.
+// Build and send the password-reset email. The link targets the FRONTEND (the user must type
+// a new password there), not the backend.
 export async function sendPasswordResetEmail(to: string, rawToken: string): Promise<void> {
   const link = `${config.CLIENT_URL}/?reset-token=${encodeURIComponent(rawToken)}`;
   const html = `

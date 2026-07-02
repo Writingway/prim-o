@@ -3,9 +3,8 @@ import { AppError } from '../middleware/error.middleware';
 import { deleteAccountSchema, updateProfileSchema } from '../schemas/privacy.schemas';
 import { exportUserData, deleteOwnAccount, updateOwnProfile, getMyProfile } from '../services/privacy.service';
 
-// GET /api/me/export - l'utilisateur connecté télécharge toutes ses
-// données personnelles (RGPD art. 15 & 20). L'id vient du JWT, jamais
-// du client.
+// GET /api/me/export — the connected user downloads all their personal data (GDPR art. 15
+// & 20). The id comes from the JWT, never from the client.
 export async function exportMyDataController(
   req: Request,
   res: Response,
@@ -20,7 +19,7 @@ export async function exportMyDataController(
 
     const data = await exportUserData(userId);
 
-    // On force le téléchargement en fichier plutôt qu'un affichage inline.
+    // Force a file download rather than inline display.
     res.setHeader('Content-Disposition', 'attachment; filename="mes-donnees.json"');
     res.status(200).json(data);
   } catch (err) {
@@ -32,8 +31,8 @@ export async function exportMyDataController(
   }
 }
 
-// DELETE /api/me - suppression (anonymisation) du compte de l'utilisateur
-// connecté, après confirmation par mot de passe (RGPD art. 17).
+// DELETE /api/me — delete (anonymize) the connected user's account, after password
+// confirmation (GDPR art. 17).
 export async function deleteMyAccountController(
   req: Request,
   res: Response,
@@ -49,8 +48,8 @@ export async function deleteMyAccountController(
     const { password } = deleteAccountSchema.parse(req.body);
     await deleteOwnAccount(userId, password);
 
-    // La session est terminée : on révoque le cookie refresh (même path
-    // que l'émission, sinon le navigateur ne le supprime pas).
+    // The session is over: clear the refresh cookie with the same path it was issued with,
+    // otherwise the browser will not remove it.
     res.clearCookie('refreshToken', { path: '/api/auth' });
     res.status(204).end();
   } catch (err) {
@@ -68,7 +67,7 @@ export async function deleteMyAccountController(
   }
 }
 
-// PATCH /api/me - rectification du profil de l'utilisateur connecté (art. 16).
+// PATCH /api/me — rectify the connected user's profile (GDPR art. 16).
 export async function updateMyProfileController(
   req: Request,
   res: Response,
@@ -99,7 +98,7 @@ export async function updateMyProfileController(
   }
 }
 
-// GET /api/me - profil de l'utilisateur connecté.
+// GET /api/me — the connected user's profile.
 export async function getMyProfileController(
   req: Request,
   res: Response,

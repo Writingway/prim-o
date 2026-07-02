@@ -3,6 +3,8 @@ import LegalPage, { type LegalPageKey } from './pages/LegalPage';
 import { RouterProvider } from '@tanstack/react-router';
 import { router } from './router';
 
+// Legal pages are addressed by URL hash (#privacy, #mentions, #cgu) and rendered in place of the
+// whole router, so they are reachable from any route; clearing the hash returns to the app.
 function legalFromHash(): LegalPageKey | null {
   const h = window.location.hash.replace('#', '');
   return h === 'privacy' || h === 'mentions' || h === 'cgu' ? h : null;

@@ -23,28 +23,25 @@ import { requireAuth, requireAdmin } from './middleware/auth.middleware';
 import { startTokenCleanup } from './jobs/tokenCleanup';
 import { startInactiveAccountCleanup } from './jobs/inactiveAccountCleanup';
 
-//stripe
 import stripeRouter from './routes/stripe.routes';
 import { stripeWebhookController } from './controllers/stripeWebhook.controller';
 
 
 const app = express();
 
-// API dynamique authentifiée : pas d'ETag → pas de 304 (qui casse fetch,
-// res.ok devenant false et le body vide côté client).
+// Authenticated dynamic API: disable ETags so responses are never 304 (a 304 breaks the client
+// fetch wrapper: res.ok is false and the body is empty).
 app.set('etag', false);
 
 if (config.NODE_ENV === 'production') app.set('trust proxy', 1);
 
-// 1. Sécurité headers
 app.use(helmet());
-// 2. CORS (avant rate limit)
+// CORS is registered before the rate limiter so throttled responses still carry CORS headers.
 app.use(cors({origin: config.CLIENT_URL, credentials: true}));
-// 3. Rate limiting - garde-fou DoS GLOBAL et large. Les routes sensibles
-// (login, refresh, génération de codes) ont leurs propres budgets serrés
-// dans lib/rateLimit.ts. Ce plafond global ne doit PAS étrangler le trafic
-// normal d'une SPA : chaque navigation déclenche /me + /offers, et un 401
-// → refresh → retry triple les appels (×2 encore en StrictMode dev).
+// Global DoS guard, deliberately loose. Sensitive routes (login, refresh, code generation)
+// have their own tight budgets in lib/rateLimit.ts. This global cap must NOT strangle normal
+// SPA traffic: every navigation fires /me + /offers, and a 401 → refresh → retry triples the
+// calls (doubled again by StrictMode in dev).
 app.use(rateLimit({
   windowMs: 60 * 1000,
   max: 300,
@@ -53,24 +50,22 @@ app.use(rateLimit({
   message: { error: 'Trop de requêtes, réessaie dans 1 minute.' },
 }));
 
-// En dev : logs détaillés colorés
-// En prod : format court (économise les logs)
+// Request logging: concise colored output in dev, Apache combined format in production.
 app.use(morgan(config.NODE_ENV === 'production' ? 'combined' : 'dev'));
 
-// Webhook Stripe : corps BRUT obligatoire (vérif de signature) → AVANT express.json().
+// The Stripe webhook needs the RAW body for signature verification, so it is mounted BEFORE
+// express.json().
 app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), stripeWebhookController);
 
-// 4. Parse JSON
 app.use(express.json());
-// Parser cookies
 app.use(cookieParser());
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', env: config.NODE_ENV });
 });
 
-// Fichiers uploadés (photos d'offres) servis en statique. Public (vitrine landing).
-// Sous /api/uploads pour passer par le proxy Vite en dev (qui ne route que /api).
+// Uploaded files (offer photos) served statically; public, used by the landing showcase.
+// Mounted under /api/uploads so the Vite dev proxy (which only forwards /api) picks it up.
 app.use('/api/uploads', express.static(UPLOADS_DIR));
 
 app.use('/api/auth', authRouter);
@@ -84,7 +79,6 @@ app.use('/api/offers', offerRouter);
 app.use('/api/stats', statsRouter);
 app.use('/api/admin', requireAuth, requireAdmin, adminRouter);
 
-//Stripe endpoints
 app.use('/api/stripe', stripeRouter);
 
 
@@ -94,8 +88,7 @@ app.listen(config.PORT, () => {
   console.log(`Serveur lancé sur http://localhost:${config.PORT}`);
 });
 
-// Démarre le job de nettoyage des tokens révoqués (tous les 24 heures).
+// Background jobs, both on a 24h cycle: dead-token purge and GDPR anonymization of
+// long-inactive accounts.
 startTokenCleanup();
-
-// Démarre le job d'anonymisation RGPD des comptes inactifs (toutes les 24h).
 startInactiveAccountCleanup();

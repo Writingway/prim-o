@@ -1,5 +1,5 @@
-// Avatars prédéfinis (déjà cadrés buste). La clé (`av_1`…`av_6`) est ce qui est
-// stocké en base (champ User.profilePhoto) ; le front la mappe vers l'image.
+// Predefined avatars (already cropped to bust). The key (`av_1`…`av_6`) is what is stored in the
+// database (User.profilePhoto); the frontend maps it back to the image asset.
 import av1 from '@/assets/avatars/av_1.png';
 import av2 from '@/assets/avatars/av_2.png';
 import av3 from '@/assets/avatars/av_3.png';
@@ -22,7 +22,7 @@ const SRC: Record<AvatarKey, string> = {
   av_1: av1, av_2: av2, av_3: av3, av_4: av4, av_5: av5, av_6: av6,
 };
 
-// Clé (potentiellement inconnue/nulle) → URL de l'image, ou null si pas d'avatar.
+// Maps a (possibly unknown or null) key to its image URL, or null when there is no avatar.
 export function avatarSrc(key: string | null | undefined): string | null {
   if (!key) return null;
   return SRC[key as AvatarKey] ?? null;

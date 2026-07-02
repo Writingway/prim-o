@@ -18,7 +18,7 @@ import { sendVerificationEmail, sendPasswordResetEmail } from '../lib/mail';
 import { Role } from "@prisma/client";
 import { DomainError, ErrorCode } from "../middleware/error.middleware";
 
-// Émet un refresh token (stocké) + un access token pour un utilisateur donné.
+// Issues a session: a persisted refresh token plus a signed access token.
 async function issueSession(user: { id: string; role: Role | null; companyId: string | null }) {
   const { raw: refreshToken, hash } = generateRefreshToken();
   await prisma.refreshToken.create({
@@ -28,8 +28,8 @@ async function issueSession(user: { id: string; role: Role | null; companyId: st
   return { accessToken, refreshToken };
 }
 
-// Account-first : crée un utilisateur flottant (role null, companyId null),
-// connecté immédiatement. L'appartenance entreprise vient ensuite.
+// Account-first signup: creates a floating user (role null, companyId null);
+// company membership comes later.
 export async function register(input: RegisterInput) {
   const { firstName, lastName, email, password } = input;
 
@@ -39,7 +39,7 @@ export async function register(input: RegisterInput) {
   const passwordHash = await bcrypt.hash(password, 12);
   const { raw, hash } = generateEmailVerificationToken();
 
-  // Atomique : jamais de compte sans son token de vérification.
+  // Atomic: never create an account without its email-verification token.
   const user = await prisma.$transaction(async (tx) => {
     const created = await tx.user.create({
       data: { email, passwordHash, firstName, lastName, role: null, companyId: null },
@@ -50,15 +50,15 @@ export async function register(input: RegisterInput) {
     return created;
   });
 
-  // Hors transaction : un échec d'envoi ne doit pas annuler l'inscription.
+  // Outside the transaction: a failed email send must not roll back the signup.
   await sendVerificationEmail(user.email, raw);
 
-  // Pas d'auto-login : l'utilisateur doit vérifier son email avant de se connecter.
+  // No auto-login: the user must verify their email before signing in.
   return { email: user.email };
 }
 
-// L'utilisateur flottant crée son entreprise (PENDING) et devient OWNER.
-// On ré-émet un accessToken frais : l'ancien portait role=null.
+// A floating user creates their company (PENDING) and becomes OWNER.
+// A fresh access token is issued: the old one still carried role=null.
 export async function createCompany(userId: string, input: CreateCompanyInput) {
   const user = await prisma.user.findFirst({ where: { id: userId, deletedAt: null } });
   if (!user) throw new DomainError(ErrorCode.USER_NOT_FOUND);
@@ -82,8 +82,8 @@ export async function createCompany(userId: string, input: CreateCompanyInput) {
   };
 }
 
-// L'utilisateur flottant rejoint une entreprise via code d'invitation.
-// Code valide = membre actif direct (plus d'approbation manager - spec §4).
+// A floating user joins a company via an invite code. A valid code makes them an
+// active member immediately — no manager approval step (spec §4).
 export async function joinCompany(userId: string, input: JoinCompanyInput) {
   const { code } = input;
   const user = await prisma.user.findFirst({ where: { id: userId, deletedAt: null } });
@@ -91,7 +91,7 @@ export async function joinCompany(userId: string, input: JoinCompanyInput) {
   if (user.companyId !== null) throw new DomainError(ErrorCode.ALREADY_IN_COMPANY);
 
   const updatedUser = await prisma.$transaction(async (tx) => {
-    // Consommation atomique du code : un seul gagnant si usedCount au plafond.
+    // Atomic code consumption: if usedCount is at the cap, only one concurrent caller wins.
     const rows = await tx.$queryRaw<{ companyId: string; role: Role }[]>`
       UPDATE "CompanyInviteCode"
       SET "usedCount" = "usedCount" + 1
@@ -119,7 +119,7 @@ export async function refreshTokens(rawToken: string) {
 
   if (!stored) throw new DomainError(ErrorCode.INVALID_REFRESH);
 
-  // DÉTECTION DE VOL : token révoqué réutilisé = on coupe toutes les sessions.
+  // THEFT DETECTION: a revoked token being reused kills every session of the user.
   if (stored.isRevoked) {
     await prisma.refreshToken.updateMany({
       where: { userId: stored.userId, isRevoked: false },
@@ -130,14 +130,14 @@ export async function refreshTokens(rawToken: string) {
 
   if (stored.expiresAt < new Date()) throw new DomainError(ErrorCode.INVALID_REFRESH);
 
-  // Utilisateur supprimé : on rejette AVANT de créer le moindre token.
+  // Deleted user: reject BEFORE minting any new token.
   const user = await prisma.user.findUnique({ where: { id: stored.userId } });
   if (!user || user.deletedAt !== null) {
     throw new DomainError(ErrorCode.INVALID_REFRESH);
   }
 
-  // ROTATION : révocation conditionnelle (isRevoked: false). Deux refresh
-  // simultanés → un seul gagne ; l'autre matche 0 ligne, throw, rollback.
+  // ROTATION: the revocation is guarded on isRevoked: false. Two concurrent
+  // refreshes → only one wins; the other matches zero rows, throws, rolls back.
   const { raw, hash } = generateRefreshToken();
   await prisma.$transaction(async (tx) => {
     const created = await tx.refreshToken.create({
@@ -163,18 +163,18 @@ export async function login(input: LoginInput) {
   const validPassword = await bcrypt.compare(password, user.passwordHash);
   if (!validPassword) throw new DomainError(ErrorCode.INVALID_CREDENTIALS);
 
-  // Les utilisateurs flottants (companyId null, role null) PEUVENT se connecter.
-  // La capacité entreprise est gardée plus loin sur Company.status.
+  // Floating users (companyId null, role null) CAN log in. Company capabilities
+  // are gated further down the stack on Company.status.
   if (!user.isEmailVerified) throw new DomainError(ErrorCode.EMAIL_NOT_VERIFIED);
 
-  // RGPD : trace la dernière connexion (le job d'anonymisation des comptes inactifs s'en sert).
+  // GDPR: record the last login; the inactive-account anonymization job relies on it.
   await prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });
 
   return issueSession(user);
 }
 
-// Source unique d'identité pour le frontend : rôle + entreprise + statut.
-// Lu en DB - le token peut être périmé et ne porte pas company.status.
+// Single source of identity for the frontend: role + company + status.
+// Read from DB — the token may be stale and does not carry company.status.
 export async function getMe(userId: string) {
   const user = await prisma.user.findFirst({
     where: { id: userId, deletedAt: null },
@@ -196,8 +196,8 @@ export async function logout(rawToken: string): Promise<void> {
   });
 }
 
-// Consomme un token de vérification email reçu par lien. Atomique :
-// on ne marque utilisé que si ça ne l'est pas déjà (pas de double usage).
+// Consumes an email-verification token from the emailed link. Atomic: the token
+// is marked used only if it was not already, so it cannot be consumed twice.
 export async function verifyEmail(rawToken: string): Promise<void> {
   const tokenHash = hashRefreshToken(rawToken);
   const stored = await prisma.emailVerificationToken.findUnique({ where: { tokenHash } });
@@ -220,15 +220,15 @@ export async function verifyEmail(rawToken: string): Promise<void> {
   });
 }
 
-// Renvoie un email de vérification. Silencieux par conception : ne révèle
-// jamais si l'email existe ou est déjà vérifié (le controller répond pareil
-// dans tous les cas). Invalide les anciens liens pour n'en garder qu'un actif.
+// Resends a verification email. Silent by design: never reveals whether the email
+// exists or is already verified (the controller answers identically in every case).
+// Older links are invalidated so only one stays active.
 export async function resendVerification(email: string): Promise<void> {
   const user = await prisma.user.findFirst({
     where: { email, deletedAt: null, isEmailVerified: false },
     select: { id: true, email: true },
   });
-  if (!user) return; // inexistant OU déjà vérifié → on ne fait rien
+  if (!user) return; // Unknown or already verified: do nothing.
 
   const { raw, hash } = generateEmailVerificationToken();
   await prisma.$transaction(async (tx) => {
@@ -241,9 +241,9 @@ export async function resendVerification(email: string): Promise<void> {
   await sendVerificationEmail(user.email, raw);
 }
 
-// Mot de passe oublié : génère un token de reset (TTL 1h) et envoie le lien.
-// Silencieux par conception (anti-énumération) : le controller répond pareil
-// que l'email existe ou non. Invalide les anciens liens (un seul actif).
+// Forgotten password: issues a reset token (1h TTL) and emails the link.
+// Silent by design (anti-enumeration): the controller answers identically whether
+// the email exists or not. Older links are invalidated (only one active at a time).
 export async function requestPasswordReset(email: string): Promise<void> {
   const user = await prisma.user.findFirst({
     where: { email, deletedAt: null },
@@ -262,9 +262,9 @@ export async function requestPasswordReset(email: string): Promise<void> {
   await sendPasswordResetEmail(user.email, raw);
 }
 
-// Consomme un token de reset et change le mot de passe. Atomique, et
-// RÉVOQUE TOUTES LES SESSIONS (refresh) de l'user : changer son mot de
-// passe déconnecte partout (défense contre un compte compromis).
+// Consumes a reset token and sets the new password. Atomic, and REVOKES ALL of
+// the user's refresh sessions: changing the password logs out everywhere
+// (defense for a compromised account).
 export async function resetPassword(rawToken: string, newPassword: string): Promise<void> {
   const tokenHash = hashRefreshToken(rawToken);
   const stored = await prisma.passwordResetToken.findUnique({ where: { tokenHash } });

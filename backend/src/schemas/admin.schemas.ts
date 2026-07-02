@@ -1,15 +1,16 @@
 import z from 'zod';
-import { safeText } from '../lib/validation';   // already used by offer.schemas
+import { safeText } from '../lib/validation';
 
 export const createCompanySchema = z.object({
-  name: safeText(1),     // required, trimmed, min length 1
+  name: safeText(1),
 });
 export type CreateCompanyInput = z.infer<typeof createCompanySchema>;
 
 
-export const idParamSchema = z.uuid();   // reject garbage :id with clean 400
+// Validates :id route params so malformed ids fail fast with a 400.
+export const idParamSchema = z.uuid();
 
-// Validation d'une entreprise par l'admin : APPROVED ou REJECTED uniquement.
+// Admin decision on a pending company registration.
 export const companyStatusSchema = z.object({
   status: z.enum(['APPROVED', 'REJECTED']),
 });
@@ -20,12 +21,13 @@ export const listUsersQuerySchema = z.object({
   limit:     z.coerce.number().int().min(1).max(100).default(20),
   role:      z.enum(['ADMIN', 'MANAGER', 'EMPLOYEE']).optional(),
   companyId: z.uuid().optional(),
-  search:    z.string().trim().max(255).optional(),    // email contains
+  // Substring match on user email.
+  search:    z.string().trim().max(255).optional(),
 });
 export type ListUsersQuery = z.infer<typeof listUsersQuerySchema>;
 
-// role is restricted to MANAGER/EMPLOYEE on purpose: you can NEVER
-// promote someone to ADMIN through this API (privilege-escalation block).
+// Role is restricted to MANAGER/EMPLOYEE on purpose: this endpoint can never promote anyone to
+// ADMIN (privilege-escalation guard).
 export const updateUserSchema = z.object({
   role: z.enum(['MANAGER', 'EMPLOYEE']).optional(),
   isEmailVerified: z.boolean().optional(),
@@ -34,7 +36,7 @@ export const updateUserSchema = z.object({
 });
 export type UpdateUserInput = z.infer<typeof updateUserSchema>;
 
-// Pagination query for any list endpoint (users, companies, etc.)
+// Shared pagination query for list endpoints (users, companies, etc.).
 export const paginationQuerySchema = z.object({
   page:  z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),

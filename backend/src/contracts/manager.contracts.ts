@@ -1,13 +1,12 @@
-// ─────────────────────────────────────────────────────────────────────────────
-// CONTRATS API — addendum v1.1 (Manager & Rétribution). Shapes GELÉES Day-0.
-// Dev A (motifs/stats), Dev B (allocation/rétribution/soldes), Dev C (front)
-// codent contre ces interfaces. Toute modif = accord des 3 puis bump ici.
+// API contracts — addendum v1.1 (Manager & Retribution). Shapes FROZEN at Day-0.
+// Dev A (motifs/stats), Dev B (allocation/retribution/balances) and Dev C (front) all code
+// against these interfaces; any change requires agreement from all three, then a bump here.
+// A "motif" is the catalogued recognition reason attached to a token attribution.
 //
-// Requests (Zod) : voir src/schemas/attribution.schemas.ts
-//   - createAttributionSchema  → distribution manager → employé
-//   - allocateSchema           → allocation employeur → manager
-// Ce fichier ne décrit que les RÉPONSES + DTOs partagés.
-// ─────────────────────────────────────────────────────────────────────────────
+// Request schemas (Zod) live in src/schemas/attribution.schemas.ts:
+//   - createAttributionSchema: manager → employee distribution.
+//   - allocateSchema: employer → manager allocation.
+// This file only describes RESPONSES and shared DTOs.
 
 export type MotifCategory =
   | 'COMPORTEMENTS_INDIVIDUELS'
@@ -17,21 +16,19 @@ export type MotifCategory =
 
 export type RetributionMode = 'PART_EGALE' | 'POURCENTAGE' | 'AUCUNE';
 
-// ── Motifs (Dev A) ───────────────────────────────────────────────
-// GET /api/motifs — liste officielle groupée par catégorie.
+// Motifs (Dev A) — GET /api/motifs: the official list, grouped by category.
 export interface MotifDTO {
   id: string;
   tag: string;
   label: string;
   category: MotifCategory;
-  compliment: string; // affiché au salarié à la réception
+  compliment: string; // shown to the employee on receipt
 }
 export interface ListMotifsResponse {
   categories: Array<{ category: MotifCategory; motifs: MotifDTO[] }>;
 }
 
-// ── Allocation employeur → manager (Dev B) ───────────────────────
-// POST /api/attributions/allocate  (body = AllocateInput)
+// Employer → manager allocation (Dev B) — POST /api/attributions/allocate (body = AllocateInput).
 export interface AllocateResponse {
   allocationId: string;
   managerId: string;
@@ -39,37 +36,34 @@ export interface AllocateResponse {
   mode: RetributionMode;
   percentage: number | null;
   status: 'A_DISTRIBUER' | 'DISTRIBUEE';
-  companyTokenBalance: number; // pool employeur restant après débit
+  companyTokenBalance: number; // employer pool remaining after the debit
 }
 
-// ── Envoi groupé d'une enveloppe (Dev B) ─────────────────────────
-// POST /api/attributions/distribute — transaction atomique : crédit manager (R) +
-// crédit de chaque employé + verrouillage de l'enveloppe (DISTRIBUEE).
+// Bulk envelope send (Dev B) — POST /api/attributions/distribute. Atomic transaction: credit
+// the manager (R), credit each employee, lock the envelope (DISTRIBUEE).
 export interface DistributeEnvelopeResponse {
   allocationId: string;
-  retributionAmount: number; // part créditée au manager (§3.4) ; 0 si AUCUNE
-  distributed: number;       // total distribué aux employés (= montant − R)
-  lineCount: number;         // nb d'attributions créées
+  retributionAmount: number; // share credited to the manager (§3.4); 0 when mode is AUCUNE
+  distributed: number;       // total distributed to employees (= amount − R)
+  lineCount: number;         // number of attributions created
   status: 'DISTRIBUEE';
 }
 
-// ── Double solde manager (Dev B) — §3.3 ──────────────────────────
-// GET /api/attributions/balances
+// Manager's two balances (Dev B, §3.3) — GET /api/attributions/balances.
 export interface ManagerBalancesResponse {
-  envelopeRemaining: number; // budget non distribué des enveloppes A_DISTRIBUER
-  personalBalance: number;   // solde perso reçu = rétribution cumulée (user.balance)
+  envelopeRemaining: number; // undistributed budget across A_DISTRIBUER envelopes
+  personalBalance: number;   // personal balance received = accumulated retribution (user.balance)
 }
 
-// ── "Mes enveloppes" du manager (Dev B) ──────────────────────────
-// GET /api/attributions/envelopes
+// Manager's "my envelopes" view (Dev B) — GET /api/attributions/envelopes.
 export interface ManagerEnvelopeDTO {
   allocationId: string;
   amount: number;
   mode: RetributionMode;
   percentage: number | null;
   status: 'A_DISTRIBUER' | 'DISTRIBUEE';
-  retributionAmount: number;    // R (live si A_DISTRIBUER, figé si DISTRIBUEE)
-  distributableBudget: number;  // montant − R
+  retributionAmount: number;    // R (computed live while A_DISTRIBUER, frozen once DISTRIBUEE)
+  distributableBudget: number;  // amount − R
   distributedAt: string | null; // ISO
   createdAt: string;            // ISO
 }
@@ -77,8 +71,7 @@ export interface ManagerEnvelopesResponse {
   envelopes: ManagerEnvelopeDTO[];
 }
 
-// ── "Mes enveloppes envoyées" de l'employeur (Dev B) ─────────────
-// GET /api/attributions/sent-envelopes
+// Employer's "sent envelopes" view (Dev B) — GET /api/attributions/sent-envelopes.
 export interface SentEnvelopeDTO {
   allocationId: string;
   amount: number;
@@ -86,7 +79,7 @@ export interface SentEnvelopeDTO {
   percentage: number | null;
   status: 'A_DISTRIBUER' | 'DISTRIBUEE';
   retributionAmount: number;
-  managerName: string;          // manager destinataire
+  managerName: string;          // recipient manager
   distributedAt: string | null; // ISO
   createdAt: string;            // ISO
 }
@@ -94,7 +87,7 @@ export interface SentEnvelopesResponse {
   envelopes: SentEnvelopeDTO[];
 }
 
-// GET /api/managers/me/history — deux historiques distincts.
+// GET /api/managers/me/history — two distinct histories: sent vs received.
 export interface ManagerHistoryResponse {
   sent: Array<{
     attributionId: string;
@@ -111,8 +104,7 @@ export interface ManagerHistoryResponse {
   }>;
 }
 
-// ── Stats employeur (Dev A) — §3.2 / §3.4 ────────────────────────
-// GET /api/stats?teamId=&from=&to=  (filtres optionnels)
+// Employer stats (Dev A, §3.2 / §3.4) — GET /api/stats?teamId=&from=&to= (optional filters).
 export interface MotifAggregateRow {
   motifTag: string;
   category: MotifCategory;
@@ -124,38 +116,38 @@ export interface EmployeeRankingRow {
   totalTokens: number;
   topMotifTag: string | null;
 }
-// BUMP v1.2 (Dev A, validé) — classement des meilleurs employés PAR motif
-// (« qui est le meilleur dans quoi »). Exposé dans StatsResponse → OWNER uniquement.
+// BUMP v1.2 (Dev A, approved) — ranking of top employees PER motif ("who is best at what").
+// Exposed in StatsResponse, OWNER only.
 export interface MotifLeaderboardRow {
   motifTag: string;
   category: MotifCategory;
-  top: Array<{ employeeId: string; tokens: number; count: number }>; // Top 3, trié tokens desc
+  top: Array<{ employeeId: string; tokens: number; count: number }>; // top 3, sorted by tokens desc
 }
-// BUMP v1.3 (Dev A, validé) — angles morts PAR manager + courbe d'évolution dans le temps (§3.5).
+// BUMP v1.3 (Dev A, approved) — blind spots PER manager plus evolution over time (§3.5).
 export interface ManagerBlindSpotsRow {
   managerId: string;
-  tags: string[]; // motifs actifs que CE manager n'a jamais utilisés
+  tags: string[]; // active motifs THIS manager has never used
 }
 export interface EvolutionPoint {
-  period: string;   // mois "YYYY-MM"
+  period: string;   // month, "YYYY-MM"
   motifTag: string;
   count: number;
   totalTokens: number;
 }
-// BUMP v1.4 (Dev A) — l'équité expose AUSSI qui le manager priorise (bénéficiaires triés).
+// BUMP v1.4 (Dev A) — equity ALSO exposes who the manager favors (sorted recipients).
 export interface EquityRow {
   managerId: string;
-  spread: number; // CV des totaux par employé (0 = équitable)
-  recipients: Array<{ employeeId: string; tokens: number; share: number }>; // qui reçoit quoi, trié desc ; share = part 0..1
+  spread: number; // coefficient of variation of per-employee totals (0 = perfectly even)
+  recipients: Array<{ employeeId: string; tokens: number; share: number }>; // who gets what, sorted desc; share in 0..1
 }
 export interface StatsResponse {
-  motifAggregate: MotifAggregateRow[];        // répartition par motif/catégorie
-  ranking: EmployeeRankingRow[];               // classement collaborateurs
-  blindSpots: string[];                        // tags de motifs jamais utilisés (angles morts, entreprise)
-  blindSpotsByManager: ManagerBlindSpotsRow[]; // §3.5 — angles morts PAR manager
-  equityByManager: EquityRow[];                // équité + bénéficiaires priorisés par manager
-  velocityByManager: Array<{ managerId: string; avgDelaySeconds: number | null }>; // allocation → 1ère distribution
-  managerNames: Record<string, string>;        // managerId → « Prénom Nom » (résolu côté serveur, inclut patron/managers supprimés)
-  leaderboardByMotif: MotifLeaderboardRow[];   // §3.5 — top employés par motif (OWNER only)
-  evolution: EvolutionPoint[];                 // §3.5 — évolution mensuelle par motif (filtrable par employeeId)
+  motifAggregate: MotifAggregateRow[];        // breakdown by motif/category
+  ranking: EmployeeRankingRow[];               // employee ranking
+  blindSpots: string[];                        // motif tags never used company-wide (blind spots)
+  blindSpotsByManager: ManagerBlindSpotsRow[]; // §3.5 — blind spots per manager
+  equityByManager: EquityRow[];                // fairness + favored recipients per manager
+  velocityByManager: Array<{ managerId: string; avgDelaySeconds: number | null }>; // allocation → first distribution
+  managerNames: Record<string, string>;        // managerId → "First Last" (resolved server-side, includes deleted owner/managers)
+  leaderboardByMotif: MotifLeaderboardRow[];   // §3.5 — top employees per motif (OWNER only)
+  evolution: EvolutionPoint[];                 // §3.5 — monthly evolution per motif (filterable by employeeId)
 }

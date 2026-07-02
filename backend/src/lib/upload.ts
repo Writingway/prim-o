@@ -3,15 +3,15 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 
-// Stockage des fichiers uploadés. __dirname → src/lib (ts-node) ou dist/lib
-// (build) ; dans les deux cas ../../uploads pointe sur backend/uploads.
+// Upload storage root. __dirname is src/lib (ts-node) or dist/lib (build); either way
+// ../../uploads resolves to backend/uploads.
 export const UPLOADS_DIR = path.resolve(__dirname, '../../uploads');
 const OFFERS_DIR = path.join(UPLOADS_DIR, 'offers');
 
-// Préfixe web (stocké en DB) → servi en statique sous /api/uploads (cf. server.ts).
+// Web prefix stored in DB; files are served statically under /api/uploads (see server.ts).
 export const OFFERS_PUBLIC_PREFIX = '/uploads/offers';
 
-// Types acceptés → extension de fichier. Le client ne choisit JAMAIS le nom.
+// Accepted MIME types mapped to the extension we assign. The client NEVER picks the filename.
 const ALLOWED = new Map<string, string>([
   ['image/jpeg', '.jpg'],
   ['image/png', '.png'],
@@ -22,26 +22,26 @@ const storage = multer.diskStorage({
   destination: (_req, _file, cb) => cb(null, OFFERS_DIR),
   filename: (_req, file, cb) => {
     const ext = ALLOWED.get(file.mimetype) ?? '';
-    cb(null, `${crypto.randomUUID()}${ext}`); // nom aléatoire → pas de traversée de chemin
+    cb(null, `${crypto.randomUUID()}${ext}`); // random name: no path traversal
   },
 });
 
-// Middleware d'upload d'une photo d'offre : 1 fichier, champ « image », 2 Mo max,
-// types image/jpeg|png|webp uniquement (refus côté serveur, le client ne décide rien).
+// Offer photo upload middleware: single file in field "image", 2 MB max, jpeg/png/webp only —
+// all enforced server-side, the client decides nothing.
 export const offerImageUpload = multer({
   storage,
-  limits: { fileSize: 2 * 1024 * 1024 }, // 2 Mo
+  limits: { fileSize: 2 * 1024 * 1024 }, // 2 MB
   fileFilter: (_req, file, cb) => {
     if (ALLOWED.has(file.mimetype)) cb(null, true);
     else cb(new Error('INVALID_IMAGE_TYPE'));
   },
 }).single('image');
 
-// Supprime un fichier uploadé à partir de son chemin web (/uploads/offers/x).
-// Best-effort : ignore l'absence. Garde-fou anti-traversée : reste sous UPLOADS_DIR.
+// Delete an uploaded file given its web path (/uploads/offers/x). Best-effort: a missing file
+// is ignored. Traversal guard: refuses anything that resolves outside UPLOADS_DIR.
 export async function removeUploadedFile(imageUrl: string): Promise<void> {
   const rel = imageUrl.replace(/^\/uploads\//, '');
   const abs = path.join(UPLOADS_DIR, rel);
   if (abs !== UPLOADS_DIR && !abs.startsWith(UPLOADS_DIR + path.sep)) return;
-  await fs.unlink(abs).catch(() => { /* déjà absent */ });
+  await fs.unlink(abs).catch(() => { /* already gone */ });
 }

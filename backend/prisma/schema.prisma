@@ -1,11 +1,5 @@
-// ============================================================
-//  Prim'O — schema.prisma
-//  User unifié + Company (multi-tenant). Corrige les règles
-//  métier violées + dette technique de l'ancienne version.
-//  ⚠️ Deux contraintes ne s'expriment pas en Prisma : voir le
-//     bloc SQL en bas (CHECK + index partiel) à coller dans une
-//     migration vide après `migrate dev`.
-// ============================================================
+// Prim'O database schema. Some constraints (CHECKs, partial unique index) cannot be expressed in
+// Prisma and live in raw SQL — see the block at the bottom of this file.
 
 generator client {
   provider = "prisma-client-js"
@@ -16,7 +10,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ─────────────────────────── ENUMS ───────────────────────────
 
 enum Role {
   ADMIN
@@ -26,12 +19,12 @@ enum Role {
 }
 
 enum CompanyStatus {
-  PENDING   // Company créée, en attente de validation ADMIN
-  APPROVED  // Company validée par ADMIN, peut créer des users
+  PENDING   // Created, awaiting ADMIN validation.
+  APPROVED  // Validated by an ADMIN; the company can now create users.
   REJECTED
 }
 
-// Addendum v1.1 §3.5 — 4 catégories officielles de motifs d'attribution.
+// Addendum v1.1 §3.5 — the four official categories of motifs (reasons for awarding tokens).
 enum MotifCategory {
   COMPORTEMENTS_INDIVIDUELS
   RELATION_CLIENT
@@ -39,28 +32,27 @@ enum MotifCategory {
   ENGAGEMENT
 }
 
-// Addendum v1.1 §3.4 — mode de rétribution choisi par l'employeur à chaque allocation.
+// Addendum v1.1 §3.4 — manager retribution mode, chosen by the employer at each allocation.
 enum RetributionMode {
-  PART_EGALE    // mode 1 : enveloppe ÷ (nbCollaborateurs + 1)
-  POURCENTAGE   // mode 2 : % fixe de l'enveloppe
-  AUCUNE        // mode 3 : pas de rétribution manager
+  PART_EGALE    // Mode 1: envelope ÷ (number of collaborators + 1).
+  POURCENTAGE   // Mode 2: fixed percentage of the envelope.
+  AUCUNE        // Mode 3: no manager retribution.
 }
 
-// Cycle de vie d'une enveloppe (addendum v1.1, modèle "Mes enveloppes").
-// Valeurs ASCII (contrainte Prisma) ; libellé FR géré à l'affichage.
+// Envelope lifecycle (addendum v1.1, the "Mes enveloppes" model).
+// Values must be ASCII (Prisma constraint); French labels are handled at display time.
 enum AllocationStatus {
-  A_DISTRIBUER  // créée par l'employeur, en attente d'ouverture par le manager
-  DISTRIBUEE    // redistribuée et verrouillée (immuable)
+  A_DISTRIBUER  // Created by the employer, waiting for the manager to distribute it.
+  DISTRIBUEE    // Distributed and locked (immutable).
 }
 
-// ─────────────────────────── ENTREPRISE ──────────────────────
-// Remplace `companyName String`. C'est la barrière multi-tenant.
+// Company is the multi-tenant boundary: every non-ADMIN user and ledger row belongs to one.
 
 model Company {
   id           String    @id @default(uuid()) @db.Uuid
   name         String
-  tokenBalance Int       @default(0)   // POOL acheté par l'employeur. CHECK >= 0 en SQL.
-  status       CompanyStatus @default(PENDING) // PENDING = en attente de validation ADMIN
+  tokenBalance Int       @default(0)   // Token pool purchased by the employer. CHECK >= 0 in SQL.
+  status       CompanyStatus @default(PENDING)
   
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
@@ -70,25 +62,24 @@ model Company {
   inviteCodes  CompanyInviteCode[]
   attributions Attribution[]
   redemptions  Redemption[]
-  purchases    CompanyTokenPurchase[]   // historique des recharges du pool (D2)
-  allocations  Allocation[]             // enveloppes allouées aux managers (addendum v1.1)
+  purchases    CompanyTokenPurchase[]   // Pool top-up ledger (D2).
+  allocations  Allocation[]             // Envelopes allocated to managers (addendum v1.1).
 }
 
-// ─────────────────────────── USER UNIQUE ─────────────────────
-// Remplace Admin + Manager + Employee. Auth écrite UNE fois.
+// Single User model for every role, so auth logic is written once.
 
 model User {
   id              String     @id @default(uuid()) @db.Uuid
-  email           String                          // unicité : index partiel en SQL (soft-delete)
+  email           String                          // Unique only among non-soft-deleted rows, via a partial index in SQL.
   passwordHash    String
-  role            Role?                           // null = utilisateur flottant (inscrit, pas encore dans une entreprise)
-  firstName       String?                         // null pour ADMIN
+  role            Role?                           // Null = floating user (registered but not yet attached to a company).
+  firstName       String?                         // Null for ADMIN.
   lastName        String?
-  profilePhoto    String?                         // clé d'avatar prédéfini (av_1…av_6) ; null = initiales
-  balance         Int        @default(0)          // Portefeuille EMPLOYÉ + solde perso MANAGER (rétribution cumulée, addendum v1.1). CHECK >= 0 en SQL.
+  profilePhoto    String?                         // Predefined avatar key (av_1..av_6); null = show initials.
+  balance         Int        @default(0)          // EMPLOYEE wallet + MANAGER personal retribution balance (addendum v1.1). CHECK >= 0 in SQL.
   isEmailVerified Boolean    @default(false)
-  companyId       String?    @db.Uuid             // null = ADMIN OU utilisateur flottant pas encore rattaché
-  lastLoginAt     DateTime?                       // RGPD : dernière connexion ; sert au job d'anonymisation des comptes inactifs (3 ans). Null = jamais connecté → repli sur createdAt.
+  companyId       String?    @db.Uuid             // Null = ADMIN, or floating user not yet attached to a company.
+  lastLoginAt     DateTime?                       // GDPR: feeds the 3-year inactive-account anonymization job. Null = never logged in (use createdAt).
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
   deletedAt       DateTime?
@@ -99,19 +90,17 @@ model User {
   passwordResetTokens PasswordResetToken[]
 
   inviteCodesCreated   CompanyInviteCode[]    @relation("InviteCreatedBy")
-  attributionsSent     Attribution[]          @relation("AttribManager")   // en tant que manager
-  attributionsReceived Attribution[]          @relation("AttribEmployee")  // en tant qu'employé
+  attributionsSent     Attribution[]          @relation("AttribManager")
+  attributionsReceived Attribution[]          @relation("AttribEmployee")
   redemptions          Redemption[]
-  purchasesCreated     CompanyTokenPurchase[] @relation("PurchaseCreatedBy") // recharges saisies par un admin
-  allocationsReceived  Allocation[]           @relation("AllocationManager")   // enveloppes reçues comme manager
-  allocationsCreated   Allocation[]           @relation("AllocationCreatedBy") // enveloppes allouées par cet employeur/owner
+  purchasesCreated     CompanyTokenPurchase[] @relation("PurchaseCreatedBy")
+  allocationsReceived  Allocation[]           @relation("AllocationManager")
+  allocationsCreated   Allocation[]           @relation("AllocationCreatedBy")
 
   @@index([companyId])
   @@index([email])
 }
 
-// ─────────────────────────── AUTH TOKENS ─────────────────────
-// Plus de 3 FK nullables : un seul userId (rôle déduit de User).
 
 model RefreshToken {
   id           String   @id @default(uuid()) @db.Uuid
@@ -127,7 +116,7 @@ model RefreshToken {
   @@index([userId])
 }
 
-// Stocke le lien de confirmation email (règle 3)
+// Email confirmation token (rule 3). Only the hash is stored; the raw value goes into the link.
 model EmailVerificationToken {
   id        String    @id @default(uuid()) @db.Uuid
   tokenHash String    @unique
@@ -141,8 +130,8 @@ model EmailVerificationToken {
   @@index([userId])
 }
 
-// Stocke le lien de réinitialisation du mot de passe (usage unique, TTL court).
-// Même schéma que la vérification email : token haché, le raw part dans le lien.
+// Password reset token: single use, short TTL. Same scheme as email verification (hash stored,
+// raw value sent in the link).
 model PasswordResetToken {
   id        String    @id @default(uuid()) @db.Uuid
   tokenHash String    @unique
@@ -156,22 +145,21 @@ model PasswordResetToken {
   @@index([userId])
 }
 
-// ─────────────────────────── CODE D'ENTREPRISE ───────────────
-// Modélise VRAIMENT la règle 3 : 24h + plafond + révocable.
-// Validité = revokedAt IS NULL AND expiresAt > now AND usedCount < maxUses
-// Consommation atomique via $queryRaw (D3) : UPDATE ... WHERE usedCount < maxUses.
+// Rule 3: invite codes are valid for 24h, capped in uses, and revocable.
+// A code is usable iff revokedAt IS NULL AND expiresAt > now AND usedCount < maxUses.
+// Consumption is atomic via $queryRaw (D3): UPDATE ... WHERE usedCount < maxUses.
 
 model CompanyInviteCode {
   id          String    @id @default(uuid()) @db.Uuid
   code        String    @unique
   companyId   String    @db.Uuid
-  createdById String    @db.Uuid           // le manager qui l'a généré
-  expiresAt   DateTime                     // = createdAt + 24h
-  maxUses     Int                          // plafond d'usages
+  createdById String    @db.Uuid           // The manager who generated the code.
+  expiresAt   DateTime                     // Always createdAt + 24h.
+  maxUses     Int
   usedCount   Int       @default(0)
-  role        Role      @default(EMPLOYEE)  // rôle attribué à l'employé qui s'inscrit
+  role        Role      @default(EMPLOYEE)  // Role granted to the user who signs up with this code.
 
-  revokedAt   DateTime?                    // révocation
+  revokedAt   DateTime?
   createdAt   DateTime  @default(now())
 
   company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
@@ -180,18 +168,17 @@ model CompanyInviteCode {
   @@index([companyId])
 }
 
-// ─────────────────────────── RECHARGE DU POOL (D2) ───────────
-// Ledger d'achats : chaque crédit du pool entreprise = une ligne immuable.
-// Source de vérité de l'historique ; Company.tokenBalance = solde courant.
+// Purchase ledger (D2): every credit to the company pool is one immutable row. This is the
+// source of truth for history; Company.tokenBalance holds the current balance.
 
 model CompanyTokenPurchase {
   id          String   @id @default(uuid()) @db.Uuid
-  amount      Int                            // > 0 (Zod + CHECK). Tokens ajoutés au pool.
-  note        String?                        // motif/référence d'achat (optionnel)
+  amount      Int                            // Tokens added to the pool. > 0 (Zod + SQL CHECK).
+  note        String?
   companyId   String   @db.Uuid
-  createdById String   @db.Uuid              // l'ADMIN qui a crédité
+  createdById String   @db.Uuid              // The ADMIN who credited the pool.
   createdAt   DateTime @default(now())
-  stripeSessionId String?  @unique   // id de la session Stripe (cs_...) — garantit l'idempotence
+  stripeSessionId String?  @unique   // Stripe session id (cs_...); uniqueness makes the webhook credit idempotent.
 
 
   company   Company @relation(fields: [companyId], references: [id])
@@ -201,20 +188,19 @@ model CompanyTokenPurchase {
   @@index([createdById])
 }
 
-// ─────────────────────────── LEDGER TOKENS ───────────────────
-// Attribution (crédit) + Redemption (débit) = registre append-only.
-// INVARIANT : user.balance == SUM(attributionsReceived) - SUM(redemptions)
-// Toujours muter le balance DANS la même transaction (voir SOLUTIONS_dette_technique.md).
+// Attribution (credit) and Redemption (debit) form an append-only ledger.
+// Invariant: user.balance == SUM(attributionsReceived) - SUM(redemptions).
+// Always mutate the balance in the same transaction as the ledger row.
 
 model Attribution {
   id               String   @id @default(uuid()) @db.Uuid
-  amount           Int                            // tokens crédités à l'employé. > 0 (Zod + CHECK)
-  motifId          String?  @db.Uuid              // motif officiel (§3.5). Nullable en DB pour les lignes legacy ; REQUIS côté Zod pour toute nouvelle attribution.
-  retributionAmount Int     @default(0)           // OBSOLÈTE (addendum v1.1) : la rétribution est désormais portée par Allocation. Figé à 0 pour les nouvelles lignes.
-  companyId        String   @db.Uuid              // dénormalisé pour filtre multi-tenant rapide
+  amount           Int                            // Tokens credited to the employee. > 0 (Zod + SQL CHECK).
+  motifId          String?  @db.Uuid              // Official motif (§3.5). Nullable in DB for legacy rows; Zod requires it on new attributions.
+  retributionAmount Int     @default(0)           // Obsolete since addendum v1.1 (retribution moved to Allocation). Always 0 on new rows.
+  companyId        String   @db.Uuid              // Denormalized for fast multi-tenant filtering.
   managerId        String   @db.Uuid
   employeeId       String   @db.Uuid
-  allocationId     String?  @db.Uuid              // enveloppe d'origine (addendum v1.1). Null pour distribution directe OWNER / lignes legacy.
+  allocationId     String?  @db.Uuid              // Source envelope (addendum v1.1). Null for direct OWNER distributions and legacy rows.
   createdAt        DateTime @default(now())
 
   company    Company     @relation(fields: [companyId], references: [id])
@@ -230,16 +216,14 @@ model Attribution {
   @@index([allocationId])
 }
 
-// ─────────────────────────── MOTIFS D'ATTRIBUTION (§3.5) ──────
-// Liste officielle V1, 4 catégories. `tag` = identité stats stable,
-// `compliment` = texte affiché au salarié à la réception.
-// Gérée par l'ADMIN (motifs personnalisés employeur = V2).
+// Official V1 list of attribution motifs (§3.5), managed by the ADMIN.
+// Employer-defined custom motifs are planned for V2.
 model Motif {
   id         String        @id @default(uuid()) @db.Uuid
-  tag        String        @unique          // clé stats stable, ex "PONCTUALITE_PRESENCE"
-  label      String                          // libellé interne lisible (ex "Ponctualité & présence")
+  tag        String        @unique          // Stable key for stats, e.g. "PONCTUALITE_PRESENCE".
+  label      String                          // Human-readable internal label (e.g. "Ponctualité & présence").
   category   MotifCategory
-  compliment String                          // affiché au salarié au moment de la réception
+  compliment String                          // Shown to the employee when they receive the tokens.
   active     Boolean       @default(true)
   sortOrder  Int           @default(0)
   createdAt  DateTime      @default(now())
@@ -247,40 +231,38 @@ model Motif {
   attributions Attribution[]
 }
 
-// ─────────────────────── ALLOCATION ENVELOPPE (§3.2 / §3.4) ───
-// L'employeur alloue une enveloppe de tokens à un manager + choisit le mode
-// de rétribution. L'enveloppe RESTANTE d'un manager se dérive du registre :
-//   restant = SUM(Allocation.amount) − SUM(Attribution.amount + retributionAmount)  [managerId]
+// §3.2 / §3.4 — the employer allocates a token envelope to a manager and picks the retribution
+// mode. A manager's remaining envelope is derived from the ledger:
+//   remaining = SUM(Allocation.amount) - SUM(Attribution.amount + retributionAmount) per managerId.
 model Allocation {
   id          String           @id @default(uuid()) @db.Uuid
-  amount      Int                              // taille de l'enveloppe. > 0 (Zod + CHECK)
+  amount      Int                              // Envelope size. > 0 (Zod + SQL CHECK).
   mode        RetributionMode
-  percentage  Int?                             // mode POURCENTAGE uniquement : 1..100. null sinon (CHECK cohérence).
-  status      AllocationStatus @default(A_DISTRIBUER) // cycle de vie de l'enveloppe
-  retributionAmount Int        @default(0)     // part R du manager, FIGÉE à l'envoi (0 tant que A_DISTRIBUER)
-  distributedAt DateTime?                      // horodatage de l'envoi validé (null tant que A_DISTRIBUER)
+  percentage  Int?                             // POURCENTAGE mode only: 1..100; null otherwise (consistency CHECK in SQL).
+  status      AllocationStatus @default(A_DISTRIBUER)
+  retributionAmount Int        @default(0)     // Manager's retribution share, frozen at send time (0 while A_DISTRIBUER).
+  distributedAt DateTime?                      // When the distribution was confirmed; null while A_DISTRIBUER.
   companyId   String           @db.Uuid
   managerId   String           @db.Uuid
-  createdById String           @db.Uuid         // employeur/owner qui alloue
+  createdById String           @db.Uuid         // The OWNER (employer) who allocated the envelope.
   createdAt   DateTime         @default(now())
 
   company   Company @relation(fields: [companyId], references: [id])
   manager   User    @relation("AllocationManager", fields: [managerId], references: [id])
   createdBy User    @relation("AllocationCreatedBy", fields: [createdById], references: [id])
-  attributions Attribution[]                   // distributions issues de cette enveloppe
+  attributions Attribution[]                   // Distributions drawn from this envelope.
 
   @@index([companyId])
   @@index([managerId])
 }
 
-// ─────────────────────────── CATÉGORIES (Phase 1 — entité) ──
 
 model Category {
   id        String   @id @default(uuid()) @db.Uuid
-  slug      String   @unique              // "food", "shopping" etc — clé stable pour seed upsert
+  slug      String   @unique              // Stable key the seed upserts on, e.g. "food", "shopping".
   label     String
-  icon      String                        // IconName string: "coffee", "gift", "ticket", "plane", "heart"
-  color     String                        // hex: "#e5784a"
+  icon      String                        // Frontend IconName value: "coffee", "gift", "ticket", "plane", "heart".
+  color     String                        // Hex color, e.g. "#e5784a".
   sortOrder Int      @default(0)
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
@@ -289,15 +271,14 @@ model Category {
   offers    PartnerOffer[]
 }
 
-// ─────────────────────────── OFFRES PARTENAIRES ──────────────
 
 model PartnerOffer {
   id          String        @id @default(uuid()) @db.Uuid
   partnerName String
-  cost        Int                              // prix en tokens
+  cost        Int                              // Price in tokens.
   discountPercent  Int
   categoryId  String        @db.Uuid
-  imageUrl    String?                          // photo uploadée (chemin /uploads/offers/…) ; null = vignette catégorie
+  imageUrl    String?                          // Uploaded photo path (/uploads/offers/...); null = category thumbnail fallback.
   isActive    Boolean       @default(true)
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
@@ -313,7 +294,7 @@ model PartnerOffer {
 model PromoCode {
   id        String    @id @default(uuid()) @db.Uuid
   code      String    @unique
-  isUsed    Boolean   @default(false)         // marqué de façon atomique (règle 5)
+  isUsed    Boolean   @default(false)         // Flipped atomically at redemption (rule 5).
   usedAt    DateTime?
   offerId   String    @db.Uuid
   createdAt DateTime  @default(now())
@@ -327,12 +308,12 @@ model PromoCode {
 
 model Redemption {
   id          String   @id @default(uuid()) @db.Uuid
-  amount      Int                            // snapshot de offer.cost au moment de l'achat
+  amount      Int                            // Snapshot of offer.cost at purchase time.
   employeeId  String   @db.Uuid
   offerId     String   @db.Uuid
-  promoCodeId String   @unique @db.Uuid      // 1 code = 1 redemption (garanti par DB)
+  promoCodeId String   @unique @db.Uuid      // One promo code backs exactly one redemption.
   companyId   String   @db.Uuid
-  used        Boolean  @default(false)        // marqué « utilisé » manuellement par l'employé (chez le commerçant)
+  used        Boolean  @default(false)        // Marked "used" manually by the employee at the merchant.
   createdAt   DateTime @default(now())
 
   employee  User         @relation(fields: [employeeId], references: [id])
@@ -345,19 +326,16 @@ model Redemption {
   @@index([offerId])
 }
 
-// ============================================================
-//  MIGRATION SQL À AJOUTER MANUELLEMENT
-//  (Prisma ne sait pas exprimer CHECK ni index partiel)
-//  → après `migrate dev`, créer une migration vide puis coller :
+// Raw SQL constraints Prisma cannot express, applied in migration
+// 20260605132150_add_check_constraints (preserve them if migrations are ever squashed):
 //
-//  -- Règle 1 : soldes jamais négatifs (au niveau DB, pas que le code)
+//  -- Rule 1: balances never go negative and amounts are strictly positive (DB-level safety net).
 //  ALTER TABLE "User"                 ADD CONSTRAINT user_balance_non_negative   CHECK ("balance" >= 0);
 //  ALTER TABLE "Company"              ADD CONSTRAINT company_pool_non_negative    CHECK ("tokenBalance" >= 0);
 //  ALTER TABLE "Attribution"          ADD CONSTRAINT attribution_amount_positive  CHECK ("amount" > 0);
 //  ALTER TABLE "Redemption"           ADD CONSTRAINT redemption_amount_positive   CHECK ("amount" > 0);
 //  ALTER TABLE "CompanyTokenPurchase" ADD CONSTRAINT purchase_amount_positive     CHECK ("amount" > 0);
 //
-//  -- Email unique SEULEMENT parmi les comptes non supprimés (réinscription après soft-delete)
+//  -- Email is unique only among non-deleted accounts (allows re-signup after soft delete).
 //  CREATE UNIQUE INDEX user_email_active_unique
 //    ON "User" ("email") WHERE "deletedAt" IS NULL;
-// ============================================================

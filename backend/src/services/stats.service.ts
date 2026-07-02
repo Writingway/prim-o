@@ -11,11 +11,11 @@ import type {
 interface StatsFilters {
   from?: Date | undefined;
   to?: Date | undefined;
-  employeeId?: string | undefined; // scope la courbe d'évolution uniquement
+  employeeId?: string | undefined; // Scopes the evolution curve only, not the other stats.
 }
 
-// §3.2/§3.4 — tableau de bord employeur. Tout est scopé à companyId (multi-tenant).
-// ≤ 2 requêtes par stat, zéro N+1.
+// §3.2/§3.4 — employer dashboard. Everything is scoped to companyId (multi-tenant).
+// At most 2 queries per stat, zero N+1.
 export async function getStats(companyId: string, filters: StatsFilters): Promise<StatsResponse> {
   const createdAt =
     filters.from || filters.to
@@ -27,14 +27,14 @@ export async function getStats(companyId: string, filters: StatsFilters): Promis
 
   const whereAttr = { companyId, ...(createdAt ? { createdAt } : {}) };
 
-  // Catalogue des motifs actifs — sert à motifAggregate ET blindSpots (1 seule requête).
+  // Active motif catalog — shared by motifAggregate AND blindSpots (one query).
   const activeMotifs = await prisma.motif.findMany({
     where: { active: true },
     select: { id: true, tag: true, category: true, sortOrder: true },
   });
   const motifById = new Map(activeMotifs.map((m) => [m.id, m]));
 
-  // 1) motifAggregate — count + somme par motif.
+  // 1) motifAggregate — count and token sum per motif.
   const aggRows = await prisma.attribution.groupBy({
     by: ['motifId'],
     where: { ...whereAttr, motifId: { not: null } },
@@ -47,7 +47,7 @@ export async function getStats(companyId: string, filters: StatsFilters): Promis
   for (const row of aggRows) {
     if (!row.motifId) continue;
     const motif = motifById.get(row.motifId);
-    if (!motif) continue; // motif inactif/supprimé : hors périmètre officiel
+    if (!motif) continue; // Inactive/deleted motif: outside the official catalog.
     usedMotifIds.add(row.motifId);
     motifAggregate.push({
       motifTag: motif.tag,
@@ -56,10 +56,10 @@ export async function getStats(companyId: string, filters: StatsFilters): Promis
       totalTokens: row._sum.amount ?? 0,
     });
   }
-  // Tri : motifs où le plus de tokens ont été donnés en tête.
+  // Motifs that received the most tokens come first.
   motifAggregate.sort((a, b) => b.totalTokens - a.totalTokens || b.count - a.count);
 
-  // 2) ranking — total par employé + motif le plus fréquent reçu.
+  // 2) ranking — total per employee plus the motif they received most often.
   const totalsByEmployee = await prisma.attribution.groupBy({
     by: ['employeeId'],
     where: whereAttr,
@@ -73,7 +73,7 @@ export async function getStats(companyId: string, filters: StatsFilters): Promis
     _sum: { amount: true },
   });
 
-  // employeeId -> motif au _count max (tie-break : 1er rencontré, ordre groupBy stable)
+  // employeeId -> motif with the highest count (tie-break: first seen; groupBy order is stable).
   const topMotif = new Map<string, { motifId: string; count: number }>();
   for (const row of motifByEmployee) {
     if (!row.motifId) continue;
@@ -89,12 +89,12 @@ export async function getStats(companyId: string, filters: StatsFilters): Promis
       const topMotifTag = top ? motifById.get(top.motifId)?.tag ?? null : null;
       return { employeeId: row.employeeId, totalTokens: row._sum.amount ?? 0, topMotifTag };
     })
-    .sort((a, b) => b.totalTokens - a.totalTokens); // le client veut « le meilleur » en tête
+    .sort((a, b) => b.totalTokens - a.totalTokens); // The client expects the top earner first.
 
-  // 3) blindSpots — motifs actifs jamais utilisés dans le périmètre (entreprise).
+  // 3) blindSpots — active motifs never used in the company-wide scope.
   const blindSpots = activeMotifs.filter((m) => !usedMotifIds.has(m.id)).map((m) => m.tag);
 
-  // 3bis) blindSpotsByManager — motifs actifs que CHAQUE manager n'a jamais utilisés (§3.5).
+  // 3bis) blindSpotsByManager — active motifs EACH manager has never used (§3.5).
   const usedByManagerRows = await prisma.attribution.groupBy({
     by: ['managerId', 'motifId'],
     where: { ...whereAttr, motifId: { not: null } },
@@ -112,7 +112,8 @@ export async function getStats(companyId: string, filters: StatsFilters): Promis
     tags: activeMotifs.filter((m) => !used.has(m.id)).map((m) => m.tag),
   }));
 
-  // 4) equityByManager — CV des totaux PAR EMPLOYÉ, par manager (favorise-t-il toujours les mêmes ?).
+  // 4) equityByManager — coefficient of variation of per-employee totals, per manager
+  // (does this manager always favor the same people?).
   const perManagerEmployee = await prisma.attribution.groupBy({
     by: ['managerId', 'employeeId'],
     where: whereAttr,
@@ -131,21 +132,21 @@ export async function getStats(companyId: string, filters: StatsFilters): Promis
     const n = totals.length;
     const sumAll = totals.reduce((s, v) => s + v, 0);
     const mean = sumAll / n;
-    const variance = totals.reduce((s, v) => s + (v - mean) ** 2, 0) / n; // population
-    const spread = mean > 0 ? Math.sqrt(variance) / mean : 0; // CV ; 0 = parfaitement équitable
+    const variance = totals.reduce((s, v) => s + (v - mean) ** 2, 0) / n; // Population variance.
+    const spread = mean > 0 ? Math.sqrt(variance) / mean : 0; // Coefficient of variation; 0 = perfectly even.
     const recipients = recs
       .map((r) => ({ employeeId: r.employeeId, tokens: r.tokens, share: sumAll > 0 ? r.tokens / sumAll : 0 }))
-      .sort((a, b) => b.tokens - a.tokens); // qui le manager priorise, en tête
+      .sort((a, b) => b.tokens - a.tokens); // Whom the manager favors most, first.
     return { managerId, spread, recipients };
   });
 
-  // 5) velocityByManager — délai moyen allocation -> 1ère distribution postérieure.
+  // 5) velocityByManager — average delay from allocation to the first distribution after it.
   const velocityByManager = await getVelocityByManager(companyId, filters.to);
 
-  // 5bis) Résolution des distributeurs présents dans les agrégats. Le PATRON distribue
-  // uniquement aux managers (allocations) : on l'exclut ici (rôle ≠ MANAGER) pour que les
-  // sections « par manager » ne montrent que de vrais managers (supprimés inclus). On résout
-  // aussi leurs noms — SANS filtrer deletedAt — sinon le front retombe sur l'UUID tronqué.
+  // 5bis) Resolve the distributors present in the aggregates. The OWNER only distributes to
+  // managers (allocations), so non-MANAGER roles are excluded here: the "per manager"
+  // sections must show real managers only (deleted ones included). Names are resolved
+  // WITHOUT filtering deletedAt — otherwise the frontend falls back to a truncated UUID.
   const distributorIds = new Set<string>([
     ...blindSpotsByManagerRaw.map((r) => r.managerId),
     ...equityByManagerRaw.map((r) => r.managerId),
@@ -160,16 +161,16 @@ export async function getStats(companyId: string, filters: StatsFilters): Promis
   const isManager = new Set(distributorUsers.filter((u) => u.role === 'MANAGER').map((u) => u.id));
   const managerNames: Record<string, string> = {};
   for (const u of distributorUsers) {
-    if (!isManager.has(u.id)) continue; // patron exclu de l'affichage « par manager »
+    if (!isManager.has(u.id)) continue; // The owner is excluded from the per-manager display.
     managerNames[u.id] = `${u.firstName ?? ''} ${u.lastName ?? ''}`.trim() || u.email;
   }
-  // On ne garde que les vrais managers dans les agrégats issus des attributions
-  // (la vélocité vient des allocations : déjà 100 % managers).
+  // Keep only real managers in the attribution-based aggregates (velocity comes from
+  // allocations, which already involve managers only).
   const blindSpotsByManager = blindSpotsByManagerRaw.filter((r) => isManager.has(r.managerId));
   const equityByManager = equityByManagerRaw.filter((r) => isManager.has(r.managerId));
 
-  // 6) leaderboardByMotif (bump v1.2) — top 3 employés par motif (« le meilleur dans quoi »), OWNER only.
-  // Réutilise motifByEmployee (déjà chargé pour topMotifTag) : aucune requête supplémentaire.
+  // 6) leaderboardByMotif (contract bump v1.2) — top 3 employees per motif ("who is best at
+  // what"), OWNER only. Reuses motifByEmployee (already loaded for topMotifTag): no extra query.
   const TOP_N = 3;
   const byMotif = new Map<string, Array<{ employeeId: string; tokens: number; count: number }>>();
   for (const row of motifByEmployee) {
@@ -194,7 +195,7 @@ export async function getStats(companyId: string, filters: StatsFilters): Promis
     .sort((a, b) => a.sortOrder - b.sortOrder)
     .map((x) => x.row);
 
-  // 7) evolution — courbe mensuelle par motif (optionnellement scopée sur un employé).
+  // 7) evolution — monthly curve per motif (optionally scoped to a single employee).
   const evolution = await getEvolution(companyId, filters, motifById);
 
   return {
@@ -210,8 +211,8 @@ export async function getStats(companyId: string, filters: StatsFilters): Promis
   };
 }
 
-// §3.5 — agrège les attributions taguées par mois × motif. date_trunc('month') →
-// to_char 'YYYY-MM'. employeeId optionnel = courbe de progression d'UN employé.
+// §3.5 — aggregates tagged attributions by month × motif; date_trunc('month') is rendered
+// as 'YYYY-MM' via to_char. Optional employeeId yields one employee's progression curve.
 async function getEvolution(
   companyId: string,
   filters: StatsFilters,
@@ -241,14 +242,15 @@ async function getEvolution(
   const out: EvolutionPoint[] = [];
   for (const r of rows) {
     const tag = motifById.get(r.motifId)?.tag;
-    if (!tag) continue; // motif inactif/supprimé : hors périmètre officiel
+    if (!tag) continue; // Inactive/deleted motif: outside the official catalog.
     out.push({ period: r.period, motifTag: tag, count: r.count, totalTokens: r.totalTokens });
   }
   return out;
 }
 
-// §3.4 — pour chaque Allocation, 1ère Attribution postérieure du même manager ; moyenne par manager.
-// LATERAL = pas de N+1. AVG ignore les NULL -> null seulement si AUCUNE allocation n'a été suivie.
+// §3.4 — for each Allocation, the same manager's first Attribution after it; averaged per
+// manager. The LATERAL join avoids N+1. AVG ignores NULLs, so the result is null only when
+// NO allocation was ever followed by a distribution.
 async function getVelocityByManager(
   companyId: string,
   to?: Date,

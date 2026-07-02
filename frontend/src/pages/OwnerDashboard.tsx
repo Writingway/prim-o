@@ -32,15 +32,15 @@ import {
   ALLOC_CHIPS, ALLOC_CHIP, ALLOC_CHIP_ON, ALLOC_CHIP_OFF, ALLOC_BANNER,
 } from '../components/dashboard/dashStyles';
 
-// Montants rapides proposés pour l'allocation d'enveloppe (chips F2).
+// Quick amounts offered for envelope allocation (F2 chips).
 const ALLOC_QUICK = ['50', '150', '300', '500'];
 
 type Props = { onLogout: () => void; onBack: () => void; onStats?: () => void; firstName?: string | null; profilePhoto?: string | null };
 
-// Dashboard patron : alloue des enveloppes aux managers (avec mode) et suit les
-// enveloppes envoyées. La gestion des employés (suppression, etc.) est back-office.
+// Owner dashboard: allocates envelopes to managers (with a retribution mode) and tracks sent
+// envelopes. Employee management (deletion, etc.) lives in the back office.
 export default function OwnerDashboard({ onLogout, onStats, firstName, profilePhoto }: Props) {
-  // Avatar du hero, maj en direct depuis le profil.
+  // Hero avatar photo, updated live when the user saves it in the Profil tab.
   const [heroPhoto, setHeroPhoto] = useState<string | null>(profilePhoto ?? null);
   const heroInitials = (firstName?.[0] ?? '?').toUpperCase();
   const { confirmDialog } = useConfirm();
@@ -51,20 +51,20 @@ export default function OwnerDashboard({ onLogout, onStats, firstName, profilePh
   const [inviteCode, setInviteCode] = useState<string | null>(null);
   const [inviteError, setInviteError] = useState('');
 
-  // Onglet initial : permet l'arrivée directe depuis /stats (ex. #managers).
+  // Initial tab from the URL hash: allows landing directly from /stats (e.g. #managers).
   const hashTab = window.location.hash.replace('#', '');
   const [activeTab, setActiveTab] =
     useState<'accueil' | 'managers' | 'profil'>(
       hashTab === 'managers' || hashTab === 'profil' ? hashTab : 'accueil',
     );
 
-  // Recharge du pool via Stripe.
+  // Pool top-up via Stripe.
   const [rechargeAmount, setRechargeAmount] = useState('');
   const [rechargeError, setRechargeError] = useState('');
   const [recharging, setRecharging] = useState(false);
   const [paymentNotice, setPaymentNotice] = useState<'success' | 'cancel' | null>(null);
 
-  // Managers + enveloppes envoyées.
+  // Managers + sent envelopes.
   const [managers, setManagers] = useState<CompanyManager[]>([]);
   const [sentEnvelopes, setSentEnvelopes] = useState<SentEnvelope[]>([]);
   const [allocOpenId, setAllocOpenId] = useState<string | null>(null);
@@ -110,7 +110,8 @@ export default function OwnerDashboard({ onLogout, onStats, firstName, profilePh
     load();
   }, []);
 
-  // Retour de Stripe : ?payment=success|cancel.
+  // Stripe checkout return (?payment=success|cancel): show the notice, clean the URL, and delay
+  // the reload so the webhook has time to credit the pool.
   useEffect(() => {
     const payment = new URLSearchParams(window.location.search).get('payment');
     if (payment === 'success' || payment === 'cancel') {
@@ -125,7 +126,7 @@ export default function OwnerDashboard({ onLogout, onStats, firstName, profilePh
     try {
       await apiLogout();
     } catch {
-      // déconnexion front même si l'appel échoue
+      // Log out on the frontend even if the API call fails.
     }
     onLogout();
   };
@@ -252,10 +253,10 @@ export default function OwnerDashboard({ onLogout, onStats, firstName, profilePh
     <div className={DASH_WRAPPER}>
       <div className={DASH_CONTAINER}>
 
-        {/* ── Onglet Accueil : hero pool + recharge + invitations ── */}
+        {/* Accueil tab: pool hero + top-up + invite codes. */}
         {activeTab === 'accueil' && (
           <>
-        {/* Hero : pool entreprise (cf. README F1) */}
+        {/* Company pool hero (see README F1). */}
         <DashboardHero
           bleed="-mx-4"
           eyebrow="Espace employeur"
@@ -306,7 +307,7 @@ export default function OwnerDashboard({ onLogout, onStats, firstName, profilePh
         )}
 
         <div className="lg:grid lg:grid-cols-2 lg:items-start lg:gap-5">
-        {/* Recharge du pool (Stripe) */}
+        {/* Pool top-up (Stripe checkout). */}
         <div className="mb-4 rounded-2xl border border-primo-line bg-white p-4">
           <div className="mb-3 text-sm font-bold text-primo-ink">Recharger le pool</div>
           <form className="flex flex-wrap items-center gap-2.5" onSubmit={handleRecharge}>
@@ -347,7 +348,7 @@ export default function OwnerDashboard({ onLogout, onStats, firstName, profilePh
         </div>
 
         <div>
-        {/* CTA principal : aller allouer aux managers (cf. mockup F1) */}
+        {/* Main CTA: jump to manager allocation (see mockup F1). */}
         <button
           type="button"
           onClick={() => setActiveTab('managers')}
@@ -356,7 +357,6 @@ export default function OwnerDashboard({ onLogout, onStats, firstName, profilePh
           <Icon name="send" size={19} /> Allouer aux managers
         </button>
 
-        {/* Invitations */}
         <div className="mb-2 flex flex-wrap gap-2.5">
           <button className={DASH_INVITE} type="button" onClick={() => handleGenerateInvite('MANAGER')}>
             <Icon name="plus" size={16} /> Code manager
@@ -378,7 +378,7 @@ export default function OwnerDashboard({ onLogout, onStats, firstName, profilePh
           </>
         )}
 
-        {/* ── Onglet Managers : allocation + mode ── */}
+        {/* Managers tab: envelope allocation + retribution mode. */}
         {activeTab === 'managers' && (
           loading ? loader
           : error ? errorNote
@@ -401,7 +401,6 @@ export default function OwnerDashboard({ onLogout, onStats, firstName, profilePh
               const selected = managers.find((m) => m.id === allocOpenId) ?? null;
               return (
               <form onSubmit={(ev) => { ev.preventDefault(); if (selected) submitAlloc(selected.id); }}>
-                {/* Sélecteur de manager */}
                 <label className="mb-2 block text-[13px] font-bold text-primo-slate">Manager</label>
                 <div className="relative">
                   <select
@@ -419,7 +418,6 @@ export default function OwnerDashboard({ onLogout, onStats, firstName, profilePh
                   <Icon name="chevron-down" size={20} className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-primo-teal" />
                 </div>
 
-                {/* Récap du manager choisi : enveloppe actuelle */}
                 {selected && (
                   <div className="mt-3 flex items-center gap-3 rounded-[14px] border border-primo-line bg-white px-4 py-3">
                     <Avatar initials={`${selected.firstName?.[0] ?? ''}${selected.lastName?.[0] ?? ''}`.toUpperCase()} />
@@ -432,7 +430,6 @@ export default function OwnerDashboard({ onLogout, onStats, firstName, profilePh
 
                 {selected && (
                   <div className="mt-5 flex flex-col gap-1">
-                    {/* Carte montant : gros affichage + Coin or */}
                     <label className="mb-2 block text-[13px] font-bold text-primo-slate">Montant à allouer</label>
                     <div className={ALLOC_AMOUNT_CARD}>
                       <div className={ALLOC_AMOUNT_VALUE}>
@@ -441,7 +438,6 @@ export default function OwnerDashboard({ onLogout, onStats, firstName, profilePh
                       </div>
                     </div>
 
-                    {/* Saisie libre + chips de montant rapide */}
                     <input
                       className={`${ALLOC_INPUT} mt-3 w-full`} type="number" min="1" step="1"
                       placeholder="Saisir un montant"
@@ -461,7 +457,6 @@ export default function OwnerDashboard({ onLogout, onStats, firstName, profilePh
                       ))}
                     </div>
 
-                    {/* Mode de rétribution */}
                     <div className="mt-4 mb-1 text-[13px] font-bold text-primo-slate">Mode de rétribution</div>
                     <ModeSelector
                       mode={allocMode}
@@ -470,7 +465,6 @@ export default function OwnerDashboard({ onLogout, onStats, firstName, profilePh
                       onPercentageChange={setAllocPercentage}
                     />
 
-                    {/* Bannière info rétribution (uniquement en POURCENTAGE) */}
                     {allocMode === 'POURCENTAGE' && (
                       <div className={ALLOC_BANNER}>
                         <Icon name="info" size={16} className="mt-0.5 flex-shrink-0" />
@@ -496,7 +490,6 @@ export default function OwnerDashboard({ onLogout, onStats, firstName, profilePh
               );
             })()}
 
-            {/* Enveloppes déjà envoyées aux managers (suivi) */}
             <h2 className={`${HISTORY_TITLE} mt-7`}>Mes enveloppes envoyées</h2>
             {sentEnvelopes.length === 0 ? (
               <p className={DASH_MSG}>Aucune enveloppe envoyée pour l'instant.</p>
@@ -509,7 +502,7 @@ export default function OwnerDashboard({ onLogout, onStats, firstName, profilePh
           )
         )}
 
-        {/* ── Onglet Profil ── */}
+        {/* Profil tab. */}
         {activeTab === 'profil' && (
           <>
             <EditProfile onPhotoChange={setHeroPhoto} />

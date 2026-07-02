@@ -2,7 +2,7 @@ import { authRequest } from "./client";
 import type { MotifCategory } from "../../types/allocation";
 export type { MotifCategory };
 
-// Miroir des shapes backend (§3.2/§3.4) — manager.contracts.ts.
+// Mirrors the backend shapes (§3.2/§3.4) — see manager.contracts.ts.
 export type MotifAggregateRow = {
   motifTag: string;
   category: MotifCategory;
@@ -42,8 +42,8 @@ export type StatsResponse = {
   evolution: EvolutionPoint[];
 };
 
-// Tableau de bord statistiques employeur (OWNER only). from/to = bornes sur la date
-// d'attribution ; employeeId = scope la courbe d'évolution sur un employé.
+// Employer statistics dashboard (OWNER only). from/to bound the attribution date;
+// employeeId scopes the evolution curve to a single employee.
 export const getStats = (params?: { from?: string; to?: string; employeeId?: string }) => {
   const qs = new URLSearchParams();
   if (params?.from) qs.set('from', params.from);

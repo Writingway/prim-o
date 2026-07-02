@@ -22,10 +22,10 @@ import {
 
 const router = Router();
 
-// Account-first : inscription = utilisateur flottant. Vérification email requise
-// avant la première connexion (pas d'auto-login).
+// Account-first signup: registration creates a floating user with no company. Email verification
+// is required before the first login (no auto-login).
 router.post('/register', registerController);
-// Appartenance entreprise (utilisateur authentifié) : créer OU rejoindre.
+// Company membership (authenticated user): create a new company or join an existing one.
 router.post('/create-company', requireAuth, createCompanyController);
 router.post('/join-company', requireAuth, joinCompanyController);
 
@@ -35,7 +35,8 @@ router.post('/logout', logoutController);
 
 router.get('/me', requireAuth, meController);
 
-// Public (utilisateur non connecté). Limiteurs dédiés contre l'abus d'envoi d'emails.
+// Deliberately unauthenticated (the caller cannot log in yet). Dedicated rate limiters guard
+// against email-sending abuse.
 router.get('/verify-email', verifyEmailController);
 router.post('/resend-verification', resendVerificationLimiter, resendVerificationController);
 router.post('/forgot-password', passwordResetLimiter, forgotPasswordController);

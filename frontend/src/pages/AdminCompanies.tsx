@@ -196,7 +196,6 @@ export default function AdminCompanies({ onFlash }: AdminCompaniesProps) {
 
   return (
     <div className="rounded-2xl border border-primo-line bg-white p-5 lg:p-6">
-      {/* Header */}
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-[17px] font-extrabold tracking-[-0.01em] text-primo-ink">
@@ -220,7 +219,6 @@ export default function AdminCompanies({ onFlash }: AdminCompaniesProps) {
         </div>
       </div>
 
-      {/* Create form */}
       {showForm && (
         <div className="rounded-2xl border border-primo-line bg-white p-4 mb-5">
           <form className="flex flex-wrap gap-2" onSubmit={create}>
@@ -246,7 +244,7 @@ export default function AdminCompanies({ onFlash }: AdminCompaniesProps) {
         </div>
       )}
 
-      {/* Undo restore notice */}
+      {/* Undo banner: restores the most recently deleted company and reactivates its users. */}
       {lastDeleted && (
         <div className="mb-5 rounded-xl border border-primo-warn-strong/30 bg-primo-warn-soft p-4 flex items-start gap-3">
           <Icon name="alert" size={16} className="mt-0.5 flex-none text-primo-warn-strong" />
@@ -259,11 +257,9 @@ export default function AdminCompanies({ onFlash }: AdminCompaniesProps) {
         </div>
       )}
 
-      {/* Loading / error */}
       {loading && <p className="py-8 text-center text-sm text-primo-gray">Chargement…</p>}
       {error && <p className="py-8 text-center text-sm text-primo-error">{error}</p>}
 
-      {/* Table */}
       {!loading && companies && (
         companies.length === 0 ? (
           <p className="py-8 text-center text-sm text-primo-gray">Aucune entreprise.</p>
@@ -368,7 +364,6 @@ export default function AdminCompanies({ onFlash }: AdminCompaniesProps) {
               </div>
             </div>
 
-            {/* Pagination */}
             <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
               <button
                 className="rounded-full border border-primo-line bg-white px-4 py-1.5 text-sm font-semibold text-primo-gray transition hover:bg-primo-surface disabled:cursor-not-allowed disabled:opacity-50"

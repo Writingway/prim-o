@@ -2,10 +2,11 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import { config } from '../config';
 
-const ACCESS_TTL = '15m'; // Access token time to live
-export const REFRESH_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 jours en ms
+// Access tokens are deliberately short-lived: anything security-sensitive re-checks the DB
+// (see requireAdmin), so a stale role expires within 15 minutes.
+const ACCESS_TTL = '15m';
+export const REFRESH_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
-// 1. Access token (JWT signé)
 export function signAccessToken(userId: string, role: string | null, companyId?: string): string {
   const payload: any = { role };
   if (companyId) {
@@ -14,26 +15,26 @@ export function signAccessToken(userId: string, role: string | null, companyId?:
   return jwt.sign(payload, config.JWT_SECRET, { subject: userId, expiresIn: ACCESS_TTL });
 }
 
-// 2. Refresh token : renvoie le brut (pour le client) + le hash (pour la DB)
+// Refresh token: the raw value goes to the client, only the sha256 hash is stored in DB.
 export function generateRefreshToken(): { raw: string; hash: string } {
   const raw = crypto.randomBytes(32).toString('hex');
   return { raw, hash: hashRefreshToken(raw) };
 }
 
-// Token de vérification email : même schéma que le refresh (raw + hash
-// sha256). On envoie le raw dans le lien, on stocke le hash en DB.
+// Email verification token: same scheme as refresh — raw goes into the link, sha256 hash
+// into the DB.
 export function generateEmailVerificationToken(): { raw: string; hash: string } {
   const raw = crypto.randomBytes(32).toString('hex');
   return { raw, hash: hashRefreshToken(raw) };
 }
 
-// Token de réinitialisation de mot de passe : même schéma (raw + hash sha256).
+// Password reset token: same raw + sha256-hash scheme.
 export function generatePasswordResetToken(): { raw: string; hash: string } {
   const raw = crypto.randomBytes(32).toString('hex');
   return { raw, hash: hashRefreshToken(raw) };
 }
 
-// 3. Hash d'un refresh reçu (pour le retrouver en DB au moment du refresh)
+// Hash an incoming raw token so it can be matched against the stored hash.
 export function hashRefreshToken(raw: string): string {
   return crypto.createHash('sha256').update(raw).digest('hex');
 }
@@ -41,7 +42,7 @@ export function hashRefreshToken(raw: string): string {
 export interface AccessPayload { sub: string; role: string | null; companyId?: string; }
 
 export function verifyAccessToken(token: string): AccessPayload {
-  const decoded = jwt.verify(token, config.JWT_SECRET); // throw si signature KO ou expiré
+  const decoded = jwt.verify(token, config.JWT_SECRET); // throws on bad signature or expiry
   if (typeof decoded === 'string' || !decoded.sub) {
     throw new Error('INVALID_TOKEN');
   }

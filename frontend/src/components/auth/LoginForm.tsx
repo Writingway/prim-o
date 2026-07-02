@@ -7,9 +7,9 @@ type LoginFormProps = {
   onLoginSuccess: (accessToken: string) => void;
 };
 
-// Formulaire de connexion. À la réussite, remonte le token + rôle au parent
-// (App) via onLoginSuccess, qui bascule alors sur la page d'accueil.
-// Le rôle n'est plus choisi ici : il est déduit du JWT renvoyé par le backend.
+// Login form. On success, passes the access token up to the parent (App) via
+// onLoginSuccess, which then switches to the home page. The role is not chosen
+// here: it is derived from the JWT returned by the backend.
 export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
@@ -19,7 +19,6 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
   const [forgotMode, setForgotMode] = useState(false);
   const [forgotMsg, setForgotMsg] = useState('');
 
-  // Met à jour le champ dont l'attribut `name` correspond à la clé du state.
   const handleFieldChange = (event: ChangeEvent<HTMLInputElement>) =>
     setForm({ ...form, [event.target.name]: event.target.value });
 
@@ -70,7 +69,7 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
     setForgotMsg('');
     setLoading(true);
     try {
-      // Réponse générique côté back (anti-énumération) → message neutre ici aussi.
+      // The backend answers generically (anti account enumeration), so the message stays neutral too.
       await forgotPassword(form.email);
       setForgotMsg("Si un compte correspond à cet email, un lien de réinitialisation vient d'être envoyé.");
     } catch {
@@ -80,7 +79,7 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
     }
   };
 
-  // Mode « mot de passe oublié » : on ne demande que l'email.
+  // Forgot-password mode: only the email is asked for.
   if (forgotMode) {
     return (
       <form className={FORM} onSubmit={handleForgot}>

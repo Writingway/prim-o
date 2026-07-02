@@ -13,6 +13,8 @@ import {
 } from '../services/attribution.service';
 import { requireManagerOrOwner } from '../middleware/authz';
 
+// POST /api/attributions — direct token attribution to an employee (owner only; managers must
+// go through their envelopes).
 export async function createAttributionController(
   req: Request,
   res: Response,
@@ -47,7 +49,7 @@ export async function createAttributionController(
   }
 }
 
-// POST /api/attributions/allocate — le patron alloue des tokens à un manager.
+// POST /api/attributions/allocate — the owner allocates tokens to a manager.
 export async function allocateController(
   req: Request,
   res: Response,
@@ -92,7 +94,8 @@ export async function allocateController(
   }
 }
 
-// POST /api/attributions/distribute — le manager redistribue une enveloppe (envoi unique).
+// POST /api/attributions/distribute — the manager distributes an envelope. One-shot: an
+// envelope can only be distributed once.
 export async function distributeEnvelopeController(
   req: Request,
   res: Response,
@@ -123,7 +126,7 @@ export async function distributeEnvelopeController(
   }
 }
 
-// GET /api/attributions/envelopes — enveloppes du manager courant ("Mes enveloppes").
+// GET /api/attributions/envelopes — the current manager's envelopes ("Mes enveloppes" view).
 export async function listEnvelopesController(
   req: Request,
   res: Response,
@@ -139,7 +142,7 @@ export async function listEnvelopesController(
   }
 }
 
-// GET /api/attributions/sent-envelopes — enveloppes envoyées par l'employeur courant.
+// GET /api/attributions/sent-envelopes — envelopes sent by the current employer.
 export async function listSentEnvelopesController(
   req: Request,
   res: Response,
@@ -155,7 +158,8 @@ export async function listSentEnvelopesController(
   }
 }
 
-// GET /api/attributions/balances — doubles soldes du manager courant.
+// GET /api/attributions/balances — the current manager's two balances (envelope remaining +
+// personal tokens).
 export async function balancesController(
   req: Request,
   res: Response,
@@ -171,7 +175,7 @@ export async function balancesController(
   }
 }
 
-// GET /api/attributions/managers — liste des managers de l'entreprise (patron).
+// GET /api/attributions/managers — the company's managers (owner allocation view).
 export async function listManagersController(
   req: Request,
   res: Response,
@@ -187,7 +191,7 @@ export async function listManagersController(
   }
 }
 
-// GET /api/attributions — historique des attributions de l'entreprise du manager.
+// GET /api/attributions — attribution history for the caller's company.
 export async function listAttributionsController(
   req: Request,
   res: Response,
@@ -197,7 +201,7 @@ export async function listAttributionsController(
     const ctx = requireManagerOrOwner(req, next);
     if (!ctx) return;
 
-    // Un manager ne voit que ses propres attributions ; le patron garde la vue entreprise.
+    // A manager only sees their own attributions; the owner keeps the company-wide view.
     const attributions = await listAttributionsByCompany(
       ctx.companyId,
       ctx.role === 'MANAGER' ? ctx.userId : undefined,

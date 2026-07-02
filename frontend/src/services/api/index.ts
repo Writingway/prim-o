@@ -1,5 +1,5 @@
-// Barrel : conserve l'import public `from "../services/api"`.
-// Le découpage par domaine est interne ; les composants ne changent pas.
+// Barrel: keeps the public `from "../services/api"` import path.
+// The split by domain is internal; components are unaffected.
 
 export type { ApiResult } from "./client";
 export { setAccessToken, registerSessionExpired, refresh, assetUrl } from "./client";

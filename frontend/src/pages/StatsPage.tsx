@@ -22,7 +22,7 @@ const CATEGORY_LABELS: Record<MotifCategory, string> = {
   ENGAGEMENT: 'Engagement',
 };
 
-// Délai en secondes → format lisible court. null = pas de distribution.
+// Delay in seconds → short human-readable string. null = no distribution yet.
 const formatDelay = (s: number | null): string => {
   if (s == null) return '—';
   if (s < 60) return `${Math.round(s)} s`;
@@ -33,13 +33,13 @@ const formatDelay = (s: number | null): string => {
   return `${Math.round(s / 86400)} j`;
 };
 
-// Rang affiché dans une pastille (le top-3 n'a plus d'emoji médaille).
+// Rank shown in a badge — deliberately a plain number, no medal emoji for the top 3.
 const medal = (i: number) => `${i + 1}`;
 
-// Palette multi-séries alignée sur la charte (teal d'abord, puis catégories).
+// Multi-series palette aligned with the brand (teal first, then category colors).
 const PALETTE = ['#00a19a', '#e08c12', '#7c5cd0', '#3f7fcb', '#0e9f6e', '#d24e86', '#2e84c8', '#e5784a'];
 
-// Classes Tailwind (ancien StatsPage.css). Variantes descendantes [&_x]: pour les enfants.
+// Tailwind classes (former StatsPage.css). [&_x]: descendant variants style child elements.
 const DIVIDER = 'border-b border-[#f0f3f2] last:border-b-0';
 const C = {
   wrapper: 'flex justify-center bg-primo-surface px-4 pb-16 pt-5',
@@ -55,7 +55,7 @@ const C = {
     '[&_small]:text-[0.78rem] [&_small]:font-medium [&_small]:text-primo-muted',
   hint: '-mt-1.5 mb-3.5 text-[0.8rem] leading-[1.45] text-primo-muted [&_strong]:font-semibold [&_strong]:text-primo-slate',
   list: 'm-0 list-none p-0',
-  // Top par motif
+  // Leaderboard by motif.
   leadGrid: 'grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-4',
   leadCard: 'rounded-[14px] border border-primo-line bg-primo-surface p-3.5',
   leadCat: 'text-[0.7rem] uppercase tracking-[0.04em] text-primo-muted',
@@ -65,26 +65,26 @@ const C = {
     'flex h-6 w-6 flex-none items-center justify-center rounded-full bg-primo-mint text-[0.75rem] font-extrabold text-primo-teal-strong',
   leadName: 'flex-1 text-[0.9rem] text-primo-slate',
   leadTokens: 'text-[0.85rem] font-extrabold text-primo-teal-strong',
-  // Classement
+  // Ranking.
   rankRow: `flex items-center gap-2.5 px-1 py-2 ${DIVIDER}`,
   rankPos:
     'flex h-[1.6rem] w-[1.6rem] flex-none items-center justify-center rounded-full bg-primo-mint text-[0.78rem] font-extrabold text-primo-teal-strong',
   rankName: 'flex-1 font-bold text-primo-ink',
   rankTokens: 'font-extrabold text-primo-teal-strong',
-  // Répartition
+  // Motif breakdown.
   aggRow: `grid grid-cols-[1fr_auto_3rem_4rem] items-center gap-2.5 px-1 py-2 ${DIVIDER}`,
   aggMotif: 'font-semibold text-primo-ink',
   aggCat: 'text-[0.72rem] text-primo-muted',
   aggCount: 'text-right text-primo-slate-soft',
   aggTokens: 'text-right font-extrabold text-primo-teal-strong',
-  // Chips
+  // Chips.
   chip: 'inline-block whitespace-nowrap rounded-full bg-primo-mint px-2.5 py-1 text-[0.74rem] font-semibold text-primo-teal-strong',
   chipWarn:
     'inline-block whitespace-nowrap rounded-full bg-primo-warn-soft2 px-2.5 py-1 text-[0.74rem] font-semibold text-primo-warn-strong',
   chipOk:
     'inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-primo-success-soft px-2.5 py-1 text-[0.74rem] font-semibold text-primo-success',
   chipCloud: 'flex flex-wrap gap-1.5',
-  // Équité
+  // Equity.
   eqRow: `px-1 py-2.5 ${DIVIDER}`,
   eqHead: 'grid grid-cols-[130px_1fr_auto] items-center gap-2.5',
   eqName: 'font-bold text-primo-ink',
@@ -95,7 +95,7 @@ const C = {
   eqRecBar: 'block h-1.5 overflow-hidden rounded-full bg-[#f0f3f2]',
   eqRecFill: 'block h-full rounded-full bg-gradient-to-r from-primo-teal-100 to-primo-teal-strong',
   eqRecVal: 'whitespace-nowrap text-[0.78rem] font-bold tabular-nums text-primo-teal-strong',
-  // Évolution
+  // Evolution.
   evoControls:
     'mb-3.5 flex flex-wrap gap-x-5 gap-y-3 text-[0.85rem] text-primo-slate-soft [&_label]:inline-flex [&_label]:items-center ' +
     '[&_select]:rounded-[11px] [&_select]:border-[1.5px] [&_select]:border-primo-line [&_select]:bg-white [&_select]:px-2.5 [&_select]:py-2 [&_select]:text-primo-ink ' +
@@ -107,11 +107,11 @@ const C = {
   trendSvg: 'h-auto w-full max-w-[620px]',
   trendAxis: 'fill-primo-muted text-[9px]',
   trendVal: 'fill-primo-teal-strong text-[9px] font-bold',
-  // Key/value (vélocité)
+  // Key/value rows (velocity).
   kvRow: `flex items-center justify-between px-1 py-2 ${DIVIDER}`,
   kvName: 'font-semibold text-primo-ink',
   kvVal: 'font-extrabold tabular-nums text-primo-ink',
-  // Messages + boutons filtres
+  // Messages + filter buttons.
   msg: 'rounded-xl border border-primo-line bg-white px-4 py-3.5 text-center text-primo-muted',
   msgError: 'rounded-xl border border-primo-error-line bg-primo-error-soft px-4 py-3.5 text-center text-primo-error',
   apply:
@@ -131,7 +131,7 @@ const eqBadge = (lvl: EqLevel) =>
         : 'bg-primo-error-soft text-primo-error'
   }`;
 
-// Toutes les courbes en même temps : une ligne colorée par motif + légende.
+// All curves at once: one colored line per motif (allocation reason), plus a legend.
 function MultiMotifChart({ evolution, labelOf }: { evolution: EvolutionPoint[]; labelOf: (t: string) => string }) {
   const periods = Array.from(new Set(evolution.map((e) => e.period))).sort();
   const byMotif = new Map<string, Map<string, number>>();
@@ -187,7 +187,7 @@ function MultiMotifChart({ evolution, labelOf }: { evolution: EvolutionPoint[]; 
   );
 }
 
-// Courbe de progression d'UN motif (mono-ligne, lisible). x = mois, y = tokens.
+// Trend line for a SINGLE motif (one readable line). x = month, y = tokens.
 function MotifTrendChart({ points }: { points: Array<{ period: string; tokens: number }> }) {
   const max = Math.max(1, ...points.map((p) => p.tokens));
   const W = 560, H = 200, padL = 32, padR = 14, padT = 18, padB = 26;
@@ -218,7 +218,7 @@ function MotifTrendChart({ points }: { points: Array<{ period: string; tokens: n
   );
 }
 
-// Section évolution : un motif + un employé sélectionnés → une seule courbe claire.
+// Evolution section: selecting one motif + one employee yields a single, clear curve.
 function EvolutionSection({ evolution, evoMotif, onMotif, evoEmployee, onEmployee, empName, labelOf }: {
   evolution: EvolutionPoint[];
   evoMotif: string;
@@ -233,7 +233,7 @@ function EvolutionSection({ evolution, evoMotif, onMotif, evoEmployee, onEmploye
   const totals = new Map<string, number>();
   for (const e of evolution) totals.set(e.motifTag, (totals.get(e.motifTag) ?? 0) + e.totalTokens);
   const motifsInEvo = Array.from(totals.keys()).sort((a, b) => (totals.get(b) ?? 0) - (totals.get(a) ?? 0));
-  // '' (ou motif absent) = toutes les courbes en même temps ; sinon une seule courbe.
+  // '' (or a motif absent from the data) shows all curves at once; otherwise a single curve.
   const showAll = evoMotif === '' || !motifsInEvo.includes(evoMotif);
   const series = new Map<string, number>();
   if (!showAll) for (const e of evolution) if (e.motifTag === evoMotif) series.set(e.period, e.totalTokens);
@@ -259,7 +259,7 @@ function EvolutionSection({ evolution, evoMotif, onMotif, evoEmployee, onEmploye
   );
 }
 
-// Tableau de bord statistiques employeur (§3.2/§3.4) — OWNER only.
+// Employer statistics dashboard (§3.2/§3.4) — OWNER only.
 export default function StatsPage({ onLogout, onBack, onNavTab }: StatsPageProps) {
   const {
     stats, loading, error,
@@ -269,8 +269,8 @@ export default function StatsPage({ onLogout, onBack, onNavTab }: StatsPageProps
     setFrom, setTo, setEvoMotif,
   } = useStats();
 
-  // Manager choisi dans la section « Angles morts » ('' = premier de la liste).
-  // State d'UI purement local (le hook ne gère que la donnée).
+  // Manager selected in the « Angles morts » section ('' = first in the list).
+  // Purely local UI state; the hook only manages data.
   const [bsMgr, setBsMgr] = useState('');
 
   return (
@@ -326,8 +326,8 @@ export default function StatsPage({ onLogout, onBack, onNavTab }: StatsPageProps
             )}
           </div>
 
-          {/* Au 1er chargement seulement : on garde les sections montées pendant un
-              re-fetch (sélection employé) pour ne pas réduire la page → pas de saut de scroll. */}
+          {/* First load only: sections stay mounted during a re-fetch (employee selection)
+              so the page keeps its height — no scroll jump. */}
           {!stats && loading && <p className={C.msg}>Chargement des statistiques…</p>}
           {error && (
             <div className={C.msgError}>
@@ -337,7 +337,7 @@ export default function StatsPage({ onLogout, onBack, onNavTab }: StatsPageProps
 
           {stats && (
             <>
-              {/* ── Top par motif (la donnée phare : « qui est le meilleur dans quoi ») ── */}
+              {/* Top by motif — the flagship insight (who is best at what), hence first on the page. */}
               <section className={C.section}>
                 <h2 className={C.title}><Icon name="trophy" size={18} className="text-primo-teal-strong" /> Top par motif</h2>
                 {stats.leaderboardByMotif.length === 0 ? (
@@ -363,7 +363,6 @@ export default function StatsPage({ onLogout, onBack, onNavTab }: StatsPageProps
                 )}
               </section>
 
-              {/* ── Classement collaborateurs ── */}
               <section className={C.section}>
                 <h2 className={C.title}><Icon name="users" size={18} className="text-primo-teal-strong" /> Classement collaborateurs</h2>
                 {stats.ranking.length === 0 ? (
@@ -382,7 +381,6 @@ export default function StatsPage({ onLogout, onBack, onNavTab }: StatsPageProps
                 )}
               </section>
 
-              {/* ── Répartition par motif ── */}
               <section className={C.section}>
                 <h2 className={C.title}><Icon name="chart" size={18} className="text-primo-teal-strong" /> Répartition par motif</h2>
                 {stats.motifAggregate.length === 0 ? (
@@ -401,7 +399,7 @@ export default function StatsPage({ onLogout, onBack, onNavTab }: StatsPageProps
                 )}
               </section>
 
-              {/* ── Angles morts : motifs jamais utilisés par le manager choisi ── */}
+              {/* Blind spots: motifs the selected manager has never used over the period. */}
               <section className={C.section}>
                 <h2 className={C.title}><Icon name="alert" size={18} className="text-primo-warn-strong" /> Angles morts <small>(motifs jamais utilisés)</small></h2>
                 {stats.blindSpotsByManager.length === 0 ? (
@@ -431,7 +429,6 @@ export default function StatsPage({ onLogout, onBack, onNavTab }: StatsPageProps
                 })()}
               </section>
 
-              {/* ── Équité : concentration + qui le manager priorise ── */}
               <section className={C.section}>
                 <h2 className={C.title}><Icon name="info" size={18} className="text-primo-teal-strong" /> Équité de distribution <small>(qui le manager priorise)</small></h2>
                 <p className={C.hint}>
@@ -469,7 +466,6 @@ export default function StatsPage({ onLogout, onBack, onNavTab }: StatsPageProps
                 )}
               </section>
 
-              {/* ── Vélocité par manager ── */}
               <section className={C.section}>
                 <h2 className={C.title}><Icon name="clock" size={18} className="text-primo-teal-strong" /> Vélocité de distribution</h2>
                 <p className={C.hint}>
@@ -490,7 +486,6 @@ export default function StatsPage({ onLogout, onBack, onNavTab }: StatsPageProps
                 )}
               </section>
 
-              {/* ── Évolution d'un motif dans le temps (courbe de progression) ── */}
               <section className={C.section}>
                 <h2 className={C.title}><Icon name="chart" size={18} className="text-primo-teal-strong" /> Évolution d'un motif dans le temps</h2>
                 <p className={C.hint}>

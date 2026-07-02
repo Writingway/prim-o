@@ -3,9 +3,9 @@ import { createPortal } from 'react-dom';
 import Icon from '@/components/ui/Icon';
 import { HERO_THEMES, type HeroTheme } from '@/hooks/useHeroTheme';
 
-// Petit bouton (coin du hero) qui ouvre une palette pour changer la couleur du
-// hero. Le hero a `overflow-hidden` (rognage des halos), donc la palette est
-// rendue dans un PORTAL (document.body) en position fixe pour ne pas être coupée.
+// Small button in the hero corner that opens a swatch palette to change the hero color.
+// The hero has `overflow-hidden` (it clips the halos), so the palette is rendered in a
+// portal on document.body with fixed positioning to avoid being clipped too.
 type Props = {
   theme: HeroTheme;
   onChange: (t: HeroTheme) => void;
@@ -39,7 +39,7 @@ export default function HeroThemeButton({ theme, onChange }: Props) {
       {pos &&
         createPortal(
           <>
-            {/* Clic extérieur pour refermer. */}
+            {/* Full-screen backdrop: clicking outside closes the palette. */}
             <div className="fixed inset-0 z-[60]" onClick={() => setPos(null)} />
             <div
               style={{ top: pos.top, right: pos.right }}

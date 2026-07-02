@@ -172,7 +172,6 @@ export default function AdminPage({ onLogout, onBack }: AdminPageProps) {
 
         {tab === 'offers' && (
           <div className="rounded-2xl border border-primo-line bg-white p-5 lg:p-6">
-            {/* Header row */}
             <div className="mb-5 flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center gap-2.5">
                 <h2 className="text-[17px] font-extrabold tracking-[-0.01em] text-primo-ink">Offres partenaires</h2>
@@ -187,7 +186,6 @@ export default function AdminPage({ onLogout, onBack }: AdminPageProps) {
               )}
             </div>
 
-            {/* Create / Edit form */}
             {offerForm.showForm && (
               <form className="rounded-2xl border border-primo-line bg-white p-5 mb-5" onSubmit={offerForm.submit}>
                 <h2 className="text-[15px] font-extrabold text-primo-ink mb-4">{offerForm.editingId ? "Modifier l'offre" : 'Nouvelle offre'}</h2>

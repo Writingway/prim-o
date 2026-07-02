@@ -1,8 +1,7 @@
 import HeroLogo from '@/components/dashboard/HeroLogo';
 
-// Footer légal : un lien par document (Confidentialité, Mentions légales, CGU).
-// Chaque lien pointe vers son hash (#privacy/#mentions/#cgu) que App.tsx
-// intercepte pour afficher le document correspondant (LegalPage).
+// Legal footer links. Each entry points to its hash (#privacy/#mentions/#cgu), which
+// App.tsx intercepts to render the matching document (LegalPage).
 const LEGAL: { key: string; title: string }[] = [
   { key: 'privacy', title: 'Politique de confidentialité' },
   { key: 'mentions', title: 'Mentions légales' },

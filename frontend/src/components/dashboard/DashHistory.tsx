@@ -4,7 +4,7 @@ import { HISTORY, HISTORY_TITLE, DASH_MSG, HISTORY_LIST, HISTORY_ROW, HISTORY_EM
 
 type Props = { attributions: AttributionHistory[] };
 
-// Historique des transactions de l'entreprise (partagé patron/manager).
+// Company transaction history, shared by the owner and manager dashboards.
 export default function DashHistory({ attributions }: Props) {
   return (
     <section className={HISTORY}>

@@ -1,6 +1,5 @@
 import logo1 from '../../assets/logos/logo_1.png';
 
-// En-tête de marque des écrans d'auth : logo Prim'O + sous-titre optionnel.
 export default function AuthBrand({ subtitle }: { subtitle?: string }) {
   return (
     <div className="mb-6 flex flex-col items-center text-center">

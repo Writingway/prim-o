@@ -5,15 +5,15 @@ type LegalPageProps = {
   onBack: () => void;
 };
 
-// Classes partagées des blocs de prose légale (remplacent les sélecteurs
-// descendants .legal-card h2/p/ul de l'ancien CSS).
+// Shared classes for the legal prose blocks (replace the old CSS descendant selectors
+// .legal-card h2/p/ul).
 const TITLE = 'mb-1.5 text-2xl font-bold text-[#1f2937]';
 const UPDATED = 'mb-6 text-[13px] text-primo-gray-light';
 const H2 = 'mt-6 mb-2 text-[17px] font-bold text-[#1f2937]';
 const P = 'my-2 text-sm leading-relaxed text-[#374151]';
 const UL = 'my-2 list-disc pl-5 text-sm leading-relaxed text-[#374151]';
 
-// Marqueur réutilisable pour les infos officielles à fournir.
+// Reusable highlight for official information still to be provided.
 const Todo = ({ children }: { children: React.ReactNode }) => (
   <span className="rounded bg-[#fef3c7] px-1.5 py-px font-semibold text-[#92400e]">
     [À COMPLÉTER : {children}]

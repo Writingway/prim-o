@@ -3,8 +3,9 @@ import { requireOwner } from '../middleware/authz';
 import { statsQuerySchema } from '../schemas/stats.schemas';
 import { getStats } from '../services/stats.service';
 
-// GET /api/stats?teamId=&from=&to= — tableau de bord employeur (§3.2/§3.4).
-// OWNER uniquement, scopé à sa company. Pas de try/catch : Express 5 propage (Zod incluse).
+// GET /api/stats?from=&to=&employeeId= — employer dashboard (spec §3.2/§3.4).
+// OWNER only, scoped to their company. No try/catch: Express 5 propagates rejections
+// (Zod errors included).
 export async function getStatsController(req: Request, res: Response, next: NextFunction): Promise<void> {
   const ctx = requireOwner(req, next);
   if (!ctx) return;

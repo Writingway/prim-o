@@ -8,10 +8,10 @@ import { listActiveCategoriesController } from '../controllers/category.controll
 
 const router = Router();
 
-// Catégories publiques (utilisées par la vitrine).
+// Deliberately public: used by the landing page showcase.
 router.get('/categories', listActiveCategoriesController);
 
-// Lecture publique : vitrine de la landing + users connectés.
+// Public reads: serve both the landing page showcase and logged-in users, hence optionalAuth.
 router.get('/', optionalAuth, listOffersController);
 router.get('/:id', optionalAuth, getOfferController);
 

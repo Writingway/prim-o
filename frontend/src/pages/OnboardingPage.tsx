@@ -7,7 +7,7 @@ import AuthBrand from '../components/auth/AuthBrand';
 type ValidationErrorBody = { details?: Array<{ message: string }> };
 
 type OnboardingPageProps = {
-  // create & join renvoient tous deux un token frais → traitement commun.
+  // Both create & join return a fresh token, so they share one completion handler.
   onDone: (accessToken: string) => void;
 };
 

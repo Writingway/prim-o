@@ -3,15 +3,15 @@ import { Prisma } from '@prisma/client'
 import type { CreateOfferInput, UpdateOfferInput } from '../schemas/offer.schemas'
 import { OFFERS_PUBLIC_PREFIX, removeUploadedFile } from '../lib/upload'
 
-// Liste admin : chaque offre est enrichie du stock de codes promo
-// (availableCodes = non utilisés, usedCodes = déjà distribués).
+// Admin listing: each offer is enriched with its promo-code stock
+// (availableCodes = unused, usedCodes = already handed out).
 export const listOffers = async () => {
   const offers = await prisma.partnerOffer.findMany({
     orderBy: { createdAt: 'desc' },
     include: { category: { select: { id: true, slug: true, label: true, icon: true, color: true } } },
   })
 
-  // Comptage des codes par offre et par statut, en une seule requête.
+  // Count codes per offer and status in one query — no per-offer round trips.
   const grouped = await prisma.promoCode.groupBy({
     by: ['offerId', 'isUsed'],
     _count: { _all: true },
@@ -48,8 +48,8 @@ export const deactivateOffer = async (id: string) => {
   return prisma.partnerOffer.update({ where: { id }, data: { isActive: false } })
 }
 
-// Associe une photo (déjà écrite sur le disque par multer) à une offre.
-// Supprime l'ancienne photo si l'offre en avait déjà une (best-effort).
+// Attaches a photo (already written to disk by multer) to an offer.
+// The previous photo, if any, is removed best-effort after the DB update.
 export const setOfferImage = async (id: string, filename: string) => {
   const existing = await prisma.partnerOffer.findUnique({ where: { id }, select: { imageUrl: true } })
   if (!existing) throw new Error('OFFER_NOT_FOUND')
@@ -59,7 +59,6 @@ export const setOfferImage = async (id: string, filename: string) => {
   return updated
 }
 
-// Retire la photo d'une offre : supprime le fichier + remet imageUrl à null.
 export const clearOfferImage = async (id: string) => {
   const existing = await prisma.partnerOffer.findUnique({ where: { id }, select: { imageUrl: true } })
   if (!existing) throw new Error('OFFER_NOT_FOUND')
@@ -67,7 +66,8 @@ export const clearOfferImage = async (id: string) => {
   return prisma.partnerOffer.update({ where: { id }, data: { imageUrl: null } })
 }
 
-// Détail public d'une offre : uniquement active, + dispo (≥1 code) sans révéler le nombre.
+// Public offer detail: active offers only; `available` says whether at least one code
+// is left without revealing the count.
 export async function getActiveOffer(id: string) {
   const offer = await prisma.partnerOffer.findFirst({
     where: { id, isActive: true },
@@ -79,7 +79,7 @@ export async function getActiveOffer(id: string) {
 }
 
 
-// Offres partenaires actives (vitrine publique) + indicateur de dispo.
+// Active partner offers (public storefront) with an availability flag.
 export async function listActiveOffers() {
   const offers = await prisma.partnerOffer.findMany({
     where: { isActive: true },
@@ -94,7 +94,7 @@ export async function listActiveOffers() {
     },
   });
 
-  // Offres ayant au moins un code disponible (on n'expose PAS le nombre exact).
+  // Offers with at least one unused code; the exact count is deliberately NOT exposed.
   const withStock = await prisma.promoCode.groupBy({
     by: ['offerId'],
     where: { isUsed: false },

@@ -2,15 +2,15 @@ import { stripe } from '../lib/stripe';
 import { config } from '../config';
 import { prisma } from '../lib/db';
 
-// Crée une session de paiement Stripe Checkout pour recharger le pool.
-// Renvoie l'URL hébergée par Stripe vers laquelle rediriger le manager.
+// Creates a Stripe Checkout session to top up the company token pool. Returns the Stripe-hosted
+// payment page URL the manager must be redirected to.
 export async function createCheckoutSession(
   managerId: string,
   companyId: string,
   amount: number,
 ): Promise<string> {
-  // Cloison entreprise inerte : pas de recharge de pool tant que la company
-  // n'est pas validée (PENDING/REJECTED). Garde côté serveur, avant Stripe.
+  // Business rule: a company that is not APPROVED (PENDING/REJECTED) is inert — no pool top-ups.
+  // Enforced server-side before any Stripe call.
   const company = await prisma.company.findUnique({
     where: { id: companyId },
     select: { status: true },
@@ -26,12 +26,12 @@ export async function createCheckoutSession(
         price_data: {
           currency: 'eur',
           product_data: { name: `Recharge de ${amount} token(s) Prim'O` },
-          unit_amount: config.TOKEN_PRICE_CENTS, // prix d'UN token, en centimes
+          unit_amount: config.TOKEN_PRICE_CENTS, // price of ONE token, in cents
         },
-        quantity: amount, // total = unit_amount × quantity
+        quantity: amount, // total charged = unit_amount × quantity
       },
     ],
-    // Stripe nous renverra ces données dans le webhook → on saura quoi créditer.
+    // Stripe round-trips this metadata into the webhook event, telling fulfillment what to credit.
     metadata: {
       companyId,
       createdById: managerId,

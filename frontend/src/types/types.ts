@@ -1,6 +1,5 @@
-// Barrel : conserve l'import public `from "../types/types"`.
-// Les types sont découpés par domaine (shared/offer/employee/company/admin) ;
-// ce fichier ne fait que les ré-exporter - aucun composant ne change.
+// Barrel file preserving the public import path `from "../types/types"`. Types are split by
+// domain (shared/offer/employee/company/admin/allocation); this file only re-exports them.
 
 export * from './shared';
 export * from './offer';

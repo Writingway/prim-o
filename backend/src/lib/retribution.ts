@@ -1,13 +1,13 @@
 import type { RetributionMode } from '@prisma/client';
 
-// Part de rétribution R du manager, prélevée sur l'enveloppe à l'envoi (addendum v1.1
-// §3.4). Arrondi au PLANCHER : tout résidu reste dans le budget équipe (en faveur des
-// salariés). Fonction pure et déterministe — testée isolément.
+// Manager retribution share R, taken from the envelope at send time (addendum v1.1 §3.4).
+// Rounded DOWN: any remainder stays in the team budget, in favor of the employees. Pure,
+// deterministic function — tested in isolation.
 export function computeRetribution(params: {
   mode: RetributionMode;
   amount: number;
   percentage: number | null;
-  teamSize: number; // nb d'employés actifs de l'entreprise (le manager est le +1)
+  teamSize: number; // active employees in the company (the manager is the +1)
 }): number {
   const { mode, amount, percentage, teamSize } = params;
   switch (mode) {

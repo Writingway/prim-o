@@ -1,9 +1,9 @@
 import Coin from '@/components/ui/Coin';
 import logo4 from '@/assets/logos/logo_4.png';
 
-// Écran d'entrée mobile (visiteur non connecté). Plein écran, hors Layout :
-// hero teal, pièce or flottante (élément signature), 2 chemins d'accès.
-// Sur desktop, le visiteur va directement sur la LandingPage (pas de splash).
+// Mobile entry screen (logged-out visitors). Full screen, outside Layout: teal hero, floating
+// gold coin (signature element), two entry paths. Desktop visitors go straight to the
+// LandingPage instead (no splash).
 type Props = {
   onLogin: () => void;
   onRegister: () => void;

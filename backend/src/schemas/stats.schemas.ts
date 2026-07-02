@@ -1,11 +1,12 @@
 import { z } from 'zod';
 
-// GET /api/stats — filtres optionnels. from/to = bornes sur Attribution.createdAt.
-// teamId accepté mais IGNORÉ en V1 (pas d'entité équipe distincte ; scope = companyId).
+// Optional filters for GET /api/stats. from/to bound Attribution.createdAt.
+// teamId is accepted but ignored in V1 (no distinct team entity; scope is the companyId).
 export const statsQuerySchema = z
   .object({
     teamId: z.uuid().optional(),
-    employeeId: z.uuid().optional(), // §3.5 — scope la courbe d'évolution sur un employé
+    // §3.5 — scopes the evolution curve to a single employee.
+    employeeId: z.uuid().optional(),
     from: z.coerce.date().optional(),
     to: z.coerce.date().optional(),
   })

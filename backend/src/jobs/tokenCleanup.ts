@@ -3,9 +3,9 @@ import { prisma } from '../lib/db';
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 const EVERY_24H_MS = 24 * 60 * 60 * 1000;
 
-// Purge : refresh expirés, refresh révoqués depuis plus de 30 jours
-// (on GARDE les révoqués récents : la détection de vol par réutilisation
-// a besoin de retrouver la ligne révoquée), et tokens email morts.
+// Purge expired refresh tokens, refresh tokens revoked more than 30 days ago, and dead email
+// tokens. Recently revoked refresh tokens are KEPT on purpose: theft detection by reuse needs
+// to find the revoked row.
 export async function purgeDeadTokens(): Promise<void> {
   const now = new Date();
   const cutoff = new Date(Date.now() - THIRTY_DAYS_MS);
@@ -27,12 +27,12 @@ export async function purgeDeadTokens(): Promise<void> {
   console.log(`[tokenCleanup] ${refresh.count} refresh + ${email.count} email supprimés`);
 }
 
-// Au boot puis toutes les 24h. deleteMany est idempotent : sans danger
-// si plusieurs instances du serveur tournent en parallèle.
+// Runs at boot, then every 24h. deleteMany is idempotent, so concurrent server instances are
+// harmless.
 export function startTokenCleanup(): void {
   purgeDeadTokens().catch((err) => console.error('[tokenCleanup] échec :', err));
   const timer = setInterval(() => {
     purgeDeadTokens().catch((err) => console.error('[tokenCleanup] échec :', err));
   }, EVERY_24H_MS);
-  timer.unref(); // n'empêche pas le process de s'arrêter proprement
+  timer.unref(); // don't keep the process alive for this timer
 }

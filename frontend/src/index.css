@@ -1,74 +1,74 @@
-/* Charte graphique PRIM'O appliquée globalement.
-   Principale : #00A19A (teal). Secondaire : #000000. Fond : #FFFFFF.
-   Police principale : Poppins. Mobile-first. */
+/* PRIM'O design system, applied globally.
+   Primary: #00A19A (teal). Secondary: #000000. Background: #FFFFFF.
+   Primary font: Poppins. Mobile-first. */
 @import 'tailwindcss';
 
-/* Tailwind v4 @theme : palette charte « réimaginée » v1.1 (teal + or, Poppins).
-   Référence : README handoff / maquette Prim'O Mobile. Tokens exposés comme
-   utilitaires (bg-primo-*, text-primo-*, border-primo-*). Migration incrémentale :
-   coexiste avec les CSS par page restants. */
+/* Tailwind v4 @theme: the "reimagined" v1.1 palette (teal + gold, Poppins).
+   Reference: README handoff / Prim'O Mobile mockup. Tokens are exposed as
+   utilities (bg-primo-*, text-primo-*, border-primo-*). Incremental migration:
+   coexists with the remaining per-page CSS. */
 @theme {
-  /* Teal — primaire */
-  --color-primo-teal: #00a19a;          /* CTA, actif */
-  --color-primo-teal-strong: #00827c;   /* texte teal, hover */
-  --color-primo-teal-dark: #00827c;     /* alias rétro-compat */
-  --color-primo-teal-100: #16ada5;      /* dégradés hero */
-  --color-primo-teal-soft: #e3f4f2;     /* fond teinté teal (= mint) */
+  /* Teal — primary */
+  --color-primo-teal: #00a19a;          /* CTA, active */
+  --color-primo-teal-strong: #00827c;   /* teal text, hover */
+  --color-primo-teal-dark: #00827c;     /* backward-compat alias */
+  --color-primo-teal-100: #16ada5;      /* hero gradients */
+  --color-primo-teal-soft: #e3f4f2;     /* tinted teal background (= mint) */
 
-  /* Encres sombres — surfaces & afficheurs */
-  --color-primo-ink-900: #063b38;       /* sidebar, afficheurs, badges */
-  --color-primo-ink-950: #06302d;       /* fond le plus sombre */
-  --color-primo-hero-from: #0a4b46;     /* début dégradé hero */
+  /* Dark inks — surfaces & displays */
+  --color-primo-ink-900: #063b38;       /* sidebar, displays, badges */
+  --color-primo-ink-950: #06302d;       /* darkest background */
+  --color-primo-hero-from: #0a4b46;     /* hero gradient start */
 
-  /* Or — jeton / récompense (réservé) */
+  /* Gold — token / reward (reserved) */
   --color-primo-gold: #ffb72e;
-  --color-primo-gold-bright: #ffc54d;   /* accent or sur fond sombre */
+  --color-primo-gold-bright: #ffc54d;   /* gold accent on dark backgrounds */
   --color-primo-gold-soft: #fff4e0;
 
-  /* Texte */
-  --color-primo-ink: #0b2422;           /* texte principal */
-  --color-primo-slate: #3c5450;         /* texte secondaire */
+  /* Text */
+  --color-primo-ink: #0b2422;           /* primary text */
+  --color-primo-slate: #3c5450;         /* secondary text */
   --color-primo-slate-soft: #5c7370;
-  --color-primo-muted: #90a5a2;         /* tertiaire / placeholders */
+  --color-primo-muted: #90a5a2;         /* tertiary / placeholders */
 
-  /* Surfaces & lignes */
+  /* Surfaces & lines */
   --color-primo-bg: #ffffff;
-  --color-primo-surface: #f3f7f6;       /* fond écran */
-  --color-primo-mint: #e3f4f2;          /* fond teinté teal */
-  --color-primo-mint-line: #8fcec8;     /* bordure pastille invite (mint) */
-  --color-primo-mint-line-hover: #d3ece8; /* hover pastille invite */
-  --color-primo-line: #e3ecea;          /* bordures */
-  --color-primo-border: #e3ecea;        /* alias rétro-compat */
+  --color-primo-surface: #f3f7f6;       /* screen background */
+  --color-primo-mint: #e3f4f2;          /* tinted teal background */
+  --color-primo-mint-line: #8fcec8;     /* invite chip border (mint) */
+  --color-primo-mint-line-hover: #d3ece8; /* invite chip hover */
+  --color-primo-line: #e3ecea;          /* borders */
+  --color-primo-border: #e3ecea;        /* backward-compat alias */
   --color-primo-gray: #6b7280;
   --color-primo-gray-light: #90a5a2;
 
-  /* États */
+  /* States */
   --color-primo-success: #0e9f6e;
   --color-primo-success-soft: #e7f7f0;
   --color-primo-error: #e5484d;
   --color-primo-error-soft: #fdecec;
-  --color-primo-error-line: #f0c9c9;    /* bordure bouton danger */
+  --color-primo-error-line: #f0c9c9;    /* danger button border */
   --color-primo-warn: #e08c12;
   --color-primo-warn-strong: #b8801c;
   --color-primo-warn-soft: #fff8ec;
   --color-primo-warn-soft2: #fbefd2;
 
-  /* Couleur de catégorie encore utilisée (confetti). Les autres couleurs de
-     catégorie viennent désormais de la DB (champ Category.color). */
+  /* Category color still used directly (confetti). The other category colors
+     now come from the DB (Category.color field). */
   --color-primo-cat-food: #e5784a;
 
   --font-sans: 'Poppins', system-ui, 'Segoe UI', Roboto, sans-serif;
 
-  /* Animations partagées. */
+  /* Shared animations. */
   --animate-confirm-fade: confirm-fade 0.12s ease;
   --animate-confirm-pop: confirm-pop 0.14s ease;
   --animate-primo-float: primo-float 4s ease-in-out infinite;
   --animate-sheet-up: sheet-up 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-  /* Entrée orchestrée du catalogue : voile + montée douce, décalée par carte. */
+  /* Orchestrated catalog entrance: fade in plus a gentle rise, staggered per card. */
   --animate-offer-in: offer-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-/* Scroll horizontal sans barre grise visible (carrousels, filtres). */
+/* Horizontal scroll with no visible gray bar (carousels, filters). */
 @utility no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
@@ -109,7 +109,7 @@
 }
 
 :root {
-  /* Seules vars legacy encore référencées dans ce fichier (color + body bg). */
+  /* The only legacy vars still referenced in this file (color + body bg). */
   --primo-ink: #0b2422;
   --primo-bg: #ffffff;
 
@@ -123,16 +123,16 @@
   box-sizing: border-box;
 }
 
-/* Garde-fou global : la PAGE ne scrolle jamais horizontalement sur mobile.
-   Les zones larges (tables) scrollent dans leur propre wrapper, pas la page. */
+/* Global guardrail: the PAGE never scrolls horizontally on mobile.
+   Wide areas (tables) scroll inside their own wrapper, not the page. */
 html, body {
   max-width: 100%;
   overflow-x: hidden;
 }
 
-/* Médias ne dépassent jamais leur conteneur. Dans @layer base pour que les
-   utilitaires de taille (h-5, w-…) puissent l'emporter — sinon une règle
-   hors-layer gagne sur tout Tailwind et fige la hauteur. */
+/* Media never overflow their container. Kept in @layer base so size utilities
+   (h-5, w-…) can win — otherwise a rule outside the layer beats all of Tailwind
+   and freezes the height. */
 @layer base {
   img, video, canvas, svg {
     max-width: 100%;
@@ -145,7 +145,7 @@ body {
   margin: 0;
   background: var(--primo-bg);
   font-family: inherit;
-  /* Mobile-first : base petit écran, enrichie ensuite via min-width. */
+  /* Mobile-first: small-screen base, enriched afterwards via min-width. */
   font-size: 15px;
 }
 

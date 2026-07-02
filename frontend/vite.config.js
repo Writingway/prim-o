@@ -6,8 +6,8 @@ import { fileURLToPath, URL } from 'node:url'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss()],
-  // Alias '@/' → src/ : fin des imports profonds '../../'. Additif, non bloquant
-  // (les imports relatifs existants marchent toujours ; migration au fil de l'eau).
+  // Alias '@/' → src/ to end deep '../../' imports. Additive and non-breaking:
+  // existing relative imports keep working; migrate incrementally.
   resolve: {
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
   },
@@ -17,17 +17,17 @@ export default defineConfig({
   },
 
   server: {
-    // Port dédié à Prim'O (5173 est souvent pris par un autre projet).
-    // strictPort : échoue clairement au lieu de glisser sur un autre port en douce.
+    // Dedicated port for Prim'O (5173 is often taken by another project).
+    // strictPort: fail loudly instead of silently sliding to another port.
     port: 5180,
     strictPort: true,
     host: true,
     allowedHosts: ['.trycloudflare.com', '.trycloudflare.com'],
-    // WSL : le watcher natif (inotify) rate souvent les changements de fichiers
-    // → HMR muet, les modifs n'apparaissent pas. Le polling est fiable en WSL.
+    // WSL: the native inotify watcher often misses file changes, leaving HMR
+    // silent so edits never show up. Polling is reliable under WSL.
     watch: { usePolling: true, interval: 200 },
-    // Proxy : les appels du front vers /api sont transmis au backend (port 4000).
-    // Le navigateur ne parle qu'au front → règle les soucis WSL/CORS en dev.
+    // Proxy: the frontend's /api calls are forwarded to the backend (port 4000).
+    // The browser only talks to the frontend, which fixes WSL/CORS issues in dev.
     proxy: {
       '/api': {
         target: 'http://localhost:4000',

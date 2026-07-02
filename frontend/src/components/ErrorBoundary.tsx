@@ -1,11 +1,10 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 
-// Filet de sécurité racine : une exception au rendu (n'importe où dans
-// l'arbre) ne doit jamais laisser un écran blanc. On affiche un fallback
-// avec un bouton de récupération au lieu de planter toute l'app.
+// Root safety net: a render exception anywhere in the tree must never leave a blank
+// screen — show a fallback with a reload button instead of crashing the whole app.
 //
-// Doit être une CLASSE : React n'expose pas componentDidCatch / getDerivedStateFromError
-// via un hook. C'est le seul cas où une classe reste obligatoire.
+// Must be a class component: React exposes getDerivedStateFromError / componentDidCatch
+// only on classes, with no hook equivalent.
 
 type Props = { children: ReactNode };
 type State = { hasError: boolean };
@@ -13,12 +12,11 @@ type State = { hasError: boolean };
 export default class ErrorBoundary extends Component<Props, State> {
   state: State = { hasError: false };
 
-  // Appelé quand un enfant jette au rendu → on bascule en mode fallback.
   static getDerivedStateFromError(): State {
     return { hasError: true };
   }
 
-  // Point de branchement pour un logger (Sentry...) plus tard.
+  // Hook point for an error reporter (e.g. Sentry) later.
   componentDidCatch(error: Error, info: ErrorInfo): void {
     console.error('Erreur de rendu non gérée :', error, info.componentStack);
   }

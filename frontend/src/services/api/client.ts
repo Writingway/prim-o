@@ -1,23 +1,20 @@
 // Core transport: token ownership, refresh singleton, request wrappers.
-// En dev l'URL est relative (/api), Vite proxifie vers le backend
-// (voir vite.config.js) → pas de souci CORS ni de port Windows/WSL.
+// In dev the URL is relative (/api) and Vite proxies it to the backend (see vite.config.js),
+// which avoids CORS issues and Windows/WSL port juggling.
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 export type ApiResult<T = unknown> = { ok: boolean; status: number; data: T | null };
 
-// Construit l'URL d'un asset (ex. photo d'offre). Une URL absolue (image
-// externe, ex. seed Unsplash) est renvoyée telle quelle ; un chemin relatif
-// « /uploads/… » (upload admin) est préfixé par l'origine de l'API (proxifiée
-// par Vite en dev).
+// Builds the URL of an asset (e.g. an offer photo). An absolute URL (external image, e.g.
+// Unsplash seed data) is returned as-is; a relative "/uploads/…" path (admin upload) is
+// prefixed with the API origin (proxied by Vite in dev).
 export function assetUrl(path: string): string {
   return /^https?:\/\//.test(path) ? path : `${API_URL}${path}`;
 }
 
-// ─── Propriété du token ──────────────────────────────────────────
-// client.ts est propriétaire de l'accessToken (en mémoire uniquement,
-// jamais en localStorage). App le pose au login, refresh() le
-// renouvelle silencieusement, et les composants ne le trimballent plus.
+// Token ownership: client.ts owns the access token, in memory only — never in localStorage.
+// App sets it at login, refresh() renews it silently, and components never carry it around.
 
 let currentToken: string | null = null;
 
@@ -25,20 +22,20 @@ export function setAccessToken(token: string | null): void {
   currentToken = token;
 }
 
-// App enregistre ici quoi faire quand la session est définitivement
-// morte (refresh impossible) : setSession(null) → écran de connexion.
+// App registers here what to do when the session is dead for good (refresh impossible):
+// setSession(null) → login screen.
 let onSessionExpired: (() => void) | null = null;
 
 export function registerSessionExpired(cb: () => void): void {
   onSessionExpired = cb;
 }
 
-// Requête brute : pose le Bearer si un token est en mémoire.
-// On ne jette pas d'exception sur les erreurs HTTP : on renvoie le statut
-// pour que les formulaires affichent le bon message (400, 404, 409...).
+// Raw request: attaches the Bearer header when a token is in memory.
+// HTTP errors do not throw; the status is returned so forms can show the right
+// message (400, 404, 409...).
 async function rawRequest<T = unknown>(method: string, path: string, body?: unknown): Promise<ApiResult<T>> {
-  // FormData (upload de fichier) : on NE pose PAS de Content-Type, le navigateur
-  // génère « multipart/form-data; boundary=… » lui-même.
+  // FormData (file upload): do NOT set Content-Type — the browser generates
+  // "multipart/form-data; boundary=…" itself.
   const isForm = body instanceof FormData;
   const headers: Record<string, string> = {};
   if (body !== undefined && !isForm) headers['Content-Type'] = 'application/json';
@@ -47,11 +44,11 @@ async function rawRequest<T = unknown>(method: string, path: string, body?: unkn
   const res = await fetch(`${API_URL}${path}`, {
     method,
     headers,
-    // credentials : pour envoyer/recevoir le cookie refresh (httpOnly)
+    // credentials: send/receive the httpOnly refresh cookie.
     credentials: 'include',
-    // no-store : sinon le navigateur revalide les GET (If-None-Match) et le
-    // backend répond 304 sans corps → res.ok=false, data=null → faux "Impossible
-    // de charger". On veut toujours un 200 + corps frais sur une API authentifiée.
+    // no-store: otherwise the browser revalidates GETs (If-None-Match) and the backend answers
+    // 304 with no body → res.ok=false, data=null → spurious "failed to load" errors. We always
+    // want a fresh 200 + body on an authenticated API.
     cache: 'no-store',
     body: body === undefined ? undefined : isForm ? body : JSON.stringify(body),
   });
@@ -60,14 +57,14 @@ async function rawRequest<T = unknown>(method: string, path: string, body?: unkn
   try {
     data = await res.json();
   } catch {
-    // Pas de corps JSON (204, page d'erreur...) - on ignore.
+    // No JSON body (204, error page...) — ignore.
   }
 
   return { ok: res.ok, status: res.status, data };
 }
 
-// POST public (login, register, refresh, logout) : pas de Bearer, pas de
-// retry - un 401 ici est une vraie réponse métier, pas un token expiré.
+// Public POST (login, register, refresh, logout): no Bearer, no retry — a 401 here is a real
+// business response, not an expired token.
 export async function post<T = unknown>(path: string, body?: unknown): Promise<ApiResult<T>> {
   const res = await fetch(`${API_URL}${path}`, {
     method: 'POST',
@@ -80,17 +77,16 @@ export async function post<T = unknown>(path: string, body?: unknown): Promise<A
   try {
     data = await res.json();
   } catch {
-    // Pas de corps JSON - on ignore.
+    // No JSON body — ignore.
   }
 
   return { ok: res.ok, status: res.status, data };
 }
 
-// ─── Refresh singleton ───────────────────────────────────────────
-// Une seule requête refresh en vol à la fois : les appelants concurrents
-// (StrictMode, wrapper 401, plusieurs appels parallèles) partagent la
-// même promesse. Sans ça, le second appel présenterait un token déjà
-// tourné → détection de vol côté serveur → famille révoquée → déco.
+// Refresh singleton: only one refresh request in flight at a time — concurrent callers
+// (StrictMode, the 401 wrapper, parallel calls) share the same promise. Without this, a second
+// call would present an already-rotated token → server-side theft detection → token family
+// revoked → user logged out.
 
 let refreshPromise: Promise<ApiResult<{ accessToken: string }>> | null = null;
 
@@ -99,7 +95,7 @@ export function refresh(): Promise<ApiResult<{ accessToken: string }>> {
     refreshPromise = post<{ accessToken: string }>('/auth/refresh')
       .then((res) => {
         if (res.ok && res.data?.accessToken) {
-          currentToken = res.data.accessToken; // renouvellement silencieux
+          currentToken = res.data.accessToken; // silent renewal
         }
         return res;
       })
@@ -110,19 +106,18 @@ export function refresh(): Promise<ApiResult<{ accessToken: string }>> {
   return refreshPromise;
 }
 
-// ─── Wrapper authentifié : 401 → refresh → retry (UNE fois) ──────
+// Authenticated wrapper: 401 → refresh → retry (exactly once).
 export async function authRequest<T = unknown>(method: string, path: string, body?: unknown): Promise<ApiResult<T>> {
   const first = await rawRequest<T>(method, path, body);
   if (first.status !== 401) return first;
 
-  // Access token expiré ? Un seul refresh silencieux, partagé.
+  // Access token expired? One shared silent refresh.
   const r = await refresh();
   if (!r.ok || !r.data?.accessToken) {
-    // On ne déconnecte QUE si le refresh est refusé pour une raison d'auth
-    // (401/403 = cookie expiré/révoqué). Un 429 (rate limit), un 5xx ou une
-    // coupure réseau ne veulent PAS dire « session morte » → sinon une rafale
-    // de requêtes (StrictMode, navigation rapide) dépasse le quota, le refresh
-    // prend un 429 et l'utilisateur est déconnecté à tort.
+    // Only log out when the refresh is rejected for an auth reason (401/403 = cookie
+    // expired/revoked). A 429 (rate limit), a 5xx or a network failure does NOT mean the session
+    // is dead — otherwise a burst of requests (StrictMode, fast navigation) exceeds the quota,
+    // the refresh gets a 429 and the user is logged out for no reason.
     if (r.status === 401 || r.status === 403) {
       setAccessToken(null);
       onSessionExpired?.();
@@ -130,8 +125,8 @@ export async function authRequest<T = unknown>(method: string, path: string, bod
     return first;
   }
 
-  // Retry UNIQUE avec le token frais. Jamais de second retry : un 401
-  // ici est une vraie interdiction, pas une expiration.
+  // Single retry with the fresh token. Never a second retry: a 401 here is a real denial,
+  // not an expiration.
   const second = await rawRequest<T>(method, path, body);
   if (second.status === 401) {
     setAccessToken(null);

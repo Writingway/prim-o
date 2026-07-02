@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { exportMyData, deleteMyAccount } from '../../services/api';
 import Icon from '../ui/Icon';
 
-// Ligne-bouton dépliable (même style que les réglages du profil).
+// Expandable row button (same style as the profile settings rows).
 const ROW =
   'flex w-full items-center gap-3 rounded-2xl border border-primo-line bg-white px-4 py-3.5 text-left transition hover:bg-primo-surface';
 const ROW_ICON =
@@ -16,8 +16,8 @@ const BTN_DANGER = `${BTN} border-[1.5px] border-primo-error-line bg-white text-
 const BTN_DANGER_SOLID = `${BTN} bg-primo-error text-white hover:brightness-95`;
 
 type PrivacySectionProps = {
-  // Appelé après une suppression réussie : le parent doit clore la session
-  // (vider le token, revenir à l'accueil) - le compte n'existe plus.
+  // Called after a successful deletion: the parent must end the session (clear the
+  // token, go back to the landing page) — the account no longer exists.
   onAccountDeleted: () => void;
 };
 
@@ -26,14 +26,14 @@ export default function PrivacySection({ onAccountDeleted }: PrivacySectionProps
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState('');
 
-  // Flux de suppression : confirmation par mot de passe.
+  // Deletion flow: the user must confirm with their password.
   const [confirming, setConfirming] = useState(false);
   const [password, setPassword] = useState('');
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
 
-  // Export : on récupère le JSON puis on le transforme en fichier
-  // téléchargeable côté navigateur (Blob + lien temporaire).
+  // Export: fetch the JSON and turn it into a browser-side download (Blob +
+  // temporary link).
   const handleExport = async () => {
     setExporting(true);
     setExportError('');
@@ -49,7 +49,7 @@ export default function PrivacySection({ onAccountDeleted }: PrivacySectionProps
       a.href = url;
       a.download = 'mes-donnees-primo.json';
       a.click();
-      URL.revokeObjectURL(url); // libère la mémoire du Blob
+      URL.revokeObjectURL(url); // free the Blob's memory
     } catch {
       setExportError('Impossible de joindre le serveur.');
     } finally {
@@ -80,7 +80,6 @@ export default function PrivacySection({ onAccountDeleted }: PrivacySectionProps
 
   return (
     <div className="mb-3.5">
-      {/* Bouton dépliable */}
       <button type="button" className={ROW} onClick={() => setOpen((o) => !o)} aria-expanded={open}>
         <span className={ROW_ICON}>
           <Icon name="shield" size={19} />
@@ -96,7 +95,7 @@ export default function PrivacySection({ onAccountDeleted }: PrivacySectionProps
       {open && (
       <div className={PANEL}>
 
-      {/* Export (RGPD art. 15 & 20) */}
+      {/* Data export (GDPR art. 15 & 20). */}
       <p className="mb-3 text-[13px] text-primo-gray">
         Tu peux télécharger l'ensemble des données que nous détenons sur toi.
       </p>
@@ -107,7 +106,7 @@ export default function PrivacySection({ onAccountDeleted }: PrivacySectionProps
 
       <hr className="my-[18px] border-0 border-t border-primo-line" />
 
-      {/* Suppression (RGPD art. 17) */}
+      {/* Account deletion (GDPR art. 17). */}
       <p className="mb-3 text-[13px] text-primo-gray">
         La suppression de ton compte est <strong>définitive</strong> : tes informations
         personnelles seront effacées. Cette action est irréversible.

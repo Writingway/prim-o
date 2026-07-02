@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
-// Le manager envoie juste le nombre de tokens à acheter.
-// Entier positif, plafonné pour éviter les montants absurdes.
+// The manager only sends the number of tokens to buy.
+// Positive integer, capped to block absurd amounts.
 export const createCheckoutSchema = z.object({
   amount: z.number().int().positive().max(10000),
 });

@@ -1,13 +1,13 @@
-// Types transverses (auth, enveloppe API, pagination).
+// Cross-cutting types (auth, pagination).
 
-// Rôle utilisateur - valeurs alignées sur l'enum Prisma backend (MANAGER, EMPLOYEE, OWNER, ADMIN),
-// en minuscules. Le rôle vient du JWT renvoyé au login.
+// User role: lowercase counterparts of the backend Prisma enum (MANAGER, EMPLOYEE, OWNER, ADMIN).
+// The role comes from the JWT returned at login.
 export type Role = 'manager' | 'employee' | 'owner' | 'admin';
 
-// Mode du formulaire d'auth.
+// Auth form mode.
 export type Mode = 'login' | 'register';
 
-// Réponse paginée générique des historiques.
+// Generic paginated response used by the history endpoints.
 export type Paginated<T> = {
   items: T[];
   total: number;

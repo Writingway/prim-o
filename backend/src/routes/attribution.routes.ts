@@ -16,7 +16,9 @@ const router = Router();
 router.post('/', requireAuth, createAttributionController);
 router.get('/', requireAuth, listAttributionsController);
 
-// Allocation patron → manager + liste des managers (pour l'UI patron).
+// Envelope flow: the owner allocates tokens to a manager, who then redistributes them to
+// employees; the list routes feed the owner and manager dashboards. Owner/manager role checks
+// live in the controllers.
 router.post('/allocate', requireAuth, allocateController);
 router.post('/distribute', requireAuth, distributeEnvelopeController);
 router.get('/managers', requireAuth, listManagersController);

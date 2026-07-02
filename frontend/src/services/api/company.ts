@@ -9,16 +9,16 @@ import type {
 } from "../../types/types";
 import { authRequest } from "./client";
 
-// Solde du pool de tokens de l'entreprise du manager.
+// Token pool balance of the manager's company.
 export const getCompany = () =>
   authRequest<{ company: Company }>('GET', '/company');
 
-// Historique des attributions de l'entreprise (récentes d'abord).
+// The company's attribution history (most recent first).
 export const listAttributions = () =>
   authRequest<{ attributions: AttributionHistory[] }>('GET', '/attributions');
 
-// Génère un code d'invitation (manager connecté).
-// Aucun body : le code est créé côté serveur avec les défauts backend.
+// Generates an invite code (logged-in manager). Only the target role is sent; the code itself
+// is created server-side with the backend defaults (maxUses, expiry).
 export const generateInviteCode = (role: 'MANAGER' | 'EMPLOYEE' = 'EMPLOYEE') =>
   authRequest<{ invite: { code: string; maxUses: number; expiresAt: string; createdAt: string } }>(
     'POST',
@@ -26,14 +26,15 @@ export const generateInviteCode = (role: 'MANAGER' | 'EMPLOYEE' = 'EMPLOYEE') =>
     { role },
   );
 
-// Envoi direct employeur → employé (TPE) : montant + motif obligatoire, sans mode.
-// Le backend débite le pool entreprise et crédite l'employé de façon atomique.
+// Direct employer → employee grant (TPE, very small companies): amount + mandatory motif
+// (allocation reason), no mode. The backend debits the company pool and credits the employee
+// atomically.
 export const createAttribution = (payload: { employeeId: string; amount: number; motifId: string }) =>
   authRequest<
     { attribution: { id: string; amount: number; createdAt: string } } | { error: string }
   >('POST', '/attributions', payload);
 
-// Un manager de l'entreprise (pour l'allocation côté patron).
+// A manager of the company (for the owner-side allocation screen).
 export type CompanyManager = {
   id: string;
   firstName: string | null;
@@ -42,12 +43,12 @@ export type CompanyManager = {
   balance: number;
 };
 
-// Liste les managers de l'entreprise (patron).
+// Lists the company's managers (owner only).
 export const listManagers = () =>
   authRequest<{ managers: CompanyManager[] }>('GET', '/attributions/managers');
 
-// Allocation patron → manager : crée une enveloppe (débite le pool). Le mode décide
-// de la rétribution du manager ; percentage requis UNIQUEMENT en mode POURCENTAGE.
+// Owner → manager allocation: creates an envelope (debits the pool). The mode decides the
+// manager's retribution; percentage is required ONLY in POURCENTAGE mode.
 export const allocateTokens = (
   managerId: string,
   amount: number,
@@ -64,23 +65,24 @@ export const allocateTokens = (
     ...(mode === 'POURCENTAGE' ? { percentage } : {}),
   });
 
-// Motifs officiels actifs, groupés par catégorie (alimente le sélecteur de motif).
+// Active official motifs, grouped by category (feeds the motif picker).
 export const listMotifs = () =>
   authRequest<{ categories: MotifCategoryGroup[] }>('GET', '/motifs');
 
-// Enveloppes du manager courant ("Mes enveloppes reçues").
+// The current manager's envelopes (the "Mes enveloppes reçues" screen).
 export const listEnvelopes = () =>
   authRequest<{ envelopes: ManagerEnvelope[] }>('GET', '/attributions/envelopes');
 
-// Enveloppes envoyées par l'employeur courant ("Mes enveloppes envoyées").
+// Envelopes sent by the current employer (the "Mes enveloppes envoyées" screen).
 export const listSentEnvelopes = () =>
   authRequest<{ envelopes: SentEnvelope[] }>('GET', '/attributions/sent-envelopes');
 
-// Doubles soldes manager : budget d'enveloppes restant + solde perso (rétribution).
+// The manager's two balances: remaining envelope budget + personal balance (retribution).
 export const getManagerBalances = () =>
   authRequest<ManagerBalances>('GET', '/attributions/balances');
 
-// Redistribution atomique d'une enveloppe (un seul envoi : part manager + employés).
+// Atomic redistribution of an envelope (a single call covers the manager's share + the
+// employee lines).
 export const distributeEnvelope = (payload: { allocationId: string; lines: DistributeLine[] }) =>
   authRequest<
     | { allocationId: string; retributionAmount: number; distributed: number; lineCount: number; status: string }

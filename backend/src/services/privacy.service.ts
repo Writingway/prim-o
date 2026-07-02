@@ -3,17 +3,12 @@ import type { Prisma } from '@prisma/client'
 import { prisma } from '../lib/db';
 import type { UpdateProfileInput } from '../schemas/privacy.schemas';
 
-// ============================================================
-//  RGPD - droit d'accès/portabilité (art. 15 & 20) + droit à
-//  l'effacement (art. 17).
-//  L'effacement = ANONYMISATION, pas suppression physique :
-//  on conserve le registre comptable (Attribution / Redemption)
-//  tout en détachant l'identité de la personne (considérant 26 :
-//  les données anonymes sortent du champ du RGPD).
-// ============================================================
+// GDPR: right of access/portability (art. 15 & 20) and right to erasure (art. 17).
+// Erasure means ANONYMIZATION, not physical deletion: the accounting ledger
+// (Attribution/Redemption) is kept while the person's identity is detached
+// (recital 26: anonymous data falls outside the GDPR).
 
-// Export complet des données personnelles, format JSON portable.
-// Ne renvoie JAMAIS passwordHash.
+// Full personal-data export as portable JSON. NEVER includes passwordHash.
 
 export async function exportUserData(userId: string) {
     const user = await prisma.user.findFirst({
@@ -107,14 +102,14 @@ export async function exportUserData(userId: string) {
 }
 
 
-// Anonymise un utilisateur DANS une transaction donnée (réutilisable
-// par la suppression self-service ET par le soft delete manager).
-//  - email : valeur unique non identifiante (l'uuid évite les collisions ;
-//    deletedAt exclut la ligne de l'index partiel → réinscription possible)
-//  - prénom / nom effacés
-//  - passwordHash vidé → login impossible
-//  - tokens d'accès supprimés (aucune valeur historique)
-// On conserve role/companyId/balance : le ledger référence ce User.
+// Anonymizes a user INSIDE a caller-provided transaction (shared by self-service
+// deletion AND the manager-side soft delete).
+//  - email: unique non-identifying value (the uuid avoids collisions; deletedAt takes
+//    the row out of the partial unique index, so the email can register again)
+//  - first/last name cleared
+//  - passwordHash emptied -> login becomes impossible
+//  - auth tokens deleted (no historical value)
+// role/companyId/balance are kept: the ledger references this User row.
 export async function anonymizeUser(tx: Prisma.TransactionClient, userId: string): Promise<void> {
     await tx.user.update({
         where: { id: userId },
@@ -132,9 +127,8 @@ export async function anonymizeUser(tx: Prisma.TransactionClient, userId: string
     await tx.emailVerificationToken.deleteMany({ where: { userId } });
 }
 
-// Rectification du profil (art. 16). Mise à jour partielle : on ne
-// touche qu'aux champs fournis. Le changement d'email est le cas
-// sensible (unicité + re-vérification).
+// Profile rectification (art. 16). Partial update: only the provided fields are
+// touched. Changing the email is the sensitive case (uniqueness + re-verification).
 export async function updateOwnProfile(userId: string, input: UpdateProfileInput) {
   const user = await prisma.user.findFirst({
     where: { id: userId, deletedAt: null },
@@ -144,7 +138,6 @@ export async function updateOwnProfile(userId: string, input: UpdateProfileInput
     throw new Error('USER_NOT_FOUND');
   }
 
-  // Construit l'objet de mise à jour à partir des seuls champs fournis.
   const data: {
     firstName?: string; lastName?: string; email?: string;
     isEmailVerified?: boolean; profilePhoto?: string | null;
@@ -153,9 +146,8 @@ export async function updateOwnProfile(userId: string, input: UpdateProfileInput
   if (input.lastName !== undefined) data.lastName = input.lastName;
   if (input.profilePhoto !== undefined) data.profilePhoto = input.profilePhoto;
 
-  // Email : seulement s'il est fourni ET différent de l'actuel.
   if (input.email !== undefined && input.email !== user.email) {
-    const newEmail = input.email; // ici TS sait que c'est bien un string
+    const newEmail = input.email; // Local const keeps TS's string narrowing.
     const taken = await prisma.user.findFirst({
       where: { email: newEmail, deletedAt: null, NOT: { id: userId } },
       select: { id: true },
@@ -163,10 +155,10 @@ export async function updateOwnProfile(userId: string, input: UpdateProfileInput
     if (taken) throw new Error('EMAIL_TAKEN');
 
     data.email = newEmail;
-    // Un EMPLOYÉ qui change d'email doit être re-validé par son manager
-    // (le bouton « Approuver » repassera isEmailVerified à true). Pour un
-    // MANAGER, on ne touche pas au drapeau : il n'a pas d'off-ramp et serait
-    // bloqué au login. La vraie vérification par lien viendra avec Brevo.
+    // An EMPLOYEE who changes email must be re-approved by their manager (the
+    // « Approuver » button flips isEmailVerified back to true). For a MANAGER the
+    // flag is left alone: they have no re-approval path and would be locked out at
+    // login. Real link-based verification will come with Brevo.
     if (user.role === 'EMPLOYEE') {
       data.isEmailVerified = false;
     }
@@ -185,8 +177,8 @@ export async function updateOwnProfile(userId: string, input: UpdateProfileInput
 }
 
 
-// Suppression self-service : exige le mot de passe en confirmation
-// d'une action irréversible.
+// Self-service account deletion: requires the password to confirm an
+// irreversible action.
 export async function deleteOwnAccount(userId: string, password: string): Promise<void> {
   const user = await prisma.user.findFirst({
     where: { id: userId, deletedAt: null },
@@ -206,8 +198,8 @@ export async function deleteOwnAccount(userId: string, password: string): Promis
   });
 }
 
-// Profil de l'utilisateur connecté (pour pré-remplir la rectification).
-// Ne renvoie jamais passwordHash.
+// Profile of the signed-in user (pre-fills the rectification form).
+// Never includes passwordHash.
 export async function getMyProfile(userId: string) {
   const user = await prisma.user.findFirst({
     where: { id: userId, deletedAt: null },
