@@ -155,7 +155,7 @@ body {
   }
 }
 
-/* ── Admin tables → stacked cards on mobile ──────────────────────────────── */
+/*  Admin tables → stacked cards on mobile  */
 @media (max-width: 639px) {
   .admin-table-responsive {
     overflow-x: visible;

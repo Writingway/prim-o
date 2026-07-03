@@ -2,7 +2,10 @@ import type { Request, Response, NextFunction } from 'express';
 import { Prisma } from '@prisma/client';
 import multer from 'multer';
 import { AppError } from '../middleware/error.middleware';
+import { z } from 'zod';
 import { createOfferSchema, updateOfferSchema } from '../schemas/offer.schemas';
+
+const offerIdSchema = z.uuid();
 import { listOffers, listActiveOffers, getOffer, createOffer, updateOffer, deactivateOffer, getActiveOffer, setOfferImage, clearOfferImage } from '../services/offer.service';
 import { offerImageUpload, removeUploadedFile, OFFERS_PUBLIC_PREFIX } from '../lib/upload';
 
@@ -20,14 +23,17 @@ export async function listOffersController(req: Request, res: Response, next: Ne
 
 export async function getOfferController(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const { id } = req.params;
-    if (!id) {
-      next(new AppError(400, 'ID de l\'offre requis.')); 
+    // Validate the uuid BEFORE Prisma: a malformed :id returns a clean 400
+    // (consistent with the admin routes) instead of a Prisma crash -> 500.
+    const parsed = offerIdSchema.safeParse(req.params.id);
+    if (!parsed.success) {
+      next(new AppError(400, 'ID de l\'offre invalide.'));
       return;
     }
+    const id = parsed.data;
     const offer = req.user?.role === 'ADMIN'
-    ? await getOffer(String(id))      // admin: everything, including deactivated offers
-    : await getActiveOffer(String(id)); // public: active only, storefront fields
+    ? await getOffer(id)      // admin: everything, including deactivated offers
+    : await getActiveOffer(id); // public: active only, storefront fields
     if (!offer) {
       next(new AppError(404, 'Offre non trouvée.'));
       return;

@@ -126,8 +126,8 @@ A native mobile app operates through **system layers** (direct hardware access, 
 V1 is designed with a **well-defined API decoupled from the frontend**. If the team decides to build a native mobile app in V2, it simply consumes the V1 API directly - no backend rewrite needed.
 
 ```
-V1 : [Browser mobile/desktop]  ── HTTP ──>  [API REST]  ──>  [DB]
-V2 : [Native iOS/Android app]  ── HTTP ──>  [Same API]  ──>  [Same DB]
+V1 : [Browser mobile/desktop]   HTTP >  [API REST]  >  [DB]
+V2 : [Native iOS/Android app]   HTTP >  [Same API]  >  [Same DB]
 ```
 
 ### General architecture
