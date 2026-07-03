@@ -1,15 +1,13 @@
 import type { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
 
-// ============================================================
-//  Erreurs typées - source unique de vérité (B1)
-//  - ErrorCode      : identité stable d'une erreur métier
-//  - ERROR_CATALOG  : code -> { status HTTP, message FR }
-//  - DomainError    : levée par les services (type-safe, pas de chaîne magique)
-//  - AppError       : erreur HTTP ad-hoc (status + message direct) - conservée
-//  Le mapping code -> HTTP se fait ICI, une seule fois. Les controllers
-//  ne catchent plus par chaîne : ils laissent remonter (Express 5 auto-catch async).
-// ============================================================
+// Typed errors - single source of truth.
+// - ErrorCode: stable identity of a business error.
+// - ERROR_CATALOG: code -> { HTTP status, French message }.
+// - DomainError: thrown by services (type-safe, no magic strings).
+// - AppError: ad-hoc HTTP error (direct status + message), kept for guards.
+// The code -> HTTP mapping happens HERE, exactly once. Controllers no longer catch by string:
+// they let errors bubble up (Express 5 auto-catches async rejections).
 
 export enum ErrorCode {
   EMAIL_TAKEN = 'EMAIL_TAKEN',
@@ -38,7 +36,7 @@ export enum ErrorCode {
 
 interface CatalogEntry {
   status: number;
-  // message statique, ou builder si un détail dynamique est fourni (ex. liste d'emails)
+  // Static message, or a builder when a dynamic detail is provided (e.g. a list of emails).
   message: string | ((detail?: string) => string);
 }
 
@@ -70,11 +68,11 @@ const ERROR_CATALOG: Record<ErrorCode, CatalogEntry> = {
   [ErrorCode.STRIPE_SESSION_NO_URL]: { status: 502, message: 'Stripe : URL de session manquante.' },
 };
 
-/** Erreur métier levée par les services. Porte un code stable ; le HTTP est résolu au centre. */
+/** Business error thrown by services. Carries a stable code; the HTTP status is resolved centrally. */
 export class DomainError extends Error {
   constructor(
     public code: ErrorCode,
-    /** détail dynamique optionnel (ex. liste d'emails en conflit) */
+    /** Optional dynamic detail (e.g. list of conflicting emails). */
     public detail?: string
   ) {
     super(code);
@@ -82,7 +80,7 @@ export class DomainError extends Error {
   }
 }
 
-/** Erreur HTTP ad-hoc : status + message directs (gardes auth/authz, validations triviales). */
+/** Ad-hoc HTTP error with direct status + message (auth/authz guards, trivial validations). */
 export class AppError extends Error {
   constructor(
     public statusCode: number,
@@ -106,14 +104,13 @@ export function errorHandler(
   res: Response,
   _next: NextFunction
 ): void {
-  // 1. Erreur métier typée - mapping centralisé
   if (err instanceof DomainError) {
     const { status, message } = resolveCatalog(err.code, err.detail);
     res.status(status).json({ error: message, code: err.code });
     return;
   }
 
-  // 2. Pont de transition : service levant encore `new Error('CODE')` ou `'CODE:detail'`
+  // Transition bridge for services that still throw `new Error('CODE')` or `'CODE:detail'`.
   if (err instanceof Error && !(err instanceof AppError)) {
     const [rawCode, ...rest] = err.message.split(':');
     if (rawCode && (Object.values(ErrorCode) as string[]).includes(rawCode)) {
@@ -123,19 +120,18 @@ export function errorHandler(
     }
   }
 
-  // 3. Erreur HTTP ad-hoc
   if (err instanceof AppError) {
     res.status(err.statusCode).json({ error: err.message, ...(err.code ? { code: err.code } : {}) });
     return;
   }
 
-  // 4. Validation Zod
+  // The name check catches ZodError instances from a duplicated zod copy, where instanceof fails.
   if (err instanceof ZodError || (err instanceof Error && err.name === 'ZodError')) {
     res.status(400).json({ error: 'Données invalides.', details: (err as ZodError).issues });
     return;
   }
 
-  // 5. Inattendu
+  // Anything else is unexpected: log it, return an opaque 500.
   console.error(err);
   res.status(500).json({ error: 'Erreur interne du serveur.' });
 }

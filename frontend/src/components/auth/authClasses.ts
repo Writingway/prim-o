@@ -1,6 +1,6 @@
-// Classes Tailwind partagées par toutes les surfaces d'auth (AuthPage, AuthTabs,
-// Login/Register, ResetPassword, Onboarding). Charte « réimaginée » v1.1 (teal + or,
-// Poppins). Source unique : un seul endroit à toucher pour le look des écrans d'auth.
+// Tailwind classes shared by every auth surface (AuthPage, AuthTabs, Login/Register,
+// ResetPassword, Onboarding). "Reimagined" v1.1 design charter (teal + gold, Poppins).
+// Single source of truth: one place to touch for the look of the auth screens.
 
 export const WRAPPER = 'flex min-h-screen items-center justify-center bg-primo-surface p-5';
 export const CARD =
@@ -8,7 +8,7 @@ export const CARD =
 export const BACK =
   'mb-3 inline-flex cursor-pointer items-center gap-1 border-none bg-transparent p-0 text-sm font-semibold text-primo-slate-soft transition hover:text-primo-teal-strong';
 
-// Onglets segmentés (pilule teal active).
+// Segmented tabs (the active tab is a teal pill).
 export const TABS = 'mb-5 flex gap-1 rounded-[14px] bg-[#e8efed] p-1';
 export const tab = (active: boolean) =>
   `flex-1 cursor-pointer rounded-[11px] border-0 py-2.5 text-sm transition ${
@@ -27,7 +27,7 @@ export const ERROR = 'm-0 text-sm text-primo-error';
 export const SUCCESS =
   'm-0 mb-1 rounded-xl bg-primo-success-soft px-3.5 py-2.5 text-center text-sm font-medium text-primo-success';
 export const HELP = 'm-0 text-sm text-primo-slate-soft';
-// Bouton-lien discret (mot de passe oublié, retour…).
+// Understated link-style button (forgot password, back links…).
 export const LINK =
   'cursor-pointer self-start border-none bg-transparent p-0 text-sm font-semibold text-primo-teal-strong hover:underline';
 

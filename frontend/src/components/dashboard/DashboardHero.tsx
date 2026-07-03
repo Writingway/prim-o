@@ -4,18 +4,17 @@ import HeroLogo from '@/components/dashboard/HeroLogo';
 import HeroThemeButton from '@/components/dashboard/HeroThemeButton';
 import { useHeroTheme } from '@/hooks/useHeroTheme';
 
-// Coquille de hero partagée par les 3 dashboards (employé/manager/owner) :
-// plein cadre dégradé (couleur via useHeroTheme), logo centré, ligne
-// avatar + titre + bouton de couleur. Le contenu propre à chaque espace
-// (carte solde / enveloppe / pool) est passé en `children`.
+// Hero shell shared by the three dashboards (employee/manager/owner): full-bleed
+// gradient (color from useHeroTheme), centered logo, then avatar + title + theme button
+// row. Space-specific content (balance card / envelope / pool) is passed as `children`.
 type Props = {
-  eyebrow: string;          // sur-titre (« Bonjour », « Espace manager »…)
-  title: ReactNode;         // nom / entreprise (ReactNode pour autoriser un badge)
-  photo?: string | null;    // avatar de profil
-  initials: string;         // repli si pas d'avatar
-  halos?: boolean;          // halos lumineux (accueil employé)
-  bleed?: string;           // marges négatives = padding du wrapper parent
-  children?: ReactNode;     // corps du hero (sous la ligne de titre)
+  eyebrow: string;          // Overline text (« Bonjour », « Espace manager »…).
+  title: ReactNode;         // Name / company (ReactNode so a badge can be included).
+  photo?: string | null;    // Profile photo.
+  initials: string;         // Fallback when there is no photo.
+  halos?: boolean;          // Glow halos (employee home).
+  bleed?: string;           // Negative margins matching the parent wrapper's padding.
+  children?: ReactNode;     // Hero body, rendered below the title row.
 };
 
 export default function DashboardHero({

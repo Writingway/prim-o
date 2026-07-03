@@ -8,7 +8,7 @@ type Props = {
   onOpen: (envelope: ManagerEnvelope) => void;
 };
 
-// Tuile d'une enveloppe reçue : ouverte (à distribuer) ou verrouillée (distribuée).
+// Tile for a received envelope: open (still to distribute) or locked (already distributed).
 export default function EnvelopeTile({ envelope: e, onOpen }: Props) {
   const distributed = e.status === 'DISTRIBUEE';
   const modeLabel = e.mode === 'POURCENTAGE' ? `${MODE_LABELS.POURCENTAGE} ${e.percentage}%` : MODE_LABELS[e.mode];

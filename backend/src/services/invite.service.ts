@@ -2,14 +2,13 @@ import crypto from 'crypto';
 import { Prisma, Role } from '@prisma/client';
 import { prisma } from '../lib/db';
 
-// Alphabet sans caractères ambigus (0/O, 1/I/L) pour une saisie humaine fiable.
-const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; // 31 symboles
-const CODE_LENGTH = 12;                                   // ~59 bits d'entropie
+// Alphabet without ambiguous characters (0/O, 1/I/L) for reliable human entry.
+const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; // 31 symbols.
+const CODE_LENGTH = 12;                                   // ~59 bits of entropy.
 const MAX_COLLISION_RETRIES = 5;
 
-// Génère un code cryptographiquement aléatoire.
-// Rejection sampling : on jette les octets hors de la plage divisible
-// par la taille de l'alphabet pour éviter tout biais modulo.
+// Cryptographically random code. Rejection sampling: bytes outside the largest
+// range divisible by the alphabet size are discarded to avoid modulo bias.
 function generateCode(): string {
   const limit = Math.floor(256 / CODE_ALPHABET.length) * CODE_ALPHABET.length;
   let out = '';
@@ -22,8 +21,8 @@ function generateCode(): string {
   return out;
 }
 
-// Crée un code d'invitation pour l'entreprise du manager.
-// companyId et createdById viennent du token (controller), jamais du client.
+// Creates an invite code for the caller's company.
+// companyId and createdById come from the token (controller side), never from the client.
 export async function generateInviteCode(params: {
   companyId: string;
   role: Role;
@@ -39,7 +38,7 @@ export async function generateInviteCode(params: {
     throw new Error('COMPANY_INACTIVE');
   }
 
-  // Retry sur collision du @unique "code" (extrêmement rare avec 59 bits).
+  // Retry on @unique "code" collisions (vanishingly rare at ~59 bits).
   for (let attempt = 0; attempt < MAX_COLLISION_RETRIES; attempt++) {
     const code = generateCode();    
     try {
@@ -49,7 +48,7 @@ export async function generateInviteCode(params: {
       });
     } catch (err) {
       if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
-        continue; // collision : on regénère
+        continue; // Collision: regenerate.
       }
       throw err;
     }

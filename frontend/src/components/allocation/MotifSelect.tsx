@@ -4,12 +4,12 @@ import { ALLOC_INPUT } from '../dashboard/dashStyles';
 
 type Props = {
   groups: MotifCategoryGroup[];
-  value: string;            // motifId sélectionné ('' = aucun)
+  value: string;            // selected motifId ('' = none)
   onChange: (motifId: string) => void;
   disabled?: boolean;
 };
 
-// Sélecteur de motif obligatoire, options groupées par catégorie (liste officielle).
+// Required motif (allocation reason) selector; options grouped by category from the official list.
 export default function MotifSelect({ groups, value, onChange, disabled }: Props) {
   return (
     <select
@@ -18,7 +18,7 @@ export default function MotifSelect({ groups, value, onChange, disabled }: Props
       disabled={disabled}
       onChange={(e) => onChange(e.target.value)}
     >
-      <option value="">— motif —</option>
+      <option value="">- motif -</option>
       {groups.map((g) => (
         <optgroup key={g.category} label={MOTIF_CATEGORY_LABELS[g.category]}>
           {g.motifs.map((m) => (

@@ -10,13 +10,13 @@ import {
 
 const router = Router();
 
-// GET /api/me - profil courant (pré-remplit la rectification)
+// Current profile; pre-fills the GDPR rectification form.
 router.get('/', requireAuth, getMyProfileController);
-// GET /api/me/export - export RGPD des données (art. 15 & 20)
+// GDPR data export (art. 15 & 20).
 router.get('/export', requireAuth, exportMyDataController);
-// DELETE /api/me - suppression/anonymisation du compte (art. 17)
+// Account deletion/anonymisation (art. 17).
 router.delete('/', requireAuth, deleteMyAccountController);
-// PATCH /api/me - rectification du profil (art. 16)
+// Profile rectification (art. 16).
 router.patch('/', requireAuth, updateMyProfileController);
 
 export default router;

@@ -1,7 +1,7 @@
 import { avatarSrc } from '@/lib/avatars';
 
-// Photo de profil : avatar prédéfini (image ronde, cadrée buste) si l'utilisateur
-// en a choisi un, sinon repli sur ses initiales (pastille dégradée teal).
+// Profile picture: the predefined avatar (round, bust-framed image) when the user
+// picked one, otherwise falls back to their initials (teal gradient disc).
 type Props = {
   photo?: string | null;
   initials?: string;

@@ -14,7 +14,7 @@ type Props = {
   employees: Employee[];
   motifGroups: MotifCategoryGroup[];
   onCancel: () => void;
-  onDistributed: () => void; // recharge la vue après succès
+  onDistributed: () => void; // parent reloads the view after success
 };
 
 type Row = { amount: string; motifId: string };
@@ -24,7 +24,7 @@ const parseAmount = (s: string) => {
   return Number.isInteger(n) && n > 0 ? n : 0;
 };
 
-// Bloc d'ouverture d'une enveloppe : répartition complète + atomique vers les employés.
+// Envelope opening block: full and atomic distribution of the team budget to the employees.
 export default function RedistributionBlock({
   envelope, employees, motifGroups, onCancel, onDistributed,
 }: Props) {
@@ -38,7 +38,7 @@ export default function RedistributionBlock({
   const totalAllocated = employees.reduce((sum, e) => sum + parseAmount(rows[e.id]?.amount ?? ''), 0);
   const remaining = budget - totalAllocated;
 
-  // Lignes réellement créditées (montant > 0).
+  // Rows that actually credit an employee (amount > 0).
   const activeLines = employees.filter((e) => parseAmount(rows[e.id]?.amount ?? '') > 0);
   const allActiveHaveMotif = activeLines.every((e) => rows[e.id]?.motifId);
   const canSend = remaining === 0 && activeLines.length > 0 && allActiveHaveMotif && !submitting;

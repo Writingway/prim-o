@@ -12,18 +12,18 @@ import { redeemOfferController } from '../controllers/redemption.controller';
 
 const router = Router();
 
-// GET /api/employees/list - protégé (manager connecté)
 router.get('/list', requireAuth, listEmployeesController);
-// DELETE /api/employees/:id - soft delete (manager connecté)
+// Soft delete.
 router.delete('/:id', requireAuth, deleteEmployeeController);
-// Espace employé : solde + historiques paginés.
+// Employee self-service: balance plus paginated received/spent histories. The EMPLOYEE role check
+// lives in the controllers.
 router.get('/me', requireAuth, getEmployeeBalanceController);
 router.get('/me/received', requireAuth, getEmployeeReceivedController);
 router.get('/me/spent', requireAuth, getEmployeeSpentController);
-// PATCH /api/employees/me/spent/:id - bascule « utilisé » d'un de mes codes.
+// Toggle the "used" flag on one of the caller's redeemed codes.
 router.patch('/me/spent/:id', requireAuth, setRedemptionUsedController);
 
-// Échange de tokens contre un code promo (employé connecté).
+// Exchange tokens for a promo code.
 router.post('/me/redeem', requireAuth, redeemOfferController);
 
 export default router;

@@ -1,14 +1,13 @@
 import { z } from 'zod';
 import { safeText } from '../lib/validation';
-// Suppression de compte : on exige le mot de passe en confirmation
-// d'une action irréversible (anonymisation). min(1) : on vérifie
-// seulement la présence ici - la comparaison réelle se fait via
-// bcrypt dans le service (deleteOwnAccount).
+// Account deletion requires the password to confirm an irreversible action (anonymisation).
+// min(1) only checks presence - the actual comparison is done with bcrypt in the service
+// (deleteOwnAccount).
 export const deleteAccountSchema = z.object({
   password: z.string().min(1),
 });
 
-// Avatars prédéfinis (fichiers front av_1…av_6). null = retour aux initiales.
+// Predefined avatars (front-end assets av_1…av_6). null resets the photo back to initials.
 export const PROFILE_PHOTOS = ['av_1', 'av_2', 'av_3', 'av_4', 'av_5', 'av_6'] as const;
 
 export const updateProfileSchema = z

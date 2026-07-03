@@ -1,7 +1,7 @@
 import type { ReactNode, SVGProps } from 'react';
 
-// Jeu d'icônes linéaires Prim'O (trait 1.8, viewBox 0 0 24 24) — zéro emoji.
-// Tracés repris de la maquette. `star` est plein (logo « pièce »), le reste au trait.
+// Prim'O line icon set (1.8 stroke, 0 0 24 24 viewBox) - no emoji anywhere.
+// Paths taken from the mockup. `star` is filled (the "coin" logo); everything else is stroked.
 export type IconName =
   | 'home' | 'gift' | 'received' | 'user' | 'users' | 'bell' | 'search'
   | 'flame' | 'trophy' | 'shield' | 'mail' | 'lock' | 'phone' | 'check'
@@ -49,7 +49,7 @@ const STROKE: Partial<Record<IconName, ReactNode>> = {
   'arrow-up': <path d="M12 19V5M5 12l7-7 7 7" />,
 };
 
-// Étoile pleine = logo « pièce » (token / récompense).
+// Filled star = the "coin" logo (token / reward).
 const STAR = <path d="M12 3.2l2.4 5.2 5.7.6-4.2 3.9 1.1 5.6L12 16l-5 2.5 1.1-5.6L3.9 9l5.7-.6L12 3.2Z" />;
 
 type Props = Omit<SVGProps<SVGSVGElement>, 'name'> & {

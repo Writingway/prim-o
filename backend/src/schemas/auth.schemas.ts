@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { safeText } from '../lib/validation';
 
-// Account-first : l'inscription ne crée qu'un utilisateur (ni entreprise ni code).
+// Account-first flow: registration only creates the user (no company, no invite code).
 export const registerSchema = z.object({
   firstName: safeText(2),
   lastName: safeText(2),
@@ -10,13 +10,13 @@ export const registerSchema = z.object({
 });
 export type RegisterInput = z.infer<typeof registerSchema>;
 
-// Création d'entreprise par un utilisateur flottant authentifié.
+// Company creation by an authenticated floating user (not attached to a company yet).
 export const createCompanySchema = z.object({
   companyName: safeText(2),
 });
 export type CreateCompanyInput = z.infer<typeof createCompanySchema>;
 
-// Rejoindre une entreprise via code d'invitation (utilisateur flottant authentifié).
+// Joining a company via invite code (authenticated floating user).
 export const joinCompanySchema = z.object({
   code: z.string().min(6),
 });

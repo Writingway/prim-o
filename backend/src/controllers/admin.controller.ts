@@ -35,7 +35,6 @@ export async function getStatsController(
   }
 }
 
-// List all companies for the admin
 export async function listCompaniesController(
   req: Request, res: Response, next: NextFunction
 ): Promise<void> {
@@ -61,14 +60,14 @@ export async function listAttributionsController(
 }
 
 
-//Create a new company. Only the name is required; tokenBalance defaults to 0.
+// Only the name is required; tokenBalance defaults to 0.
 export async function createCompanyController(
   req: Request, res: Response, next: NextFunction
 ): Promise<void> {
   try {
-    const data = createCompanySchema.parse(req.body);   // 400 if name missing
+    const data = createCompanySchema.parse(req.body);
     const company = await createCompany(data);
-    res.status(201).json({ company });                  // 201 = "created"
+    res.status(201).json({ company });
   } catch (err) {
     next(err);
   }
@@ -79,7 +78,7 @@ export async function softDeleteCompanyController(
   req: Request, res: Response, next: NextFunction
 ): Promise<void> {
   try {
-    const companyId = idParamSchema.parse(req.params.id);   // 400 if not a UUID
+    const companyId = idParamSchema.parse(req.params.id);
     const result = await softDeleteCompany(companyId);
     res.json(result);
   } catch (err) {
@@ -110,7 +109,7 @@ export async function restoreCompanyController(
   }
 }
 
-// Valide/rejette une entreprise (file d'attente admin). PENDING -> APPROVED/REJECTED.
+// Approve or reject a company in the admin validation queue: PENDING -> APPROVED/REJECTED.
 export async function setCompanyStatusController(
   req: Request, res: Response, next: NextFunction
 ): Promise<void> {

@@ -1,8 +1,7 @@
 import logo3 from '@/assets/logos/logo_3.png';
 
-// Wordmark Prim'O en blanc (le « prim » noir est inversé en blanc), centré.
-// Affiché en tête des heros des 3 dashboards — source unique pour éviter la
-// répétition.
+// Centered white Prim'O wordmark (logo_3 is the asset with the normally black « prim »
+// inverted to white), for dark backgrounds - dashboard heros and the footer.
 export default function HeroLogo({ className = '' }: { className?: string }) {
   return (
     <img

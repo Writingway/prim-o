@@ -2,13 +2,15 @@ export type Category = {
   id: string;
   slug: string;
   label: string;
-  icon: string;       // IconName value from the icon set
-  color: string;      // hex color e.g. "#e5784a"
+  // IconName value from the icon set.
+  icon: string;
+  // Hex color, e.g. "#e5784a".
+  color: string;
   sortOrder?: number;
   isActive?: boolean;
 };
 
-// Offre partenaire (GET /api/offers, vitrine publique).
+// Partner offer (GET /api/offers, public storefront).
 export type Offer = {
   id: string;
   partnerName: string;
@@ -16,11 +18,12 @@ export type Offer = {
   discountPercent: number;
   category: Category;
   isActive: boolean;
-  // Photo uploadée par l'admin (chemin /uploads/offers/…) ; null/absent = vignette catégorie.
+  // Photo uploaded by the admin (/uploads/offers/… path); null/absent falls back to the category
+  // thumbnail.
   imageUrl?: string | null;
-  // Stock de codes promo (présent uniquement dans la liste admin).
+  // Promo-code stock, present only in the admin list.
   availableCodes?: number;
   usedCodes?: number;
-  // Indicateur de dispo côté vitrine (≥1 code dispo), sans révéler le nombre.
+  // Storefront availability flag (at least one code left) without revealing the count.
   available?: boolean;
 };

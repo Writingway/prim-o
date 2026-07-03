@@ -8,7 +8,7 @@ import {
 
 type Props = {
   mode: RetributionMode;
-  percentage: string; // string pour la saisie contrôlée
+  percentage: string; // kept as a string for the controlled input
   onModeChange: (mode: RetributionMode) => void;
   onPercentageChange: (value: string) => void;
 };
@@ -21,16 +21,15 @@ const HINTS: Record<RetributionMode, string> = {
   AUCUNE: 'Le manager ne reçoit rien : tout va à l’équipe.',
 };
 
-// Choix du mode de rétribution (+ champ % conditionnel) pour l'allocation employeur.
-// Borne le % saisi dans [1, 100] et le renvoie en chaîne contrôlée.
+// Clamps the typed percentage to [1, 100] and returns it as a controlled-input string.
 const clampPct = (n: number) => String(Math.min(100, Math.max(1, n)));
 
+// Retribution mode picker (+ conditional % field) for the employer allocation flow.
 export default function ModeSelector({ mode, percentage, onModeChange, onPercentageChange }: Props) {
   const pctNum = Number(percentage) || 0;
 
   return (
     <div className={ALLOC_MODE}>
-      {/* Onglets segmentés Part égale / Pourcentage / Aucune */}
       <div className={ALLOC_MODE_OPTIONS} role="tablist">
         {MODES.map((m) => (
           <button
@@ -47,7 +46,6 @@ export default function ModeSelector({ mode, percentage, onModeChange, onPercent
       </div>
       <p className={ALLOC_MODE_HINT}>{HINTS[mode]}</p>
 
-      {/* Stepper −/+ : part reversée au manager */}
       {mode === 'POURCENTAGE' && (
         <div className={ALLOC_PCT_ROW}>
           <span className={ALLOC_PCT_LABEL}>Part reversée au manager</span>

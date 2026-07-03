@@ -33,13 +33,13 @@ const refreshCookieOptions = {
   path: '/api/auth',
 };
 
-// Express 5 propage les rejets async vers errorHandler : pas de try/catch
-// ni de remap par chaîne ici - le mapping code -> HTTP est centralisé.
+// Express 5 forwards async rejections to errorHandler: no try/catch or per-string remapping
+// here - the code -> HTTP mapping is centralized.
 
 export async function registerController(req: Request, res: Response): Promise<void> {
   const input = registerSchema.parse(req.body);
   await register(input);
-  // Pas d'auto-login : on confirme la création, l'utilisateur active via l'email.
+  // No auto-login: the user must activate the account via the verification email first.
   res.status(201).json({ message: 'Compte créé. Vérifie ton email pour activer ton compte.' });
 }
 
@@ -64,7 +64,7 @@ export async function refreshController(req: Request, res: Response, next: NextF
     res.cookie('refreshToken', refreshToken, { ...refreshCookieOptions });
     res.status(200).json({ accessToken });
   } catch (err) {
-    // Effet de bord propre à la session invalide : on purge le cookie pourri.
+    // Session is invalid: clear the stale cookie so the client stops replaying it.
     if (err instanceof DomainError && err.code === ErrorCode.INVALID_REFRESH) {
       res.clearCookie('refreshToken', { path: '/api/auth' });
     }
@@ -79,7 +79,7 @@ export async function loginController(req: Request, res: Response): Promise<void
   res.status(200).json({ accessToken });
 }
 
-// Source de vérité d'identité pour le front (role, companyId, company.status).
+// Identity source of truth for the frontend (role, companyId, company.status).
 export async function meController(req: Request, res: Response): Promise<void> {
   const user = await getMe(req.user!.id);
   res.json({ user });
@@ -92,11 +92,9 @@ export async function logoutController(req: Request, res: Response): Promise<voi
   res.status(204).end();
 }
 
-// ─────────────────────── Vérification email + reset mot de passe ───────────────
-
-// Lien cliqué depuis l'email (GET). Consomme le token côté serveur puis
-// redirige vers le front. Try/catch local : on redirige même en cas d'échec
-// (jamais de JSON d'erreur sur une navigation navigateur).
+// Link clicked from the email (GET). Consumes the token server-side then redirects to the
+// frontend. Local try/catch: redirect even on failure - never return error JSON on a browser
+// navigation.
 export async function verifyEmailController(req: Request, res: Response): Promise<void> {
   const token = typeof req.query.token === 'string' ? req.query.token : '';
   try {
@@ -107,22 +105,22 @@ export async function verifyEmailController(req: Request, res: Response): Promis
   }
 }
 
-// Renvoi du lien de vérification. Réponse toujours générique (anti-énumération) :
-// le service est silencieux si l'email est inconnu ou déjà vérifié.
+// Resend the verification link. Response is always generic (anti-enumeration): the service
+// stays silent when the email is unknown or already verified.
 export async function resendVerificationController(req: Request, res: Response): Promise<void> {
   const { email } = resendVerificationSchema.parse(req.body);
   await resendVerification(email);
   res.status(200).json({ message: "Si un compte existe et n'est pas vérifié, un email vient d'être renvoyé." });
 }
 
-// Mot de passe oublié : déclenche l'envoi du lien. Réponse générique également.
+// Forgot password: triggers the reset link email. Same generic anti-enumeration response.
 export async function forgotPasswordController(req: Request, res: Response): Promise<void> {
   const { email } = forgotPasswordSchema.parse(req.body);
   await requestPasswordReset(email);
   res.status(200).json({ message: "Si un compte correspond à cet email, un lien de réinitialisation a été envoyé." });
 }
 
-// Consomme le token de reset et fixe le nouveau mot de passe (révoque les sessions).
+// Consume the reset token and set the new password (revokes all sessions).
 export async function resetPasswordController(req: Request, res: Response): Promise<void> {
   const { token, password } = resetPasswordSchema.parse(req.body);
   await resetPassword(token, password);

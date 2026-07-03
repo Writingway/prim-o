@@ -1,7 +1,7 @@
 import { authRequest } from "./client";
 
-// Crée une session Stripe Checkout pour recharger le pool (manager connecté).
-// Renvoie l'URL hébergée par Stripe vers laquelle rediriger le navigateur.
+// Creates a Stripe Checkout session to top up the pool (logged-in manager).
+// Returns the Stripe-hosted URL the browser should be redirected to.
 export function createCheckout(amount: number) {
   return authRequest('POST', '/stripe/checkout', { amount }) as Promise<{
     ok: boolean;

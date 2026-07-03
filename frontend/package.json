@@ -5,12 +5,15 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:landing": "vite landing",
     "build": "tsc -b && vite build",
+    "build:landing": "tsc -b && vite build landing",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run"
   },
   "dependencies": {
+    "@fontsource/poppins": "^5.2.7",
     "@tailwindcss/vite": "^4.3.1",
     "@tanstack/react-router": "^1.170.16",
     "react": "^19.2.6",

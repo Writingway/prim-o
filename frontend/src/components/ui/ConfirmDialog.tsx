@@ -2,20 +2,20 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 const BTN = 'rounded-lg border border-transparent px-[18px] py-2.5 text-sm font-semibold transition cursor-pointer';
 
-// Popup de confirmation maison (remplace window.confirm / alert natifs).
-// API promise-based : `await confirm({ message })` rend true/false, donc les
-// handlers gardent le même flux `if (!await confirm(...)) return;`.
+// In-house confirmation popup (replaces the native window.confirm / alert).
+// Promise-based API: `await confirm({ message })` resolves to true/false, so
+// handlers keep the same `if (!await confirm(...)) return;` flow.
 
 export type ConfirmOptions = {
   message: string;
   title?: string;
   confirmLabel?: string;
   cancelLabel?: string;
-  danger?: boolean; // bouton de confirmation rouge (action destructive)
+  danger?: boolean; // red confirm button (destructive action)
 };
 
-// Signature de la fonction `confirm` retournée par useConfirm. Partagée par
-// les hooks qui orchestrent une action confirmée (le dialog reste dans le composant).
+// Signature of the `confirm` function returned by useConfirm. Shared with hooks that
+// orchestrate a confirmed action (the dialog itself stays in the component).
 export type ConfirmFn = (options: ConfirmOptions) => Promise<boolean>;
 
 export function useConfirm() {
@@ -35,7 +35,7 @@ export function useConfirm() {
     setOpts(null);
   }, []);
 
-  // Echap = annuler tant que le popup est ouvert.
+  // Escape cancels while the popup is open.
   useEffect(() => {
     if (!opts) return;
     const onKey = (e: KeyboardEvent) => {

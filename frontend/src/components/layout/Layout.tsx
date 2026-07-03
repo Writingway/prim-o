@@ -16,27 +16,25 @@ type LayoutNav = {
 
 type LayoutProps = {
   title?: string;
-  header?: ReactNode;        // chrome 'public' : remplace le Header teal par défaut
-  headerActions?: ReactNode; // transmis au Topbar desktop
-  headerActionsMobile?: ReactNode; // boutons icônes du header console mobile
-  children: ReactNode;       // le contenu de la page
-  // 'public' (défaut) = pages vitrine/légales → footer affiché.
-  // 'app' = coquille appli mobile connectée → pas de footer, barre d'onglets
-  //         en bas (zone du pouce). Voir moodboard client.
-  // 'console' = coquille adaptative : sidebar + topbar en desktop (lg+),
-  //             Header + BottomNav en mobile. Un seul arbre de contenu.
+  header?: ReactNode;        // 'public' chrome: replaces the default teal Header.
+  headerActions?: ReactNode; // Forwarded to the desktop Topbar.
+  headerActionsMobile?: ReactNode; // Icon buttons for the mobile console header.
+  children: ReactNode;
+  // 'public' (default) = marketing/legal pages → footer shown.
+  // 'app' = logged-in mobile shell → no footer, tab bar fixed at the bottom (thumb zone).
+  // 'console' = adaptive shell: Sidebar + Topbar on desktop (lg+), ConsoleHeaderMobile +
+  //             BottomNav below lg - a single content tree for both.
   chrome?: 'app' | 'public' | 'console';
-  bottomNav?: ReactNode;     // rendu fixe en bas si chrome='app'
-  // Champs console (ignorés par 'app'/'public').
+  bottomNav?: ReactNode;     // Rendered fixed at the bottom when chrome='app'.
+  // Console-only fields (ignored by 'app'/'public').
   nav?: LayoutNav;
   subtitle?: string;
   sidebarFooter?: ReactNode;
-  // 'console' sur mobile affiche ConsoleHeaderMobile. Les dashboards (employé/
-  // manager/owner) utilisent leur DashboardHero comme en-tête mobile : on
-  // supprime alors la barre console mobile pour ne pas doubler l'en-tête.
+  // Dashboards (employee/manager/owner) use their DashboardHero as the mobile header;
+  // set this to drop ConsoleHeaderMobile so the header is not doubled.
   hideConsoleMobileHeader?: boolean;
-  // Masque le Topbar desktop (lg+) sans toucher au mobile. Les dashboards
-  // utilisent leur DashboardHero comme en-tête : pas besoin du bandeau Topbar.
+  // Hides the desktop (lg+) Topbar without touching mobile. Dashboards use their
+  // DashboardHero as the header, so the Topbar band would be redundant.
   hideConsoleTopbar?: boolean;
 };
 
@@ -57,7 +55,7 @@ export default function Layout({
   if (chrome === 'console') {
     return (
       <div className="flex min-h-[100dvh] flex-col lg:h-[100dvh] lg:flex-row lg:overflow-hidden">
-        {/* Desktop (lg+) : sidebar verticale à gauche. */}
+        {/* Desktop (lg+): vertical sidebar on the left. */}
         {nav && (
           <Sidebar
             items={nav.items}
@@ -69,16 +67,16 @@ export default function Layout({
           />
         )}
         <div className="flex min-h-0 flex-1 flex-col">
-          {/* Mobile (<lg) : header console (pendant du Topbar) — titre + sous-titre + actions. */}
+          {/* Mobile (<lg): console header, counterpart of the desktop Topbar. */}
           {!hideConsoleMobileHeader && (
             <ConsoleHeaderMobile title={title} subtitle={subtitle} actions={headerActionsMobile} />
           )}
-          {/* Desktop (lg+) : topbar ; masquée en mobile. */}
+          {/* Desktop (lg+): topbar. */}
           {!hideConsoleTopbar && (
             <Topbar title={title} subtitle={subtitle} actions={headerActions} />
           )}
           <main className="w-full flex-1 pb-24 lg:overflow-y-auto lg:pb-0">{children}</main>
-          {/* Mobile (<lg) : BottomNav depuis le MÊME objet nav que la Sidebar. */}
+          {/* Mobile (<lg): BottomNav, driven by the same nav object as the Sidebar. */}
           {nav && bottomNav}
         </div>
       </div>
@@ -88,14 +86,14 @@ export default function Layout({
     return (
       <div className="flex min-h-[100dvh] flex-col">
         <Header title={title}>{headerActions}</Header>
-        {/* pb pour ne pas masquer le bas du contenu sous la barre d'onglets. */}
+        {/* Bottom padding keeps content clear of the fixed tab bar. */}
         <main className="w-full flex-1 pb-24 lg:pb-0">{children}</main>
         {bottomNav}
       </div>
     );
   }
-  // Public : footer (vitrine/légal). Si une bottomNav est fournie (ex. landing),
-  // elle s'affiche en MOBILE uniquement (lg:hidden) et le footer passe en desktop.
+  // Public: footer for marketing/legal pages. If a bottomNav is provided (e.g. the
+  // landing page), it shows on mobile only and the footer moves to desktop.
   return (
     <div className="flex min-h-[100dvh] flex-col">
       {header ?? <Header title={title}>{headerActions}</Header>}

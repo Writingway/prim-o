@@ -17,17 +17,17 @@ export function requireAuth(req: Request, res: Response, next: NextFunction): vo
       id: payload.sub,
       role: payload.role,
       ...(payload.companyId ? { companyId: payload.companyId } : {}),
-    }; // injecte les infos du token dans req.user
-    next(); // route protégée accessible
+    };
+    next();
   } catch {
     next(new AppError(401, 'Token invalide ou expiré.'));
   }
 }
 
 
-// Auth optionnelle : peuple req.user si un token valide est présent,
-// sinon laisse passer en anonyme (utilisé sur les routes à lecture publique
-// qui adaptent leur réponse selon le rôle, ex. vitrine des offres).
+// Optional auth: populates req.user when a valid token is present, otherwise lets the request
+// through as anonymous. Used on publicly readable routes that tailor their response to the
+// caller's role, e.g. the offers showcase.
 export function optionalAuth(req: Request, _res: Response, next: NextFunction): void {
   const header = req.headers.authorization;
   if (!header?.startsWith('Bearer ')) {
@@ -42,14 +42,14 @@ export function optionalAuth(req: Request, _res: Response, next: NextFunction): 
       ...(payload.companyId ? { companyId: payload.companyId } : {}),
     };
   } catch {
-    // Token invalide/expiré : on reste anonyme plutôt que de rejeter.
+    // Invalid/expired token: stay anonymous rather than reject.
   }
   next();
 }
 
 export async function requireAdmin(req: Request, res: Response, next: NextFunction): Promise<void> {
-  // Token says ADMIN, but role/status can change mid-session. The 15-min
-  // access token would otherwise honor a stale role. Re-check live.
+  // The token says ADMIN, but role/status can change mid-session and the 15-min access token
+  // would otherwise honor a stale role - re-check against the DB.
   if (req.user?.role !== 'ADMIN') {
     next(new AppError(403, 'Accès réservé aux administrateurs.'));
     return;

@@ -3,7 +3,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/react';
 import ErrorBoundary from './ErrorBoundary';
 
-// Composant cobaye : jette au rendu pour déclencher la boundary.
+// Fixture component: throws during render to trigger the boundary.
 function Boom(): never {
   throw new Error('boom');
 }
@@ -12,7 +12,7 @@ afterEach(cleanup);
 
 describe('ErrorBoundary', () => {
   it('affiche le fallback quand un enfant jette', () => {
-    // React loggue l'erreur capturée → on coupe le bruit dans la sortie test.
+    // React logs the caught error; silence it to keep the test output clean.
     const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     render(

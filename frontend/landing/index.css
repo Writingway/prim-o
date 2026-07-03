@@ -1,0 +1,6 @@
+/* CSS entry point for the showcase: reuses the app's Prim'O design system.
+   @source: since the Vite root is landing/, Tailwind would not scan ../src on
+   its own, so we declare both trees to scan explicitly. */
+@import '../src/index.css';
+@source '../src';
+@source '.';

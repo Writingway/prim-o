@@ -11,15 +11,14 @@ import {
 import { prisma } from '../lib/db';
 import { requireManagerOrOwner } from '../middleware/authz';
 
-// Lit page/limit depuis la query, avec valeurs par défaut et bornes sûres.
 function parsePaging(req: Request): { page: number; limit: number } {
   const page = Math.max(1, Number(req.query.page) || 1);
   const limit = Math.min(50, Math.max(1, Number(req.query.limit) || 10));
   return { page, limit };
 }
 
-// GET /api/employees - liste les employés de l'employeur connecté.
-// L'employerId vient du token (req.user), jamais d'une entrée client.
+// GET /api/employees - employees of the connected employer. The company scope comes from the
+// token (req.user), never from client input.
 export async function listEmployeesController(
   req: Request,
   res: Response,
@@ -36,7 +35,7 @@ export async function listEmployeesController(
   }
 }
 
-// DELETE /api/employees/:id - soft delete d'un employé de l'entreprise du manager.
+// DELETE /api/employees/:id - soft-delete an employee of the caller's company.
 export async function deleteEmployeeController(
   req: Request,
   res: Response,
@@ -69,7 +68,7 @@ export async function deleteEmployeeController(
   }
 }
 
-// Garde commun : seul un EMPLOYEE accède à ces routes. Renvoie l'id ou null.
+// Guard for EMPLOYEE-only routes; returns the user id, or null after replying 403.
 function requireEmployee(req: Request, next: NextFunction): string | null {
   if (req.user?.role !== 'EMPLOYEE') {
     next(new AppError(403, 'Accès réservé aux employés.'));
@@ -78,7 +77,7 @@ function requireEmployee(req: Request, next: NextFunction): string | null {
   return req.user.id;
 }
 
-// GET /api/employees/me - solde de l'employé connecté.
+// GET /api/employees/me - the connected employee's balance.
 export async function getEmployeeBalanceController(
   req: Request,
   res: Response,
@@ -100,7 +99,7 @@ export async function getEmployeeBalanceController(
 }
 
 
-// GET /api/employees/me/received - historique des tokens reçus, paginé.
+// GET /api/employees/me/received - paginated history of received tokens.
 export async function getEmployeeReceivedController(
   req: Request,
   res: Response,
@@ -118,15 +117,15 @@ export async function getEmployeeReceivedController(
   }
 }
 
-// GET /api/employees/me/spent - historique des dépenses, paginé.
+// GET /api/employees/me/spent - paginated spending history.
 export async function getEmployeeSpentController(
   req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> {
   try {
-    // « Mes achats » : auto-scopé par l'utilisateur courant → accessible à tout
-    // utilisateur authentifié (employé ET manager achètent des codes).
+    // "Mes achats" is self-scoped to the current user, so any authenticated user may call it
+    // (both employees and managers buy codes).
     const userId = req.user!.id;
     const { page, limit } = parsePaging(req);
     const result = await getEmployeeSpent(userId, page, limit);
@@ -136,7 +135,7 @@ export async function getEmployeeSpentController(
   }
 }
 
-// PATCH /api/employees/me/spent/:id - bascule « utilisé » d'un code (propriétaire).
+// PATCH /api/employees/me/spent/:id - toggle a code's "used" flag (redemption owner only).
 export async function setRedemptionUsedController(
   req: Request,
   res: Response,
@@ -161,5 +160,5 @@ export async function setRedemptionUsedController(
   }
 }
 
-// (Endpoint d'approbation manager supprimé - spec §4 : le code d'invitation
-//  vaut autorisation, l'employé est actif direct. Plus d'étape d'approbation.)
+// No manager-approval endpoint by design (spec §4): the invitation code itself is the
+// authorization, so an employee is active immediately after joining.

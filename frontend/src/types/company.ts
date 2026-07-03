@@ -1,11 +1,11 @@
-// Entreprise du manager (GET /api/company).
+// The manager's company (GET /api/company).
 export type Company = {
   id: string;
   name: string;
   tokenBalance: number;
 };
 
-// Une ligne d'historique d'attribution (GET /api/attributions).
+// One attribution history row (GET /api/attributions).
 export type AttributionHistory = {
   id: string;
   amount: number;

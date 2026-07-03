@@ -1,4 +1,4 @@
-// Employé tel que renvoyé par GET /api/employees/list.
+// Employee as returned by GET /api/employees/list.
 export type Employee = {
   id: string;
   firstName: string;
@@ -9,19 +9,21 @@ export type Employee = {
   createdAt: string;
 };
 
-// Un token reçu (attribution du manager), renvoyé par GET /api/employees/me/received.
+// A received token (manager attribution), returned by GET /api/employees/me/received.
 export type ReceivedToken = {
   id: string;
   amount: number;
   reason: string;
-  compliment: string | null; // §3.5 — message affiché au salarié à la réception (null si attribution legacy)
+  // §3.5 - message shown to the employee on receipt; null for legacy attributions.
+  compliment: string | null;
   motifLabel: string | null;
   createdAt: string;
   managerName: string;
-  managerPhoto: string | null; // avatar de l'expéditeur (manager/owner), null = initiales
+  // Sender's avatar (manager/owner); null means fall back to initials.
+  managerPhoto: string | null;
 };
 
-// Un token dépensé (redemption contre une offre), GET /api/employees/me/spent.
+// A spent token (redemption against an offer), GET /api/employees/me/spent.
 export type SpentToken = {
   id: string;
   amount: number;

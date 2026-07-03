@@ -1,16 +1,16 @@
-// Stats globales du tableau de bord admin (GET /api/admin/stats).
+// Global stats for the admin dashboard (GET /api/admin/stats).
 export type AdminStats = {
   companies: number;
   users: number;
   managers: number;
 };
 
-// Rôle / statut côté admin - enums Prisma en MAJUSCULES (≠ Role JWT minuscule).
+// Admin-side role/status: UPPERCASE Prisma enum values (unlike the lowercase JWT `Role`).
 export type AdminRole = 'ADMIN' | 'MANAGER' | 'EMPLOYEE';
 export type AdminStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 
-// Utilisateur renvoyé par GET /api/admin/users (ADMIN_SAFE_SELECT backend,
-// jamais de passwordHash).
+// User as returned by GET /api/admin/users (backend ADMIN_SAFE_SELECT - never exposes
+// passwordHash).
 export type AdminUser = {
   id: string;
   email: string;
@@ -23,7 +23,7 @@ export type AdminUser = {
   createdAt: string;
 };
 
-// Entreprise vue admin (GET /api/admin/companies) - avec nb d'utilisateurs.
+// Company as seen by the admin (GET /api/admin/companies), including its user count.
 export type AdminCompany = {
   id: string;
   name: string;
@@ -33,7 +33,7 @@ export type AdminCompany = {
   _count: { users: number };
 };
 
-// Ligne du registre global d'attributions (GET /api/admin/attributions).
+// Row of the global attributions register (GET /api/admin/attributions).
 export type AdminAttribution = {
   id: string;
   amount: number;
@@ -44,7 +44,7 @@ export type AdminAttribution = {
   employee: { firstName: string; lastName: string };
 };
 
-// Ligne du registre global de redemptions (GET /api/admin/redemptions).
+// Row of the global redemptions register (GET /api/admin/redemptions).
 export type AdminRedemption = {
   id: string;
   amount: number;
@@ -55,8 +55,8 @@ export type AdminRedemption = {
   promoCode: { code: string };
 };
 
-// Ligne du registre global des paiements Stripe (GET /api/admin/purchases).
-// Source : CompanyTokenPurchase filtré sur stripeSessionId != null.
+// Row of the global Stripe payments register (GET /api/admin/purchases).
+// Sourced from CompanyTokenPurchase filtered on stripeSessionId != null.
 export type AdminPurchase = {
   id: string;
   amount: number;

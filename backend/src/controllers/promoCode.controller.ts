@@ -3,7 +3,7 @@ import { AppError } from '../middleware/error.middleware';
 import { addPromoCodesSchema } from '../schemas/promoCode.schemas';
 import { addPromoCodes, listPromoCodes, deletePromoCode } from '../services/promoCode.service';
 
-// POST /api/admin/offers/:offerId/promo-codes - ajout en lot (admin).
+// POST /api/admin/offers/:offerId/promo-codes - bulk add of codes (admin).
 export async function addPromoCodesController(
   req: Request,
   res: Response,
@@ -27,7 +27,7 @@ export async function addPromoCodesController(
   }
 }
 
-// GET /api/admin/offers/:offerId/promo-codes - liste des codes d'une offre (admin).
+// GET /api/admin/offers/:offerId/promo-codes - list an offer's codes (admin).
 export async function listPromoCodesController(
   req: Request,
   res: Response,
@@ -50,7 +50,7 @@ export async function listPromoCodesController(
   }
 }
 
-// DELETE /api/admin/promo-codes/:id - supprime un code non utilisé (admin).
+// DELETE /api/admin/promo-codes/:id - delete a code, only if still unused (admin).
 export async function deletePromoCodeController(
   req: Request,
   res: Response,

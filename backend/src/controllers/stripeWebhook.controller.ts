@@ -8,7 +8,8 @@ export async function stripeWebhookController(req: Request, res: Response): Prom
 
   let event: ReturnType<typeof stripe.webhooks.constructEvent>;
   try {
-    // req.body est un Buffer (corps brut) grâce à express.raw().
+    // req.body is a raw Buffer (express.raw() on this route) - required for Stripe signature
+    // verification.
     event = stripe.webhooks.constructEvent(
       req.body,
       signature as string,
@@ -23,7 +24,7 @@ export async function stripeWebhookController(req: Request, res: Response): Prom
     try {
       await fulfillCheckout(event.data.object as CheckoutSession);
     } catch {
-      // 500 → Stripe RÉESSAIERA plus tard.
+      // Responding 500 makes Stripe retry the event later.
       res.status(500).json({ error: 'fulfillment failed' });
       return;
     }

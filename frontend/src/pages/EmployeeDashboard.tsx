@@ -15,8 +15,6 @@ import { formatDate, formatDateTime } from '@/lib/format';
 import { DASH_CONTAINER } from '@/components/dashboard/dashStyles';
 
 const WRAPPER = 'min-h-screen bg-primo-surface px-4 py-5 sm:px-5';
-// Check for duplication of constant inside all the dashboard
-// const CONTAINER = 'mx-auto flex w-full max-w-[640px] flex-col lg:max-w-[1120px]';
 const NOTE = 'm-0 text-center text-[13px] text-primo-slate-soft';
 const ERROR_NOTE = 'm-0 rounded-xl bg-primo-error-soft px-4 py-3 text-center text-[13px] text-primo-error';
 const MUTED = 'text-sm font-medium text-primo-muted';
@@ -29,7 +27,7 @@ const TX_SUB = 'text-xs text-primo-muted';
 const TX_AMOUNT = 'flex-none text-base font-extrabold';
 const MORE_BTN =
   'mt-3 w-full rounded-xl border border-primo-line bg-white px-3.5 py-2.5 text-sm font-bold text-primo-teal-strong hover:bg-primo-mint';
-// Déconnexion rapatriée dans le profil en mobile (header masqué < lg).
+// Logout moved into the profile tab on mobile, because the console header is hidden below lg.
 const MOBILE_LOGOUT =
   'mt-2.5 flex w-full items-center justify-center gap-2.5 rounded-[14px] border-[1.5px] border-primo-error-line bg-white px-4 py-3.5 text-[15px] font-bold text-primo-error hover:bg-primo-error-soft lg:hidden';
 
@@ -37,18 +35,18 @@ type EmployeeTab = 'offres' | 'codes' | 'historique' | 'profil';
 
 type EmployeeDashboardProps = {
   onLogout: () => void;
-  onBack: () => void; // conservé pour la signature de route (non utilisé : `/` redirige)
+  onBack: () => void; // Kept for the route signature (unused: the router redirects `/`).
   firstName?: string | null;
   profilePhoto?: string | null;
 };
 
-// Espace employé : un shell unique à onglets-vues (barre du bas fixe, le contenu
-// est remplacé par onglet — modèle « app mobile », identique à manager/owner).
+// Employee area: a single tab-view shell (fixed bottom bar, content swapped per tab -
+// "mobile app" model, same as the manager/owner dashboards).
 export default function EmployeeDashboard({ onLogout, firstName, profilePhoto }: EmployeeDashboardProps) {
   const { balance, error, loading, reload, received, spent, handleLogout } =
     useEmployeeDashboard(onLogout);
   const [tab, setTab] = useState<EmployeeTab>('historique');
-  // Avatar du hero, maj en direct quand on l'enregistre dans le profil.
+  // Hero avatar photo, updated live when the user saves it in the Profil tab.
   const [heroPhoto, setHeroPhoto] = useState<string | null>(profilePhoto ?? null);
   const heroInitials = (firstName?.[0] ?? '?').toUpperCase();
   const [histView, setHistView] = useState<'recus' | 'depenses'>('recus');
@@ -61,7 +59,7 @@ export default function EmployeeDashboard({ onLogout, firstName, profilePhoto }:
     </div>
   );
 
-  // Hero solde, partagé par les onglets Offres et Historique.
+  // Balance hero card; null until the balance has loaded.
   const hero =
     balance === null ? null : (
       <DashboardHero
@@ -71,7 +69,7 @@ export default function EmployeeDashboard({ onLogout, firstName, profilePhoto }:
         photo={heroPhoto}
         initials={heroInitials}
       >
-        {/* Solde : carte vitrée discrète, token mis en valeur. */}
+        {/* Balance: understated glass card, with the token coin as the highlight. */}
         <div className="relative mt-6 flex items-end justify-between gap-4 rounded-[20px] bg-white/[0.08] px-4 py-4 ring-1 ring-white/10 backdrop-blur-sm">
           <div className="min-w-0">
             <div className="text-[12px] font-medium uppercase tracking-[0.12em] text-white/55">
@@ -127,10 +125,9 @@ export default function EmployeeDashboard({ onLogout, firstName, profilePhoto }:
       <div className={WRAPPER}>
         <div className={DASH_CONTAINER}>  
 
-          {/* ── Onglet Offres : solde + catalogue. Le catalogue n'est PAS derrière
-              le `loading` du dashboard : il gère son propre chargement. Sinon, à
-              l'achat, `onRedeemed` rerend en loading → OfferCatalog se démonte et
-              la célébration « Code débloqué » disparaît avant de s'afficher. ── */}
+          {/* Offres tab. The catalog is NOT gated behind the dashboard `loading` flag: it handles
+              its own loading. Otherwise, on purchase, `onRedeemed` re-renders in loading state,
+              OfferCatalog unmounts, and the « Code débloqué » celebration vanishes before showing. */}
           {tab === 'offres' && (
             <OfferCatalog
               isLoggedIn
@@ -142,10 +139,10 @@ export default function EmployeeDashboard({ onLogout, firstName, profilePhoto }:
             />
           )}
 
-          {/* ── Onglet Mes codes : codes promo achetés (copiables) ── */}
+          {/* Mes codes tab: purchased promo codes, copyable. */}
           {tab === 'codes' && <MyPromoCodes />}
 
-          {/* ── Onglet Historique : reçus + dépenses ── */}
+          {/* Historique tab: tokens received and spent. */}
           {tab === 'historique' && (
             loading ? loader
             : error ? errorNote
@@ -153,7 +150,6 @@ export default function EmployeeDashboard({ onLogout, firstName, profilePhoto }:
               <>
                 {hero}
 
-                {/* Switch Tokens reçus / Mes dépenses */}
                 <div className="mb-4 grid grid-cols-2 gap-1 rounded-full bg-primo-mint p-1">
                   <button
                     type="button"
@@ -178,7 +174,7 @@ export default function EmployeeDashboard({ onLogout, firstName, profilePhoto }:
                 {histView === 'recus' && (
                   <section className="mb-6">
                     {received.items.length === 0 ? (
-                      <p className={MUTED}>Aucun token reçu pour l'instant — ça ne saurait tarder.</p>
+                      <p className={MUTED}>Aucun token reçu pour l'instant - ça ne saurait tarder.</p>
                     ) : (
                       <>
                         <ul className="m-0 flex list-none flex-col gap-2.5 p-0 lg:grid lg:grid-cols-2 lg:items-start lg:gap-2.5">
@@ -240,7 +236,7 @@ export default function EmployeeDashboard({ onLogout, firstName, profilePhoto }:
             )
           )}
 
-          {/* ── Onglet Profil ── */}
+          {/* Profil tab. */}
           {tab === 'profil' && (
             <>
               <EditProfile onPhotoChange={setHeroPhoto} />

@@ -1,7 +1,7 @@
 import { prisma } from '../lib/db';
 
-// Motifs officiels actifs, groupés par catégorie dans l'ordre métier.
-// Conforme à ListMotifsResponse (contracts). Source du sélecteur de motif.
+// Active official motifs (allocation reasons), grouped by category in business order.
+// Matches ListMotifsResponse (contracts); feeds the motif selector.
 const CATEGORY_ORDER = [
   'COMPORTEMENTS_INDIVIDUELS',
   'RELATION_CLIENT',
