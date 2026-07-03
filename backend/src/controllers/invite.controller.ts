@@ -3,8 +3,8 @@ import { AppError } from '../middleware/error.middleware';
 import { generateInviteSchema } from '../schemas/invite.schemas';
 import { generateInviteCode } from '../services/invite.service';
 
-// POST /api/invites/generate - un manager génère un code d'invitation.
-// companyId + createdById viennent du token (req.user), jamais du body.
+// POST /api/invites/generate - generate an invitation code. companyId and createdById come
+// from the token (req.user), never from the body.
 export async function generateInviteController(
   req: Request,
   res: Response,
@@ -24,8 +24,8 @@ export async function generateInviteController(
 
     const input = generateInviteSchema.parse(req.body ?? {});
 
-    // Escalade interdite : un manager ne peut inviter que des employés.
-    // Seul un OWNER peut générer un code MANAGER.
+    // No privilege escalation: a manager may only invite employees; only an OWNER can
+    // generate a MANAGER code.
     if (req.user.role === 'MANAGER' && input.role === 'MANAGER') {
       next(new AppError(403, 'Un manager ne peut pas générer de code manager.'));
       return;

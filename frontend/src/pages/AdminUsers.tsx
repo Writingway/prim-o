@@ -24,7 +24,7 @@ const PAGE_SIZE = 20;
 
 type Filters = { role: AdminRole | ''; search: string };
 
-// onFlash : message transitoire remonté au parent (AdminPage gère l'affichage).
+// onFlash: transient notice bubbled up to AdminPage, which owns its display.
 type AdminUsersProps = { onFlash: (msg: string) => void };
 
 const AVATAR_BG = [
@@ -91,7 +91,6 @@ export default function AdminUsers({ onFlash }: AdminUsersProps) {
     load();
   }, [load]);
 
-  // Tout changement de filtre repart à la page 1.
   const setFilter = (patch: Partial<Filters>) => {
     setPage(1);
     setFilters((f) => ({ ...f, ...patch }));
@@ -124,7 +123,8 @@ export default function AdminUsers({ onFlash }: AdminUsersProps) {
       } else if (res.status === 401) {
         setError('Session expirée, reconnecte-toi.');
       } else {
-        // Le backend renvoie des messages métier clairs (dernier admin, auto-modif…).
+        // The backend returns clear business-rule messages (last admin, self-modification…),
+        // so surface them as-is.
         setError((res.data as { error?: string } | null)?.error ?? 'Action impossible.');
       }
     } catch {
@@ -166,7 +166,6 @@ export default function AdminUsers({ onFlash }: AdminUsersProps) {
 
   return (
     <div className="rounded-2xl border border-primo-line bg-white p-5 lg:p-6">
-      {/* Header row */}
       <div className="mb-5 flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <Icon name="users" size={18} className="text-primo-teal" />
@@ -186,7 +185,6 @@ export default function AdminUsers({ onFlash }: AdminUsersProps) {
         )}
       </div>
 
-      {/* Filters */}
       <div className="mb-5 flex flex-wrap gap-3">
         <div className="relative flex-1 min-w-[180px]">
           <Icon

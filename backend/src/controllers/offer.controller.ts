@@ -9,8 +9,8 @@ import { offerImageUpload, removeUploadedFile, OFFERS_PUBLIC_PREFIX } from '../l
 
 export async function listOffersController(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    // Admin (token via optionalAuth) : liste complète, inactives comprises.
-    // Public / autres rôles : uniquement les offres actives (vitrine).
+    // Admin (token via optionalAuth): full list, inactive offers included.
+    // Public / other roles: active offers only (storefront view).
     const offers = req.user?.role === 'ADMIN' ? await listOffers() : await listActiveOffers();
     res.json({ offers });
   } catch (err) {
@@ -26,8 +26,8 @@ export async function getOfferController(req: Request, res: Response, next: Next
       return;
     }
     const offer = req.user?.role === 'ADMIN'
-    ? await getOffer(String(id))      // admin : tout, y compris désactivées
-    : await getActiveOffer(String(id)); // public : actives, champs vitrine
+    ? await getOffer(String(id))      // admin: everything, including deactivated offers
+    : await getActiveOffer(String(id)); // public: active only, storefront fields
     if (!offer) {
       next(new AppError(404, 'Offre non trouvée.'));
       return;
@@ -84,8 +84,8 @@ export async function deactivateOfferController(req: Request, res: Response, nex
   }
 }
 
-// Middleware d'upload : exécute multer puis traduit ses erreurs (poids/format)
-// en réponses HTTP parlantes plutôt qu'une 500 générique.
+// Upload middleware: runs multer, then translates its errors (size/format) into meaningful
+// HTTP responses instead of a generic 500.
 export function uploadOfferImageMiddleware(req: Request, res: Response, next: NextFunction): void {
   offerImageUpload(req, res, (err: unknown) => {
     if (err) {
@@ -110,7 +110,8 @@ export async function uploadOfferImageController(req: Request, res: Response, ne
     const offer = await setOfferImage(String(id), req.file.filename);
     res.json({ offer });
   } catch (err) {
-    // Offre introuvable (ou autre échec) → on nettoie le fichier fraîchement uploadé.
+    // On failure (offer not found or otherwise), remove the freshly uploaded file so it does
+    // not orphan on disk.
     await removeUploadedFile(`${OFFERS_PUBLIC_PREFIX}/${req.file.filename}`);
     if (err instanceof Error && err.message === 'OFFER_NOT_FOUND') {
       next(new AppError(404, 'Offre non trouvée.')); return;

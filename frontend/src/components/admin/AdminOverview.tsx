@@ -20,7 +20,7 @@ type Props = {
 };
 
 
-// Avatar coloré déterministe à partir du nom (palette tokens primo only).
+// Deterministic coloured avatar derived from the company name (primo palette tokens only).
 const AVATAR_BG = [
   'bg-primo-teal-soft text-primo-teal-dark',
   'bg-primo-warn-soft text-primo-warn-strong',
@@ -35,7 +35,7 @@ function avatarFor(name: string) {
   return { initials, cls: AVATAR_BG[hash] };
 }
 
-// Statut entreprise → libellé + classe badge (réutilise ADMIN_BADGE).
+// Company status → badge label + class (reuses ADMIN_BADGE).
 const STATUS_BADGE: Record<AdminCompany['status'], { label: string; cls: string }> = {
   APPROVED: { label: 'Actif', cls: `${ADMIN_BADGE} bg-primo-success-soft text-primo-success` },
   PENDING: { label: 'Attente', cls: `${ADMIN_BADGE} bg-primo-warn-soft text-primo-warn-strong` },
@@ -66,7 +66,7 @@ export default function AdminOverview({
     setLoading(true);
     setError('');
     try {
-      // 1re page (limit max 100) : sert l'aperçu + amorce le calcul exact des tokens.
+      // First page (limit capped at 100): feeds the preview and seeds the exact token count.
       const first = await listAdminCompanies(1, 100);
       if (!first.ok || !first.data) {
         if (first.status === 401) onAuthExpired();
@@ -76,8 +76,8 @@ export default function AdminOverview({
       setCompanies(first.data.items);
       setTotal(first.data.total);
 
-      // Tokens en circulation = somme exacte sur TOUTES les entreprises.
-      // Pages restantes récupérées en parallèle (backend plafonne limit à 100).
+      // Tokens in circulation = exact sum over ALL companies. Remaining pages are
+      // fetched in parallel (the backend caps limit at 100).
       const pages = Math.ceil(first.data.total / 100);
       const rest =
         pages > 1
@@ -101,7 +101,7 @@ export default function AdminOverview({
 
   const activeOffers = offers.filter((o) => o.isActive).length;
 
-  // Offres avec stock de codes (présent uniquement en vue admin).
+  // Offers that carry a promo-code stock (these fields only exist in the admin view).
   const offersWithCodes = offers.filter(
     (o) => (o.availableCodes ?? 0) > 0 || (o.usedCodes ?? 0) > 0,
   );
@@ -118,7 +118,7 @@ export default function AdminOverview({
 
   return (
     <div className="flex flex-col gap-5 py-1 lg:min-h-0 lg:flex-1 lg:px-2">
-      {/* KPI ROW */}
+      {/* KPI row. */}
       <div className="grid flex-none grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <div className={KPI_CARD}>
           <div className={KPI_CHIP}>
@@ -138,7 +138,7 @@ export default function AdminOverview({
           <div className={KPI_LABEL}>Utilisateurs enregistrés</div>
         </div>
 
-        {/* Carte sombre accent or — tokens */}
+        {/* Dark gold-accent card: tokens in circulation. */}
         <div className="rounded-xl bg-primo-ink-900 p-3 text-white sm:rounded-2xl sm:p-5">
           <div className="flex items-start justify-between">
             <Coin size={28} className="sm:hidden" />
@@ -162,9 +162,9 @@ export default function AdminOverview({
         </div>
       </div>
 
-      {/* BOTTOM TWO-COL */}
+      {/* Bottom two-column area. */}
       <div className="grid grid-cols-1 gap-5 lg:min-h-0 lg:flex-1 lg:grid-cols-[1fr_380px]">
-        {/* LEFT — Entreprises preview */}
+        {/* Left: companies preview. */}
         <div className={`${PANEL} flex flex-col lg:min-h-0 lg:overflow-hidden`}>
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div>
@@ -191,7 +191,7 @@ export default function AdminOverview({
             <p className="py-8 text-center text-sm text-primo-gray">Aucune entreprise enregistrée.</p>
           ) : (
             <>
-              {/* En-têtes — masqués en mobile */}
+              {/* Column headers - hidden on mobile. */}
               <div className="hidden grid-cols-[1fr_110px_110px_90px] gap-3 border-b border-primo-line pb-2 text-[11px] font-semibold uppercase tracking-wide text-primo-gray sm:grid">
                 <span>Entreprise</span>
                 <span>Utilisateurs</span>
@@ -241,7 +241,7 @@ export default function AdminOverview({
 
               <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-primo-line pt-3">
                 <span className="text-[13px] text-primo-gray">
-                  Affichage 1–{preview.length} sur {total}
+                  Affichage 1-{preview.length} sur {total}
                 </span>
                 <button
                   type="button"
@@ -255,9 +255,9 @@ export default function AdminOverview({
           )}
         </div>
 
-        {/* RIGHT — colonne droite */}
+        {/* Right column. */}
         <div className="flex flex-col gap-4 lg:min-h-0">
-          {/* Stock codes promo */}
+          {/* Promo-code stock per partner. */}
           <div className={`${PANEL} flex flex-col lg:min-h-0 lg:flex-1 lg:overflow-hidden`}>
             <div className="mb-3 flex items-center justify-between gap-2">
               <div>
@@ -318,7 +318,7 @@ export default function AdminOverview({
             )}
           </div>
 
-          {/* Alerte stock critique — uniquement si une offre ≥ 90 % */}
+          {/* Critical stock alert - only when an offer has ≥ 90% of its codes used. */}
           {lowStock.length > 0 && (
             <div className="rounded-2xl border border-primo-warn-strong/30 bg-primo-warn-soft p-5">
               <div className="flex items-start gap-3">

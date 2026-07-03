@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 
-// Topbar console (desktop lg+ uniquement) — titre + sous-titre à gauche,
-// actions à droite. Blanche, bordure basse, collée en haut.
+// Console topbar (desktop lg+ only) - title and subtitle on the left, actions on the
+// right. ConsoleHeaderMobile is its mobile counterpart.
 type Props = {
   title?: string;
   subtitle?: string;

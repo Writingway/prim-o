@@ -6,49 +6,48 @@ import { cropToFile } from '@/lib/cropImage';
 import Icon from '@/components/ui/Icon';
 
 type Props = {
-  currentImageUrl: string | null;  // image existante (édition), chemin /uploads/…
-  onPick: (file: File | null) => void;  // image RECADRÉE prête à uploader (null = aucune)
-  onClear: () => void;             // retirer l'image existante
+  currentImageUrl: string | null;  // existing image (edit mode), /uploads/… path
+  onPick: (file: File | null) => void;  // CROPPED image ready to upload (null = none)
+  onClear: () => void;             // remove the existing image
 };
 
 const BOX = 'w-full max-w-[320px]';
 
-// Champ photo du formulaire d'offre. Recadreur « pro » (react-easy-crop) : quand
-// l'admin ajoute/change une photo, il la déplace + zoome dans un cadre carré ;
-// on produit l'image recadrée (canvas) qui sera uploadée. Une image existante
-// s'affiche telle quelle jusqu'à ce qu'on la change.
+// Photo field of the offer form. "Pro" cropper (react-easy-crop): when the admin adds
+// or changes a photo, they pan + zoom it inside a square frame; the cropped image
+// (canvas) is what gets uploaded. An existing image is shown as-is until replaced.
 export default function OfferImageField({ currentImageUrl, onPick, onClear }: Props) {
-  // Source en cours de recadrage (nouvelle photo choisie). null = pas d'édition de cadrage.
+  // Source currently being cropped (newly picked photo). null = no crop in progress.
   const [sourceUrl, setSourceUrl] = useState<string | null>(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [area, setArea] = useState<Area | null>(null);
-  // Aperçu de l'image RECADRÉE (carré produit) → reflète le rendu final, réutilisé
-  // pour l'aperçu « carte mobile » en object-cover.
+  // Preview of the CROPPED image (the produced square): reflects the final output and
+  // feeds the "mobile card" preview rendered with object-cover.
   const [croppedPreview, setCroppedPreview] = useState<string | null>(null);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const openPicker = () => inputRef.current?.click();
 
-  // onPick peut changer à chaque render (vient du hook) → ref pour ne pas relancer
-  // l'effet de recadrage en boucle.
+  // onPick may change on every render (it comes from a hook); kept in a ref so the
+  // crop effect does not re-run in a loop.
   const onPickRef = useRef(onPick);
   useEffect(() => { onPickRef.current = onPick; }, [onPick]);
 
-  // Révoque l'object URL de la source quand elle change / au démontage.
+  // Revoke the source object URL when it changes / on unmount.
   useEffect(() => {
     if (!sourceUrl?.startsWith('blob:')) return;
     return () => URL.revokeObjectURL(sourceUrl);
   }, [sourceUrl]);
 
-  // Révoque l'object URL de l'aperçu recadré quand il change / au démontage.
+  // Revoke the cropped-preview object URL when it changes / on unmount.
   useEffect(() => {
     if (!croppedPreview?.startsWith('blob:')) return;
     return () => URL.revokeObjectURL(croppedPreview);
   }, [croppedPreview]);
 
-  // Produit l'image recadrée (debounce) dès que le cadrage se stabilise :
-  // remonte le fichier à uploader ET met à jour l'aperçu mobile.
+  // Produce the cropped image (debounced) once the crop settles: hands the parent the
+  // file to upload AND refreshes the mobile preview.
   useEffect(() => {
     if (!sourceUrl || !area) return;
     const id = setTimeout(() => {
@@ -57,7 +56,7 @@ export default function OfferImageField({ currentImageUrl, onPick, onClear }: Pr
           onPickRef.current(file);
           setCroppedPreview(URL.createObjectURL(file));
         })
-        .catch(() => { /* recadrage impossible : on laisse l'admin réessayer */ });
+        .catch(() => { /* cropping failed: let the admin retry */ });
     }, 200);
     return () => clearTimeout(id);
   }, [sourceUrl, area]);
@@ -70,7 +69,7 @@ export default function OfferImageField({ currentImageUrl, onPick, onClear }: Pr
     setCroppedPreview(null);
   };
 
-  // Annule le recadrage en cours → revient à l'image existante (ou à rien).
+  // Cancel the in-progress crop: fall back to the existing image (or to nothing).
   const cancelCrop = () => {
     setSourceUrl(null);
     setArea(null);
@@ -78,7 +77,7 @@ export default function OfferImageField({ currentImageUrl, onPick, onClear }: Pr
     onPick(null);
   };
 
-  // Retire complètement l'image (existante incluse).
+  // Remove the image entirely (including an existing one).
   const removeAll = () => {
     setSourceUrl(null);
     setArea(null);
@@ -104,7 +103,7 @@ export default function OfferImageField({ currentImageUrl, onPick, onClear }: Pr
       />
 
       {sourceUrl ? (
-        // ── Mode recadrage (nouvelle photo) ──
+        // Crop mode (a new photo was just picked).
         <div className="flex flex-wrap items-start gap-5">
           <div className="flex flex-col gap-2.5">
             <div className={`relative aspect-square ${BOX} overflow-hidden rounded-2xl bg-primo-ink-900 ring-1 ring-primo-line`}>
@@ -120,7 +119,6 @@ export default function OfferImageField({ currentImageUrl, onPick, onClear }: Pr
               />
             </div>
 
-            {/* Zoom */}
             <label className="flex items-center gap-2.5">
               <Icon name="search" size={16} className="text-primo-muted" />
               <input
@@ -160,7 +158,7 @@ export default function OfferImageField({ currentImageUrl, onPick, onClear }: Pr
           <BannerPreview src={croppedPreview} />
         </div>
       ) : currentImageUrl ? (
-        // ── Image existante (édition) : affichée telle quelle ──
+        // Existing image (edit mode), shown as-is.
         <div className="flex flex-wrap items-start gap-5">
           <div className="flex flex-col gap-2.5">
             <div className={`relative aspect-square ${BOX} overflow-hidden rounded-2xl ring-1 ring-primo-line`}>
@@ -186,7 +184,7 @@ export default function OfferImageField({ currentImageUrl, onPick, onClear }: Pr
           <BannerPreview src={assetUrl(currentImageUrl)} />
         </div>
       ) : (
-        // ── Aucune image : zone d'ajout ──
+        // No image yet: add-photo placeholder button.
         <button
           type="button"
           onClick={openPicker}
@@ -203,8 +201,8 @@ export default function OfferImageField({ currentImageUrl, onPick, onClear }: Pr
   );
 }
 
-// Aperçu « carte mobile » : la même image recadrée affichée dans un cadre bannière
-// (object-cover) → reflète le rendu réel sur mobile, mis à jour en direct.
+// "Mobile card" preview: the same cropped image shown in a banner frame (object-cover),
+// mirroring the real mobile rendering, updated live.
 function BannerPreview({ src }: { src: string | null }) {
   return (
     <div className="flex flex-col gap-1">

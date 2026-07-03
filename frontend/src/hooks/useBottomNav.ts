@@ -1,8 +1,8 @@
 import type { IconName } from '@/components/ui/Icon';
 
-// Config de navigation bas, partagée par tous les espaces connectés
-// (employé/manager/owner) — source unique, alimente BottomNav et Sidebar. Chaque
-// espace gère l'onglet actif via un state `tab` (modèle onglets-vues).
+// Bottom-navigation config shared by every signed-in space (employee/manager/owner) - single
+// source of truth feeding both BottomNav and Sidebar. Each space tracks the active tab through a
+// `tab` state (tabs-as-views model).
 export type NavItem = { key: string; label: string; icon: IconName; targetId: string };
 export type NavContext = 'employee' | 'manager' | 'owner';
 

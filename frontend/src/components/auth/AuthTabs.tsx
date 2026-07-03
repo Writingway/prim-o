@@ -6,7 +6,6 @@ type AuthTabsProps = {
   onChange: (mode: Mode) => void;
 };
 
-// Onglets : Se connecter / S'inscrire.
 export default function AuthTabs({ mode, onChange }: AuthTabsProps) {
   return (
     <div className={TABS}>

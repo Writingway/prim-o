@@ -11,7 +11,7 @@ type AuthPageProps = {
   onLoginSuccess: (accessToken: string) => void;
   initialMode?: Mode;
   onBack?: () => void;
-  // Bandeau passé par le router (ex. retour de vérification email).
+  // Banner passed down by the router (e.g. returning from email verification).
   notice?: { type: 'success' | 'error'; text: string };
 };
 
@@ -19,7 +19,7 @@ export default function AuthPage({ onLoginSuccess, initialMode = 'login', onBack
   const [mode, setMode] = useState<Mode>(initialMode);
   const [successMessage, setSuccessMessage] = useState('');
 
-  // Inscription sans auto-login : on confirme + bascule sur l'onglet connexion.
+  // Registration does not auto-login: confirm, then switch back to the login tab.
   const handleRegisterSuccess = () => {
     setSuccessMessage('Compte créé. Vérifie ton email pour activer ton compte.');
     setMode('login');

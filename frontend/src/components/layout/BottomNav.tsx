@@ -1,9 +1,8 @@
 import Icon from '@/components/ui/Icon';
 import type { NavItem } from '@/hooks/useBottomNav';
 
-// Barre d'onglets bas (mobile-first) — composant de présentation contrôlé.
-// Les items + l'état actif viennent de useBottomNav (config partagée). Actif =
-// teal, inactif = muted. Icônes linéaires Prim'O, plus d'emoji.
+// Bottom tab bar (mobile, <lg) - controlled presentational component. Items and the
+// active key come from useBottomNav, the nav config shared with the desktop Sidebar.
 type Props = {
   items: NavItem[];
   active: string;

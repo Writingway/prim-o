@@ -1,8 +1,8 @@
 import { useState } from 'react';
 
-// Couleur du hero, personnalisable par l'utilisateur (persistée en localStorage).
-// Variantes choisies pour rester dans l'identité Prim'O (teal + or) : des dégradés
-// profonds et sobres qui s'accordent au logo et à la pièce dorée.
+// Hero color, user-customizable and persisted in localStorage.
+// Variants are picked to stay within the Prim'O identity (teal + gold): deep, muted gradients
+// that match the logo and the gold coin.
 export type HeroTheme =
   | 'teal'
   | 'emeraude'
@@ -13,7 +13,7 @@ export type HeroTheme =
   | 'indigo'
   | 'bordeaux';
 
-// Les classes de dégradé sont des littéraux complets → Tailwind les détecte.
+// Gradient classes are full literals so Tailwind's scanner can detect them.
 export const HERO_THEMES: { key: HeroTheme; label: string; gradient: string; swatch: string }[] = [
   { key: 'teal', label: 'Teal', gradient: 'from-primo-hero-from via-primo-ink-900 to-primo-ink-950', swatch: '#0a4b46' },
   { key: 'emeraude', label: 'Émeraude', gradient: 'from-[#0c6b46] via-[#084d33] to-[#05311f]', swatch: '#0c6b46' },
@@ -38,7 +38,7 @@ export function useHeroTheme() {
     try {
       localStorage.setItem(KEY, t);
     } catch {
-      // localStorage indisponible (mode privé strict) → on garde le choix en mémoire.
+      // localStorage unavailable (strict private mode) - keep the choice in memory only.
     }
   };
 

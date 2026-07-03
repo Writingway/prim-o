@@ -3,8 +3,8 @@ import { toast } from 'sonner';
 import LegalPage, { type LegalPageKey } from '../src/pages/LegalPage';
 import LandingPage from '../src/pages/LandingPage';
 
-// URL de l'app réelle quand elle sera en ligne. Tant que null, les CTA
-// (« Créer mon compte », « S'identifier ») affichent un toast d'attente.
+// URL of the real app once it goes live. While null, the CTAs
+// (« Créer mon compte », « S'identifier ») show a "coming soon" toast.
 const APP_URL: string | null = null;
 
 function legalFromHash(): LegalPageKey | null {
@@ -12,9 +12,9 @@ function legalFromHash(): LegalPageKey | null {
   return h === 'privacy' || h === 'mentions' || h === 'cgu' ? h : null;
 }
 
-// Vitrine autonome : la landing + pages légales, sans router ni backend.
-// Le teaser d'offres de la landing est déjà best-effort : sans API il se
-// masque tout seul, et le catalogue affiche son état vide propre.
+// Standalone showcase: the landing plus the legal pages, with no router or backend.
+// The landing's offer teaser is already best-effort - with no API it hides itself,
+// and the catalog falls back to its own empty state.
 export default function LandingApp() {
   const [legalPage, setLegalPage] = useState<LegalPageKey | null>(legalFromHash);
   useEffect(() => {

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-// L'employé échange ses tokens contre une offre (id en body).
+// An employee redeems their tokens against an offer.
 export const redeemSchema = z.object({
   offerId: z.string().uuid(),
 });

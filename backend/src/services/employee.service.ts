@@ -2,8 +2,7 @@ import { prisma } from "../lib/db";
 import { anonymizeUser } from './privacy.service';
 
 
-// Liste les employés rattachés à un employeur (hors employés supprimés).
-// Ne renvoie jamais passwordHash ni invitationToken.
+// Never returns passwordHash or invitationToken.
 export async function listEmployeesByEmployer(companyId: string) {
   return prisma.user.findMany({
     where: { role: 'EMPLOYEE', companyId, deletedAt: null },
@@ -20,7 +19,8 @@ export async function listEmployeesByEmployer(companyId: string) {
   });
 }
 
-// Soft delete d'un employé (deletedAt), uniquement s'il appartient à l'entreprise du manager.
+// Removing an employee means GDPR anonymization (see privacy.service), never a hard delete.
+// Only allowed for employees of the caller's own company.
 export async function softDeleteEmployee(companyId: string, employeeId: string) {
   const employee = await prisma.user.findUnique({
     where: { id: employeeId },
@@ -39,7 +39,7 @@ export async function softDeleteEmployee(companyId: string, employeeId: string) 
   });
 }
 
-// Solde seul de l'employé. employeeId vient du JWT.
+// employeeId comes from the JWT, never from client input.
 export async function getEmployeeBalance(employeeId: string): Promise<number> {
   const user = await prisma.user.findUnique({
     where: { id: employeeId },
@@ -51,7 +51,6 @@ export async function getEmployeeBalance(employeeId: string): Promise<number> {
   return user.balance;
 }
 
-// Historique des tokens reçus (attributions), paginé.
 export async function getEmployeeReceived(employeeId: string, page: number, limit: number) {
   const [rows, total] = await Promise.all([
     prisma.attribution.findMany({
@@ -71,7 +70,8 @@ export async function getEmployeeReceived(employeeId: string, page: number, limi
   ]);
 
   return {
-    // `reason` = compliment du motif (texte montré au salarié) ; le texte libre n'existe plus.
+    // `reason` is the motif's compliment (the text shown to the employee); free-text
+    // reasons no longer exist.
     items: rows.map((r) => ({
       id: r.id,
       amount: r.amount,
@@ -86,7 +86,6 @@ export async function getEmployeeReceived(employeeId: string, page: number, limi
   };
 }
 
-// Historique des dépenses (redemptions), paginé.
 export async function getEmployeeSpent(employeeId: string, page: number, limit: number) {
   const [rows, total] = await Promise.all([
     prisma.redemption.findMany({
@@ -121,8 +120,8 @@ export async function getEmployeeSpent(employeeId: string, page: number, limit: 
   };
 }
 
-// Bascule manuelle du statut « utilisé » d'un code, par son propriétaire.
-// On filtre sur employeeId pour garantir qu'on ne touche que SES redemptions.
+// Manual toggle of a code's "used" flag by its owner. Filtering on employeeId
+// guarantees an employee can only touch their OWN redemptions.
 export async function setRedemptionUsed(employeeId: string, redemptionId: string, used: boolean) {
   const result = await prisma.redemption.updateMany({
     where: { id: redemptionId, employeeId },

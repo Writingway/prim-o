@@ -6,7 +6,7 @@ export const listAllCategories = async () => {
   return prisma.category.findMany({ orderBy: { sortOrder: 'asc' } });
 };
 
-// Public: only active categories that have at least 1 active offer
+// Public listing: only active categories that have at least one active offer.
 export const listActiveCategories = async () => {
   return prisma.category.findMany({
     where: {
@@ -26,7 +26,7 @@ export const updateCategory = async (id: string, data: UpdateCategoryInput) => {
   return prisma.category.update({ where: { id }, data: data as Prisma.CategoryUpdateInput });
 };
 
-// Soft-delete: never hard-delete (referential integrity)
+// Soft-delete only: offers reference categories, so rows are never hard-deleted.
 export const deactivateCategory = async (id: string) => {
   return prisma.category.update({ where: { id }, data: { isActive: false } });
 };

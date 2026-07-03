@@ -7,12 +7,12 @@ import type { ConfirmFn } from '@/components/ui/ConfirmDialog';
 type Opts = {
   confirm: ConfirmFn;
   flash: (msg: string) => void;
-  reload: () => Promise<void>;      // rafraîchit les compteurs de stock de la liste
-  setError: (msg: string) => void;  // bannière d'erreur globale (chemin 401)
+  reload: () => Promise<void>;      // refreshes the list's stock counters
+  setError: (msg: string) => void;  // global error banner (401 path)
   onAuthExpired: () => void;
 };
 
-// Panneau « Gérer les codes » : ouvert pour une offre à la fois (lecture + import + suppression).
+// "Gérer les codes" panel: open for one offer at a time (list + import + delete).
 export function usePromoCodes({ confirm, flash, reload, setError, onAuthExpired }: Opts) {
   const [openId, setOpenId] = useState<string | null>(null);
   const [text, setText] = useState('');
@@ -51,22 +51,21 @@ export function usePromoCodes({ confirm, flash, reload, setError, onAuthExpired 
     const res = await deletePromoCode(codeId);
     if (res.ok) {
       flash('Code supprimé.');
-      reload(); // rafraîchit les compteurs de stock
+      reload(); // refresh the stock counters
     } else if (res.status === 409) {
       setCodesError('Ce code a déjà été utilisé, impossible de le supprimer.');
     } else {
       setCodesError('Impossible de supprimer ce code.');
     }
-    // Dans tous les cas, on resynchronise la liste affichée.
+    // Whatever the outcome, resync the displayed list.
     if (openId) {
       const r = await listPromoCodes(openId);
       if (r.ok && r.data) setList(r.data.codes);
     }
   };
 
-  // Lit un fichier CSV côté navigateur et remplit le textarea avec les codes
-  // (un par ligne). On gère le séparateur ligne ET virgule, et on ignore une
-  // éventuelle ligne d'en-tête « code ».
+  // Read a CSV file in the browser and fill the textarea with the codes (one per line).
+  // Handles newline, comma and semicolon separators, and skips an optional "code" header row.
   const handleCsvFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     setCodesError('');
     const file = e.target.files?.[0];
@@ -75,23 +74,23 @@ export function usePromoCodes({ confirm, flash, reload, setError, onAuthExpired 
     reader.onload = () => {
       const raw = String(reader.result ?? '');
       const codes = raw
-        .split(/[\r\n,;]+/)        // lignes, virgules ou points-virgules
+        .split(/[\r\n,;]+/)        // newlines, commas or semicolons
         .map((c) => c.trim())
-        .filter((c) => c.length > 0 && c.toLowerCase() !== 'code'); // saute l'en-tête éventuel
+        .filter((c) => c.length > 0 && c.toLowerCase() !== 'code'); // skip an optional header
       if (codes.length === 0) {
         setCodesError('Aucun code trouvé dans le fichier.');
       } else {
-        setText(codes.join('\n')); // l'admin vérifie avant d'ajouter
+        setText(codes.join('\n')); // the admin reviews before adding
       }
     };
     reader.onerror = () => setCodesError('Impossible de lire le fichier.');
     reader.readAsText(file);
-    e.target.value = ''; // permet de re-sélectionner le même fichier
+    e.target.value = ''; // allow re-selecting the same file
   };
 
   const addCodes = async (offer: Offer) => {
     setCodesError('');
-    // Découpe sur retour à la ligne, virgule ou point-virgule (même logique que le CSV).
+    // Split on newline, comma or semicolon (same logic as the CSV import).
     const codes = text
       .split(/[\r\n,;]+/)
       .map((c) => c.trim())
@@ -107,7 +106,7 @@ export function usePromoCodes({ confirm, flash, reload, setError, onAuthExpired 
         flash(`${res.data.added} code(s) ajouté(s), ${res.data.skipped} ignoré(s).`);
         setText('');
         setOpenId(null);
-        reload(); // rafraîchit le badge de stock
+        reload(); // refresh the stock badge
       } else if (res.status === 401) {
         setError('Session expirée, reconnecte-toi.');
         onAuthExpired();

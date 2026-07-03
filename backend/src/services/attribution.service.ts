@@ -4,9 +4,9 @@ import type { RetributionMode } from '@prisma/client';
 import type { CreateAttributionInput, DistributeEnvelopeInput } from '../schemas/attribution.schemas';
 import { computeRetribution } from '../lib/retribution';
 
-// Envoi direct employeur → employé (TPE) : débite le POOL entreprise, crédite l'employé
-// et enregistre le motif. Atomique + gardé. Réservé à l'OWNER (les managers passent par
-// les enveloppes — voir distributeEnvelope).
+// Direct owner → employee send (small-company flow): debits the company POOL, credits the
+// employee and records the motif (allocation reason). Atomic + guarded. OWNER only -
+// managers go through envelopes (see distributeEnvelope).
 export async function createAttribution(
   attributorId: string,
   companyId: string,
@@ -14,7 +14,6 @@ export async function createAttribution(
 ) {
   const { employeeId, amount, motifId } = input;
 
-  // Vérification employé
   const employee = await prisma.user.findUnique({
     where: { id: employeeId },
     select: { id: true, role: true, companyId: true, deletedAt: true },
@@ -27,7 +26,6 @@ export async function createAttribution(
     throw new Error('EMPLOYEE_NOT_IN_COMPANY');
   }
 
-  // Vérification entreprise (doit être validée)
   const company = await prisma.company.findUnique({
     where: { id: companyId },
     select: { status: true },
@@ -64,9 +62,9 @@ export async function createAttribution(
   }
 }
 
-// Allocation employeur → manager : débite le POOL entreprise et CRÉE une enveloppe
-// (Allocation, statut A_DISTRIBUER). NE crédite PLUS le solde du manager : les tokens
-// "vivent" dans l'enveloppe jusqu'à l'envoi (où R lui est crédité). Atomique + gardé.
+// Owner → manager allocation: debits the company POOL and CREATES an envelope (Allocation,
+// status A_DISTRIBUER). Does NOT credit the manager's balance anymore: the tokens live in
+// the envelope until distribution, when the retribution R is credited. Atomic + guarded.
 export async function allocateToManager(
   companyId: string,
   createdById: string,
@@ -120,9 +118,9 @@ export async function allocateToManager(
   }
 }
 
-// Envoi atomique d'une enveloppe : recalcule R, vérifie l'invariant Σ(montants) =
-// montant − R, crédite le manager (R) + chaque employé, marque l'enveloppe DISTRIBUEE.
-// Tout échec → rollback complet, l'enveloppe reste A_DISTRIBUER.
+// Atomic envelope distribution: recomputes R, checks the invariant Σ(line amounts) =
+// amount − R, credits the manager (R) and each employee, marks the envelope DISTRIBUEE.
+// Any failure rolls back everything and the envelope stays A_DISTRIBUER.
 export async function distributeEnvelope(
   managerId: string,
   companyId: string,
@@ -139,7 +137,7 @@ export async function distributeEnvelope(
     if (alloc.companyId !== companyId) throw new Error('ALLOCATION_NOT_IN_COMPANY');
     if (alloc.status !== 'A_DISTRIBUER') throw new Error('ALLOCATION_ALREADY_DISTRIBUTED');
 
-    // nbEquipe = employés actifs de l'entreprise au moment de l'envoi (le manager = +1).
+    // Team size = the company's active employees at distribution time (the manager counts as +1).
     const teamSize = await tx.user.count({
       where: { companyId, role: 'EMPLOYEE', deletedAt: null },
     });
@@ -154,23 +152,23 @@ export async function distributeEnvelope(
     const total = lines.reduce((sum, l) => sum + l.amount, 0);
     if (total !== budget) throw new Error('DISTRIBUTION_MISMATCH');
 
-    // Tous les destinataires doivent être des employés actifs de l'entreprise.
+    // Every recipient must be an active employee of the company.
     const employeeIds = lines.map((l) => l.employeeId);
     const validEmployees = await tx.user.count({
       where: { id: { in: employeeIds }, companyId, role: 'EMPLOYEE', deletedAt: null },
     });
     if (validEmployees !== employeeIds.length) throw new Error('EMPLOYEE_INVALID');
 
-    // Tous les motifs doivent exister et être actifs.
+    // Every motif must exist and be active.
     const motifIds = [...new Set(lines.map((l) => l.motifId))];
     const validMotifs = await tx.motif.count({ where: { id: { in: motifIds }, active: true } });
     if (validMotifs !== motifIds.length) throw new Error('MOTIF_INVALID');
 
-    // Crédit rétribution manager (solde perso).
+    // Credit the retribution R to the manager's personal balance.
     if (retribution > 0) {
       await tx.user.update({ where: { id: managerId }, data: { balance: { increment: retribution } } });
     }
-    // Crédit employés + création des attributions, rattachées à l'enveloppe.
+    // Credit each employee and record the attributions, linked to the envelope.
     for (const l of lines) {
       await tx.user.update({ where: { id: l.employeeId }, data: { balance: { increment: l.amount } } });
       await tx.attribution.create({
@@ -193,9 +191,9 @@ export async function distributeEnvelope(
   });
 }
 
-// Liste les enveloppes d'un manager ("Mes enveloppes"). Pour A_DISTRIBUER, R et le
-// budget sont calculés en direct (taille d'équipe courante) ; pour DISTRIBUEE on relit
-// le R figé à l'envoi.
+// A manager's envelopes ("Mes enveloppes" screen). For A_DISTRIBUER, R and the budget are
+// computed live from the current team size; for DISTRIBUEE we read back the R frozen at
+// distribution time.
 export async function listManagerEnvelopes(managerId: string, companyId: string) {
   const allocations = await prisma.allocation.findMany({
     where: { managerId },
@@ -224,8 +222,8 @@ export async function listManagerEnvelopes(managerId: string, companyId: string)
   });
 }
 
-// Enveloppes ENVOYÉES par un employeur ("Mes enveloppes envoyées") : filtrées par
-// createdById, avec le manager destinataire. Lecture seule, pas de calcul de R.
+// Envelopes SENT by an owner ("Mes enveloppes envoyées" screen): filtered by createdById,
+// with the recipient manager. Read-only, no R computation.
 export async function listSentEnvelopes(companyId: string, createdById: string) {
   const allocations = await prisma.allocation.findMany({
     where: { companyId, createdById },
@@ -249,8 +247,8 @@ export async function listSentEnvelopes(companyId: string, createdById: string) 
   }));
 }
 
-// Doubles soldes manager (§3.3) : enveloppe restante (budget non distribué des
-// enveloppes A_DISTRIBUER) + solde perso (rétribution cumulée = user.balance).
+// The manager's two balances (§3.3): remaining envelope budget (undistributed A_DISTRIBUER
+// envelopes) plus personal balance (accumulated retribution = user.balance).
 export async function getManagerBalances(managerId: string, companyId: string) {
   const user = await prisma.user.findUnique({ where: { id: managerId }, select: { balance: true } });
   const pending = await prisma.allocation.findMany({
@@ -265,7 +263,7 @@ export async function getManagerBalances(managerId: string, companyId: string) {
   return { envelopeRemaining, personalBalance: user?.balance ?? 0 };
 }
 
-// Liste les managers d'une entreprise (pour l'allocation côté patron).
+// Managers of a company, for the owner's allocation screen.
 export async function listCompanyManagers(companyId: string) {
   return prisma.user.findMany({
     where: { companyId, role: 'MANAGER', deletedAt: null },
@@ -274,11 +272,11 @@ export async function listCompanyManagers(companyId: string) {
   });
 }
 
-// Historique des attributions d'une entreprise (récentes d'abord).
-// `managerId` optionnel = ne renvoyer que les attributions de CE manager (un manager ne
-// voit que les siennes ; le patron, sans filtre, garde la vue entreprise complète).
-// `reason` est dérivé du motif (le texte libre n'existe plus) pour rester compatible
-// avec l'affichage existant.
+// Company attribution history, newest first.
+// Optional `managerId` restricts the list to that manager's own attributions (a manager
+// only sees theirs; the owner, unfiltered, keeps the full company view).
+// `reason` is derived from the motif - free-text reasons no longer exist - to stay
+// compatible with the existing display.
 export async function listAttributionsByCompany(companyId: string, managerId?: string) {
   const rows = await prisma.attribution.findMany({
     where: { companyId, ...(managerId ? { managerId } : {}) },

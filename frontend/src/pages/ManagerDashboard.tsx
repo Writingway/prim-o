@@ -41,11 +41,11 @@ type Props = { onLogout: () => void; onBack: () => void; firstName?: string | nu
 const initials = (e: Employee) =>
   `${e.firstName[0] ?? ''}${e.lastName[0] ?? ''}`.toUpperCase();
 
-// Dashboard manager : ouvre ses enveloppes reçues et redistribue à ses employés.
-// (Le manager ne distribue plus en direct : tout passe par les enveloppes.)
+// Manager dashboard: opens received envelopes and redistributes them to employees.
+// (Managers no longer distribute directly: everything goes through envelopes.)
 export default function ManagerDashboard({ onLogout, firstName, profilePhoto }: Props) {
   const { confirm, confirmDialog } = useConfirm();
-  // Avatar du hero, maj en direct depuis le profil.
+  // Hero avatar photo, updated live when the user saves it in the Profil tab.
   const [heroPhoto, setHeroPhoto] = useState<string | null>(profilePhoto ?? null);
   const heroInitials = (firstName?.[0] ?? '?').toUpperCase();
   const [employees, setEmployees] = useState<Employee[] | null>(null);
@@ -129,7 +129,7 @@ export default function ManagerDashboard({ onLogout, firstName, profilePhoto }: 
     try {
       await apiLogout();
     } catch {
-      // déconnexion front même si l'appel échoue
+      // Log out on the frontend even if the API call fails.
     }
     onLogout();
   };
@@ -174,7 +174,7 @@ export default function ManagerDashboard({ onLogout, firstName, profilePhoto }: 
 
   return (
     <Layout
-      title="Prim'O — Espace manager"
+      title="Prim'O - Espace manager"
       chrome="console"
       hideConsoleMobileHeader
       hideConsoleTopbar
@@ -203,10 +203,9 @@ export default function ManagerDashboard({ onLogout, firstName, profilePhoto }: 
     <div className={DASH_WRAPPER}>
       <div className={DASH_CONTAINER}>
 
-        {/* Hero affiché en tête des onglets Enveloppes ET Offres (comme l'employé). */}
         {(activeTab === 'employes' ) && (
           <>
-            {/* Hero (cf. README D1) */}
+            {/* Hero (see README D1); the envelope count doubles as a shortcut to the Enveloppes tab. */}
             <DashboardHero
               bleed="-mx-4"
               eyebrow="Espace manager"
@@ -233,7 +232,7 @@ export default function ManagerDashboard({ onLogout, firstName, profilePhoto }: 
                   <div className="text-xs text-white/65">Mon solde perso</div>
                   <div className="mt-1.5 flex items-center gap-1.5">
                     <Coin size={18} />
-                    <span className="text-xl font-extrabold">{balances?.personalBalance ?? '—'}</span>
+                    <span className="text-xl font-extrabold">{balances?.personalBalance ?? '-'}</span>
                   </div>
                 </div>
                 <div className="rounded-2xl bg-white/[0.06] p-3.5">
@@ -248,13 +247,12 @@ export default function ManagerDashboard({ onLogout, firstName, profilePhoto }: 
           </>
         )}
 
-        {/* ── Onglet Enveloppes : 2 sections — reçues (à distribuer) + ouvertes ── */}
+        {/* Enveloppes tab: two views - received (still to distribute) and opened. */}
         {activeTab === 'enveloppes' && (
           loading ? loader
           : error ? errorNote
           : (
             <>
-              {/* Switch Reçues / Ouvertes */}
               <div className="mb-4 grid grid-cols-2 gap-1 rounded-full bg-primo-mint p-1">
                 <button
                   type="button"
@@ -316,7 +314,7 @@ export default function ManagerDashboard({ onLogout, firstName, profilePhoto }: 
           )
         )}
 
-        {/* ── Onglet Offres : le manager dépense sa rétribution (catalogue partagé) ── */}
+        {/* Offres tab: the manager spends their personal retribution balance (shared catalog). */}
         {activeTab === 'offres' && (
           <OfferCatalog
             isLoggedIn
@@ -328,16 +326,15 @@ export default function ManagerDashboard({ onLogout, firstName, profilePhoto }: 
           />
         )}
 
-        {/* ── Onglet Mes codes : codes promo achetés (copiables) ── */}
+        {/* Mes codes tab: purchased promo codes, copyable. */}
         {activeTab === 'codes' && <MyPromoCodes />}
 
-        {/* ── Onglet Employés : gestion d'équipe + historique ── */}
+        {/* Employés tab: team management + attribution history. */}
         {activeTab === 'employes' && (
           loading ? loader
           : error ? errorNote
           : (
             <>
-              {/* Génération d'un code d'invitation employé */}
               <div className="mb-4 flex flex-wrap items-center justify-between gap-2.5">
                 <h2 className={HISTORY_TITLE}>Mes employés</h2>
                 <button className={DASH_INVITE} type="button" onClick={handleGenerateInvite}>
@@ -393,7 +390,7 @@ export default function ManagerDashboard({ onLogout, firstName, profilePhoto }: 
           )
         )}
 
-        {/* ── Onglet Profil ── */}
+        {/* Profil tab. */}
         {activeTab === 'profil' && (
           <>
             <EditProfile onPhotoChange={setHeroPhoto} />

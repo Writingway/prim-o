@@ -1,7 +1,7 @@
 import z from 'zod';
 import { safeText } from '../lib/validation';
 
-// Valid icon names from the front-end Icon component set
+// Icon names must exist in the front-end Icon component set; keep this list in sync with it.
 const VALID_ICONS = ['home','gift','received','user','users','bell','search','flame','trophy',
   'shield','mail','lock','phone','check','plus','minus','send','building','card','envelope',
   'chart','alert','info','copy','logout','settings','clock','star','coffee','ticket','heart',

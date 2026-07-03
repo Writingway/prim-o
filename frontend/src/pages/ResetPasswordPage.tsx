@@ -7,11 +7,11 @@ import PasswordStrength from '../components/auth/PasswordStrength';
 
 type ResetPasswordPageProps = {
   token: string;
-  onDone: () => void; // quitter la page (retour connexion)
+  onDone: () => void; // Leave the page (back to login).
 };
 
-// Page atteinte via le lien reçu par mail (…/?reset-token=…). L'utilisateur
-// y choisit un nouveau mot de passe ; le token est consommé côté backend.
+// Reached via the emailed link (…/?reset-token=…). The user picks a new password here;
+// the token is consumed by the backend.
 export default function ResetPasswordPage({ token, onDone }: ResetPasswordPageProps) {
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');

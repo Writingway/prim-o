@@ -78,7 +78,7 @@ const ADMIN_SECTIONS: NavSection[] = [
 
 const ADMIN_NAV_FLAT: NavItem[] = [...NAV_PLATEFORME, ...NAV_GESTION];
 
-// Bottom nav capped at 5 — categories & codes accessible via sidebar on desktop only.
+// Bottom nav capped at 5 - categories & codes accessible via sidebar on desktop only.
 const ADMIN_BOTTOM_NAV_ITEMS: NavItem[] = [
   { key: 'overview',    label: 'Synthèse',     icon: 'chart',    targetId: 'nav-overview' },
   { key: 'companies',   label: 'Entreprises',  icon: 'building', targetId: 'nav-companies' },
@@ -172,7 +172,6 @@ export default function AdminPage({ onLogout, onBack }: AdminPageProps) {
 
         {tab === 'offers' && (
           <div className="rounded-2xl border border-primo-line bg-white p-5 lg:p-6">
-            {/* Header row */}
             <div className="mb-5 flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center gap-2.5">
                 <h2 className="text-[17px] font-extrabold tracking-[-0.01em] text-primo-ink">Offres partenaires</h2>
@@ -187,7 +186,6 @@ export default function AdminPage({ onLogout, onBack }: AdminPageProps) {
               )}
             </div>
 
-            {/* Create / Edit form */}
             {offerForm.showForm && (
               <form className="rounded-2xl border border-primo-line bg-white p-5 mb-5" onSubmit={offerForm.submit}>
                 <h2 className="text-[15px] font-extrabold text-primo-ink mb-4">{offerForm.editingId ? "Modifier l'offre" : 'Nouvelle offre'}</h2>
@@ -230,7 +228,7 @@ export default function AdminPage({ onLogout, onBack }: AdminPageProps) {
                       value={offerForm.form.categoryId}
                       onChange={(e) => offerForm.setForm({ ...offerForm.form, categoryId: e.target.value })}
                     >
-                      <option value="">— Sélectionner une catégorie —</option>
+                      <option value="">- Sélectionner une catégorie -</option>
                       {adminCategories.filter((c) => c.isActive !== false).map((c) => (
                         <option key={c.id} value={c.id}>{c.label}</option>
                       ))}
@@ -295,7 +293,7 @@ export default function AdminPage({ onLogout, onBack }: AdminPageProps) {
                               </span>
                             </td>
                             <td className="px-4 py-3 text-[13px] text-primo-ink border-b border-primo-line" data-label="Réduction">{offer.discountPercent}%</td>
-                            <td className="px-4 py-3 text-[13px] text-primo-ink border-b border-primo-line" data-label="Catégorie">{offer.category?.label ?? '—'}</td>
+                            <td className="px-4 py-3 text-[13px] text-primo-ink border-b border-primo-line" data-label="Catégorie">{offer.category?.label ?? '-'}</td>
                             <td className="px-4 py-3 text-[13px] text-primo-ink border-b border-primo-line" data-label="Statut">
                               <span className={offer.isActive
                                 ? 'rounded-full px-2 py-0.5 text-xs font-semibold bg-primo-success-soft text-primo-success'

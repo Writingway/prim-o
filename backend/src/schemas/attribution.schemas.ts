@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
-// Distribution manager → employé (§3.3/§3.5). Le motif est OBLIGATOIRE (tag
-// officiel) — le texte libre `reason` a été retiré (le motif porte le sens).
+// Manager-to-employee distribution (§3.3/§3.5). The motif (allocation reason) is mandatory -
+// the free-text `reason` field was removed; the motif alone carries the meaning.
 export const createAttributionSchema = z.object({
   employeeId: z.uuid(),
   amount:     z.number().int().positive(),
@@ -10,8 +10,8 @@ export const createAttributionSchema = z.object({
 
 export type CreateAttributionInput = z.infer<typeof createAttributionSchema>;
 
-// Allocation employeur → manager (§3.2/§3.4) avec mode de rétribution.
-// `percentage` exigé UNIQUEMENT en mode POURCENTAGE (1..100), interdit sinon.
+// Employer-to-manager allocation (§3.2/§3.4) with a distribution mode.
+// `percentage` is required only in POURCENTAGE mode (1..100) and forbidden otherwise.
 export const allocateSchema = z
   .object({
     managerId:  z.uuid(),
@@ -26,8 +26,8 @@ export const allocateSchema = z
 
 export type AllocateInput = z.infer<typeof allocateSchema>;
 
-// Envoi groupé manager → employés depuis une enveloppe (§3.3). Redistribution COMPLÈTE
-// et atomique : chaque ligne a un motif obligatoire ; un employé n'apparaît qu'une fois.
+// Bulk manager-to-employee send from an envelope (§3.3). The redistribution is complete and
+// atomic: every line requires a motif, and an employee may appear only once.
 export const distributeEnvelopeSchema = z.object({
   allocationId: z.uuid(),
   lines: z

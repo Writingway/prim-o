@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react';
 
 type HeaderProps = {
-  title?: string;        // texte de la marque, défaut Prim'O
-  children?: ReactNode;  // les boutons, fournis par chaque page
+  title?: string;        // Brand wordmark text.
+  children?: ReactNode;  // Action buttons supplied by each page.
 };
 
 export default function Header({ title = "Prim'O", children }: HeaderProps) {

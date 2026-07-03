@@ -1,5 +1,5 @@
 import { prisma } from '../lib/db';
-import { Prisma } from '@prisma/client';   // add to existing imports
+import { Prisma } from '@prisma/client';
 import type { 
   ListUsersQuery, 
   UpdateUserInput, 
@@ -18,28 +18,27 @@ export async function getStats() {
   return { companies, users, managers };
 }
 
-// List all companies for the admin, with how many users each has.
 export async function listCompanies(q: PaginationQuery) {
   const where = { deletedAt: null };
   const [items, total] = await Promise.all([
     prisma.company.findMany({
       where,
       orderBy: { createdAt: 'desc' },
-      skip: (q.page - 1) * q.limit,   // how many rows to jump over
-      take: q.limit,                  // how many to return
+      skip: (q.page - 1) * q.limit,
+      take: q.limit,
       select: {
         id: true, name: true, tokenBalance: true, status: true, createdAt: true,
         _count: { select: { users: true } },
       },
     }),
-    prisma.company.count({ where }),  // total, so the UI knows page count
+    prisma.company.count({ where }),
   ]);
   return { items, total, page: q.page, hasMore: q.page * q.limit < total };
 }
 
 // Global ledger: every token attribution across ALL companies (admin view).
 export async function listAttributions(q: PaginationQuery) {
-  const where = {};   // no filter -> admin sees everything
+  const where = {}; // Deliberately unfiltered: the admin ledger spans all companies.
   const [items, total] = await Promise.all([
     prisma.attribution.findMany({
       where,
@@ -50,29 +49,29 @@ export async function listAttributions(q: PaginationQuery) {
         id: true,
         amount: true,
         createdAt: true,
-        company:  { select: { name: true } },                    // just the name
-        manager:  { select: { firstName: true, lastName: true } }, // not the whole row
+        company:  { select: { name: true } },
+        manager:  { select: { firstName: true, lastName: true } },
         employee: { select: { firstName: true, lastName: true } },
         motif:    { select: { label: true } },
       },
     }),
     prisma.attribution.count({ where }),
   ]);
-  // `reason` = libellé du motif (le texte libre n'existe plus), pour l'affichage du ledger.
+  // `reason` is the motif label - free-text reasons no longer exist.
   const mapped = items.map(({ motif, ...a }) => ({ ...a, reason: motif?.label ?? '' }));
   return { items: mapped, total, page: q.page, hasMore: q.page * q.limit < total };
 }
 
 
-// Create a new company. Only the name is required; tokenBalance defaults to 0.  
 export async function createCompany(data: CreateCompanyInput) {
   return prisma.company.create({
-    data: { name: data.name, status: 'APPROVED' },   // créée par l'admin = active d'emblée
+    // Admin-created companies skip the approval queue: APPROVED from the start.
+    data: { name: data.name, status: 'APPROVED' },
     select: { id: true, name: true, tokenBalance: true, status: true, createdAt: true },
   });
 }
 
-// Validation d'entreprise (file d'attente admin) : PENDING -> APPROVED/REJECTED.
+// Company vetting (admin approval queue): PENDING -> APPROVED/REJECTED.
 export async function setCompanyStatus(companyId: string, status: 'APPROVED' | 'REJECTED') {
   const company = await prisma.company.findFirst({
     where: { id: companyId, deletedAt: null },
@@ -92,27 +91,27 @@ export async function setCompanyStatus(companyId: string, status: 'APPROVED' | '
 export async function softDeleteCompany(companyId: string) {
   return prisma.$transaction(async (tx) => {
     const company = await tx.company.findFirst({
-      where: { id: companyId, deletedAt: null },   // not found OR already deleted -> 404
+      where: { id: companyId, deletedAt: null }, // Missing and already-deleted both yield 404.
       select: { id: true },
     });
     if (!company) throw new Error('COMPANY_NOT_FOUND');
 
     const now = new Date();
 
-    // 1. which users to kill (need ids to target their tokens)
+    // Collect user ids first so their refresh tokens can be targeted below.
     const users = await tx.user.findMany({
       where: { companyId, deletedAt: null },
       select: { id: true },
     });
     const userIds = users.map((u) => u.id);
 
-    // 2. soft-delete the users (frees their email via the partial unique index)
+    // Soft-delete the users; this frees their emails via the partial unique index.
     await tx.user.updateMany({
       where: { companyId, deletedAt: null },
       data: { deletedAt: now },
     });
 
-    // 3. revoke their refresh tokens -> no session survives past the 15-min access TTL
+    // Revoke refresh tokens so no session outlives the 15-minute access-token TTL.
     if (userIds.length > 0) {
       await tx.refreshToken.updateMany({
         where: { userId: { in: userIds }, isRevoked: false },
@@ -120,13 +119,12 @@ export async function softDeleteCompany(companyId: string) {
       });
     }
 
-    // 4. revoke live invite codes -> nobody signs up into a dead company
+    // Revoke live invite codes so nobody can sign up into a deleted company.
     await tx.companyInviteCode.updateMany({
       where: { companyId, revokedAt: null },
       data: { revokedAt: now },
     });
 
-    // 5. finally flag the company
     await tx.company.update({
       where: { id: companyId },
       data: { deletedAt: now },
@@ -142,15 +140,15 @@ export async function softDeleteCompany(companyId: string) {
 export async function restoreCompany(companyId: string) {
   return prisma.$transaction(async (tx) => {
     const company = await tx.company.findFirst({
-      where: { id: companyId, deletedAt: { not: null } },   // must be deleted
+      where: { id: companyId, deletedAt: { not: null } },
       select: { id: true, deletedAt: true },
     });
-    if (!company) throw new Error('COMPANY_NOT_DELETED');    // not found OR alive
+    if (!company) throw new Error('COMPANY_NOT_DELETED'); // Missing or still active.
 
-    const deletedAt = company.deletedAt!;   // exact cascade timestamp
+    const deletedAt = company.deletedAt!; // Non-null: the query filters on deletedAt != null.
 
     const usersToRestore = await tx.user.findMany({
-      where: { companyId, deletedAt },      // only the cascade victims
+      where: { companyId, deletedAt }, // Only users removed by this exact cascade.
       select: { id: true, email: true },
     });
 
@@ -223,13 +221,13 @@ export async function updateUser(id: string, data: UpdateUserInput) {
 
     const nextRole = data.role!;
 
-    // Cet endpoint ne peut affecter que MANAGER/EMPLOYEE (jamais ADMIN, anti-escalade) :
-    // un rôle non-ADMIN exige toujours une entreprise.
+    // This endpoint only assigns MANAGER/EMPLOYEE (never ADMIN - no privilege escalation),
+    // and a non-ADMIN role always requires a company.
     if (user.companyId === null) {
       throw new Error('ROLE_REQUIRES_COMPANY');
     }
 
-    // Last-admin guard : rétrograder le dernier admin actif est interdit.
+    // Last-admin guard: demoting the last active admin is forbidden.
     const losesAdmin = user.role === 'ADMIN';
     if (losesAdmin) {
       const admins = await tx.user.count({
@@ -246,7 +244,7 @@ export async function updateUser(id: string, data: UpdateUserInput) {
       select: ADMIN_SAFE_SELECT,
     });
 
-    // Changement de rôle -> on coupe les sessions (le token au rôle périmé meurt).
+    // Role changed: revoke sessions so tokens carrying the stale role die.
     if (nextRole !== user.role) {
       await tx.refreshToken.updateMany({
         where: { userId: id, isRevoked: false }, data: { isRevoked: true },
@@ -304,8 +302,8 @@ export async function listRedemptions(q: PaginationQuery) {
 }
 
 // Global ledger: every Stripe top-up recorded in DB (admin view).
-// Filtré sur stripeSessionId != null → uniquement les vrais paiements Stripe
-// (exclut d'éventuels crédits manuels sans session).
+// stripeSessionId != null keeps only real Stripe payments and excludes any
+// manual credits recorded without a session.
 export async function listPurchases(q: PaginationQuery) {
   const where: Prisma.CompanyTokenPurchaseWhereInput = { stripeSessionId: { not: null } };
   const [items, total] = await Promise.all([

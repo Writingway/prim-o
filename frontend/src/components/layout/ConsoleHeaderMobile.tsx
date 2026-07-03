@@ -1,9 +1,7 @@
 import type { ReactNode } from 'react';
 
-// Header console MOBILE (<lg) — pendant du Topbar desktop.
-// Titre + sous-titre de la section à gauche, slot actions à droite
-// (réservé pour de futures icônes : thème clair/sombre, notifications…).
-// Blanc, bordure basse, collé en haut — cohérent avec Topbar.
+// Mobile (<lg) console header - counterpart of the desktop Topbar: section title and
+// subtitle on the left, an actions slot for icon buttons on the right.
 type Props = {
   title?: string;
   subtitle?: string;

@@ -18,7 +18,7 @@ type LandingPageProps = {
   onDashboard: () => void;
 };
 
-// Cadre téléphone commun aux mockups (captures mobiles réelles de l'app).
+// Shared phone frame for the mockups (real mobile screenshots of the app).
 function PhoneFrame({ src, alt, className = '' }: { src: string; alt: string; className?: string }) {
   return (
     <div
@@ -31,7 +31,7 @@ function PhoneFrame({ src, alt, className = '' }: { src: string; alt: string; cl
   );
 }
 
-// Puce ✓ + titre + description (sections salarié / entreprise / stats).
+// Check bullet + title + description (used by the salarié / entreprise / stats sections).
 function CheckItem({ title, text, dark = false }: { title: string; text: string; dark?: boolean }) {
   return (
     <li className="flex items-start gap-3.5">
@@ -50,7 +50,7 @@ function CheckItem({ title, text, dark = false }: { title: string; text: string;
   );
 }
 
-// En-tête de section : kicker uppercase + gros titre.
+// Section heading: uppercase kicker + large title.
 function SectionHead({ kicker, title, dark = false }: { kicker: string; title: string; dark?: boolean }) {
   return (
     <div>
@@ -64,11 +64,10 @@ function SectionHead({ kicker, title, dark = false }: { kicker: string; title: s
   );
 }
 
-// Landing page desktop (visiteur) : page marketing — présentation de l'app,
-// fonctionnalités par audience (salarié / entreprise / stats patron) avec
-// captures mobiles réelles, teaser du catalogue d'offres (API). « Offres »
-// bascule sur le catalogue complet DANS la page (même URL, même nav).
-// Les visiteurs mobiles voient le Splash à la place (cf. router).
+// Desktop landing page (visitors): marketing page - app pitch, features per audience
+// (employee / company / owner stats) with real mobile screenshots, and an API-fed teaser of
+// the offer catalog. "Offres" swaps in the full catalog WITHIN the page (same URL, same nav).
+// Mobile visitors see the Splash screen instead (see router).
 export default function LandingPage({
   isLoggedIn,
   onLogin,
@@ -82,11 +81,11 @@ export default function LandingPage({
     let alive = true;
     listOffers()
       .then((res) => { if (alive && res.ok && res.data) setOffers(res.data.offers.slice(0, 4)); })
-      .catch(() => {}); // teaser best-effort : la landing vit sans
+      .catch(() => {}); // Best-effort teaser: the landing works without it.
     return () => { alive = false; };
   }, []);
 
-  // Bascule accueil ↔ catalogue (même route, remontée en haut de page).
+  // Home ↔ catalog toggle (same route, scrolls back to the top).
   const goHome = () => { setView('home'); window.scrollTo({ top: 0 }); };
   const goOffers = () => { setView('offers'); window.scrollTo({ top: 0 }); };
 
@@ -102,7 +101,6 @@ export default function LandingPage({
 
   return (
     <div className="min-h-screen bg-white text-primo-ink">
-      {/* ── Nav sticky ── */}
       <nav className="sticky top-0 z-50 border-b border-primo-line bg-white/85 backdrop-blur-md">
         <div className="mx-auto flex h-[68px] max-w-[1140px] items-center justify-between px-5 sm:px-10">
           <button type="button" onClick={goHome} aria-label="Accueil">
@@ -124,7 +122,7 @@ export default function LandingPage({
       </nav>
 
       {view === 'offers' ? (
-        /* ── Vue catalogue : l'ancien catalogue complet, dans la même page ── */
+        /* Catalog view: the full offer catalog, swapped in on the same page. */
         <div className="min-h-screen bg-primo-surface">
           <OfferCatalog
             isLoggedIn={isLoggedIn}
@@ -136,7 +134,7 @@ export default function LandingPage({
         </div>
       ) : (<>
 
-      {/* ── Hero ── */}
+      {/* Hero. */}
       <header className="relative overflow-hidden bg-gradient-to-b from-primo-mint via-[#f7fbfa] to-white">
         <div
           aria-hidden
@@ -170,7 +168,7 @@ export default function LandingPage({
           </div>
 
           <div className="relative hidden justify-center lg:flex">
-            {/* Toast flottant « tokens reçus » */}
+            {/* Decorative floating «tokens reçus» toast mockup. */}
             <div className="absolute -left-9 top-12 z-10 flex items-center gap-2.5 rounded-2xl border border-primo-line bg-white px-4 py-3 shadow-[0_20px_40px_-18px_rgba(6,48,45,0.30)]">
               <img src={coin} alt="" className="h-[34px] w-[34px]" />
               <span>
@@ -179,7 +177,7 @@ export default function LandingPage({
               </span>
             </div>
             <PhoneFrame src={screenEmployee} alt="Dashboard employé Prim'O" className="z-[2]" />
-            {/* Carte flottante « code promo » */}
+            {/* Decorative floating «code promo» card mockup. */}
             <div className="absolute -right-5 bottom-16 z-10 rounded-2xl border border-primo-line bg-white px-4 py-3 text-center shadow-[0_20px_40px_-18px_rgba(6,48,45,0.30)]">
               <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-primo-slate-soft">Ton code promo</div>
               <div className="mt-0.5 text-base font-extrabold tracking-[0.06em] text-primo-teal-strong">PRIMO-7F2K</div>
@@ -188,7 +186,7 @@ export default function LandingPage({
         </div>
       </header>
 
-      {/* ── Bande catégories ── */}
+      {/* Category strip. */}
       <div className="overflow-hidden border-y border-primo-line bg-white py-4">
         <div className="flex items-center justify-center gap-6 whitespace-nowrap text-sm font-semibold text-primo-muted sm:gap-11">
           {['Restaurants', 'Sport', 'Culture', 'Bien-être', 'Shopping', 'Voyage'].map((cat, i) => (
@@ -200,7 +198,7 @@ export default function LandingPage({
         </div>
       </div>
 
-      {/* ── Comment ça marche ── */}
+      {/* «Comment ça marche» section. */}
       <section className="mx-auto max-w-[1140px] px-5 py-16 sm:px-10 lg:py-24">
         <div className="max-w-[560px]">
           <SectionHead kicker="Comment ça marche" title="De l'effort à la récompense, en trois gestes." />
@@ -210,7 +208,7 @@ export default function LandingPage({
             {
               num: '01',
               title: 'Ton entreprise te récompense',
-              text: "Ton manager t'attribue des tokens en un clic — au moment où tu le mérites, pas six mois plus tard.",
+              text: "Ton manager t'attribue des tokens en un clic - au moment où tu le mérites, pas six mois plus tard.",
             },
             {
               num: '02',
@@ -234,7 +232,7 @@ export default function LandingPage({
         </div>
       </section>
 
-      {/* ── Côté salarié ── */}
+      {/* «Côté salarié» section. */}
       <section className="mx-auto grid max-w-[1140px] items-center gap-14 px-5 pb-16 sm:px-10 lg:grid-cols-2 lg:gap-16 lg:pb-24">
         <div className="flex justify-center">
           <PhoneFrame src={screenOffers} alt="Catalogue d'offres Prim'O" className="w-[260px]" />
@@ -249,7 +247,7 @@ export default function LandingPage({
         </div>
       </section>
 
-      {/* ── Côté entreprise (bande sombre pleine largeur) ── */}
+      {/* «Côté entreprise» section (full-width dark band). */}
       <section className="relative overflow-hidden bg-gradient-to-br from-primo-ink-900 to-primo-ink-950">
         <div
           aria-hidden
@@ -271,7 +269,7 @@ export default function LandingPage({
         </div>
       </section>
 
-      {/* ── Pilotage / stats ── */}
+      {/* «Pilotage» (stats) section. */}
       <section className="mx-auto grid max-w-[1140px] items-center gap-14 px-5 py-16 sm:px-10 lg:grid-cols-2 lg:gap-16 lg:py-24">
         <div className="flex justify-center">
           <PhoneFrame src={screenStats} alt="Statistiques employeur Prim'O" className="w-[260px]" />
@@ -286,7 +284,7 @@ export default function LandingPage({
         </div>
       </section>
 
-      {/* ── Offres partenaires (teaser API) ── */}
+      {/* Partner offers teaser (fed by the API). */}
       <section className="bg-gradient-to-b from-white to-primo-mint/60">
         <div className="mx-auto max-w-[1140px] px-5 py-16 sm:px-10 lg:py-24">
           <div className="flex flex-wrap items-end justify-between gap-5">
@@ -332,7 +330,7 @@ export default function LandingPage({
         </div>
       </section>
 
-      {/* ── CTA final ── */}
+      {/* Final CTA. */}
       <section className="relative overflow-hidden bg-white text-center">
         <div
           aria-hidden
@@ -355,7 +353,6 @@ export default function LandingPage({
 
       </>)}
 
-      {/* ── Footer ── */}
       <footer className="bg-primo-ink-950">
         <div className="mx-auto flex max-w-[1140px] flex-col items-center justify-between gap-5 px-5 py-9 sm:flex-row sm:px-10">
           <img src={logo4} alt="Prim'O" className="h-8 w-auto" />

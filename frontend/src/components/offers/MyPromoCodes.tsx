@@ -4,10 +4,9 @@ import type { SpentToken } from '@/types/types';
 import Icon from '@/components/ui/Icon';
 import { formatDate } from '@/lib/format';
 
-// « Mes codes » : les codes promo achetés par l'utilisateur connecté (employé OU
-// manager — /employees/me/spent est filtré par user). Deux catégories pilotées
-// par l'utilisateur : « Disponible » (pas encore utilisé) et « Utilisé ». Un
-// bouton fait basculer le code de l'une à l'autre (persisté en base).
+// « Mes codes »: the promo codes bought by the logged-in user (employee OR manager -
+// /employees/me/spent is filtered per user). Two user-driven buckets, « Disponible » (not yet
+// used) and « Utilisé »; a button moves a code from one to the other (persisted server-side).
 const PAGE_SIZE = 10;
 
 type View = 'available' | 'used';
@@ -47,7 +46,7 @@ export default function MyPromoCodes() {
     setTimeout(() => setCopied((c) => (c === code ? null : c)), 2000);
   };
 
-  // Bascule « utilisé » : mise à jour optimiste, repli si l'appel échoue.
+  // Optimistic toggle: flip locally first, roll back if the API call fails.
   const toggleUsed = async (id: string, used: boolean) => {
     setItems((prev) => prev.map((it) => (it.id === id ? { ...it, used } : it)));
     const res = await setSpentUsed(id, used);
@@ -68,7 +67,6 @@ export default function MyPromoCodes() {
         <p className="mt-6 rounded-xl bg-primo-error-soft px-4 py-3 text-center text-[13px] text-primo-error">{error}</p>
       ) : (
         <>
-          {/* Switch de catégorie Disponible / Utilisé */}
           <div className="mb-4 grid grid-cols-2 gap-1 rounded-full bg-primo-mint p-1">
             <button
               type="button"
@@ -110,7 +108,6 @@ export default function MyPromoCodes() {
                     <div className="text-xs text-primo-muted">{formatDate(t.createdAt)} · −{t.amount} tokens</div>
                   </div>
 
-                  {/* Code copiable */}
                   <div className="mx-3.5 mt-3 flex items-center gap-2 rounded-xl border-[1.5px] border-dashed border-primo-gold-bright/60 bg-primo-gold-soft px-3.5 py-2.5">
                     <span className={`flex-1 break-all font-mono text-base font-extrabold tracking-[2px] text-primo-ink ${t.used ? 'line-through opacity-60' : ''}`}>
                       {t.promoCode}
@@ -127,8 +124,8 @@ export default function MyPromoCodes() {
                     )}
                   </div>
 
-                  {/* Marquer utilisé = définitif (pas de retour). Une fois utilisé,
-                      on n'affiche plus qu'un statut figé. */}
+                  {/* Marking a code as used is one-way in the UI: once used, only a frozen
+                      status is shown - no undo. */}
                   <div className="p-3.5 pt-3">
                     {t.used ? (
                       <div className="flex w-full items-center justify-center gap-2 rounded-xl bg-primo-error-soft py-2.5 text-sm font-bold text-primo-error">

@@ -1,10 +1,9 @@
 import { z } from 'zod';
 
-// Génération d'un code d'invitation par un manager.
-// Tout est borné côté serveur : on ne fait jamais confiance au client.
-//  - maxUses  : plafond d'inscriptions autorisées avec ce code (anti-abus).
-//  - expiresInHours : durée de validité. Par défaut 24h (règle métier),
-//    plafonné à 7 jours.
+// Invite code generation by a manager. All bounds are enforced server-side; the client is
+// never trusted.
+//  - maxUses: cap on how many signups a single code allows (abuse guard).
+//  - expiresInHours: validity window, 24h by default (business rule) and 24h at most.
 export const generateInviteSchema = z.object({
   maxUses: z.number().int().min(1).max(100).optional().default(5),
   expiresInHours: z.number().int().min(1).max(24).optional().default(24),

@@ -5,15 +5,15 @@ type LegalPageProps = {
   onBack: () => void;
 };
 
-// Classes partagées des blocs de prose légale (remplacent les sélecteurs
-// descendants .legal-card h2/p/ul de l'ancien CSS).
+// Shared classes for the legal prose blocks (replace the old CSS descendant selectors
+// .legal-card h2/p/ul).
 const TITLE = 'mb-1.5 text-2xl font-bold text-[#1f2937]';
 const UPDATED = 'mb-6 text-[13px] text-primo-gray-light';
 const H2 = 'mt-6 mb-2 text-[17px] font-bold text-[#1f2937]';
 const P = 'my-2 text-sm leading-relaxed text-[#374151]';
 const UL = 'my-2 list-disc pl-5 text-sm leading-relaxed text-[#374151]';
 
-// Marqueur réutilisable pour les infos officielles à fournir.
+// Reusable highlight for official information still to be provided.
 const Todo = ({ children }: { children: React.ReactNode }) => (
   <span className="rounded bg-[#fef3c7] px-1.5 py-px font-semibold text-[#92400e]">
     [À COMPLÉTER : {children}]
@@ -54,8 +54,8 @@ function PrivacyPolicy() {
       <h2 className={H2}>4. Qui peut accéder à vos données ?</h2>
       <p className={P}>
         Vos données sont accessibles à votre employeur (via son espace manager), à nos
-        prestataires techniques — hébergement (<Todo>hébergeur</Todo>), envoi d'emails
-        transactionnels (Brevo) et traitement des paiements (Stripe) — et, le cas échéant,
+        prestataires techniques - hébergement (<Todo>hébergeur</Todo>), envoi d'emails
+        transactionnels (Brevo) et traitement des paiements (Stripe) - et, le cas échéant,
         aux partenaires fournissant les offres que vous utilisez. Nous ne vendons jamais
         vos données.
       </p>
@@ -97,7 +97,7 @@ function PrivacyPolicy() {
         par Stripe : les données de paiement sont traitées par Stripe Payments
         Europe Ltd (Irlande), qui peut transférer certaines données vers Stripe Inc.
         aux États-Unis. Ce transfert est encadré par le Data Privacy Framework
-        UE–États-Unis, auquel Stripe est certifié, ainsi que par les clauses
+        UE-États-Unis, auquel Stripe est certifié, ainsi que par les clauses
         contractuelles types de la Commission européenne. Aucun autre transfert de
         données hors de l'Union européenne n'est effectué.
       </p>

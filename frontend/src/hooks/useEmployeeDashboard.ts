@@ -9,7 +9,7 @@ import { usePaginatedList } from './usePaginatedList';
 
 const PAGE_SIZE = 10;
 
-// Espace employé : solde + 2 historiques paginés (reçus / dépenses).
+// Employee space: balance + two paginated histories (received / spent).
 export function useEmployeeDashboard(onLogout: () => void) {
   const [balance, setBalance] = useState<number | null>(null);
   const [error, setError] = useState('');
@@ -17,7 +17,7 @@ export function useEmployeeDashboard(onLogout: () => void) {
   const received = usePaginatedList(getEmployeeReceived, PAGE_SIZE);
   const spent = usePaginatedList(getEmployeeSpent, PAGE_SIZE);
 
-  // Chargement initial groupé : solde + 1re page de chaque historique, un seul spinner.
+  // Grouped initial load: balance + first page of each history, so there is a single spinner.
   const reload = async () => {
     setLoading(true);
     setError('');
@@ -47,6 +47,7 @@ export function useEmployeeDashboard(onLogout: () => void) {
     }
   };
 
+  // Mount-only fetch: `reload` is recreated on every render, so listing it as a dep would loop.
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     reload();
@@ -57,7 +58,7 @@ export function useEmployeeDashboard(onLogout: () => void) {
     try {
       await apiLogout();
     } catch {
-      // On déconnecte côté front même si l'appel réseau échoue.
+      // Log out client-side even if the network call fails.
     }
     onLogout();
   };
