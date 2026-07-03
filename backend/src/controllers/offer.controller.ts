@@ -23,8 +23,8 @@ export async function listOffersController(req: Request, res: Response, next: Ne
 
 export async function getOfferController(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    // Valide l'uuid AVANT Prisma : un :id malformé renvoie 400 propre
-    // (cohérent avec les routes admin) au lieu d'un crash Prisma -> 500.
+    // Validate the uuid BEFORE Prisma: a malformed :id returns a clean 400
+    // (consistent with the admin routes) instead of a Prisma crash -> 500.
     const parsed = offerIdSchema.safeParse(req.params.id);
     if (!parsed.success) {
       next(new AppError(400, 'ID de l\'offre invalide.'));
@@ -32,8 +32,8 @@ export async function getOfferController(req: Request, res: Response, next: Next
     }
     const id = parsed.data;
     const offer = req.user?.role === 'ADMIN'
-    ? await getOffer(id)      // admin : tout, y compris désactivées
-    : await getActiveOffer(id); // public : actives, champs vitrine
+    ? await getOffer(id)      // admin: everything, including deactivated offers
+    : await getActiveOffer(id); // public: active only, storefront fields
     if (!offer) {
       next(new AppError(404, 'Offre non trouvée.'));
       return;
