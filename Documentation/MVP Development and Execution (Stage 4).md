@@ -104,7 +104,7 @@ the actual code.
 
 ## 2. Monitoring & Adjustments
 
-- **Tracking:** Notion board for tasks, Discord for coordination between the
+- **Tracking:** Discord for coordination & task between the
   Monday / Wednesday / Friday checkpoints; GitHub PRs as the source of truth for
   completed work (review required before merge).
 - **Metrics followed:** tasks completed vs planned per sprint, PR review
@@ -190,8 +190,8 @@ Consolidated retrospective:
 | Testing evidence | [backend/tests/TEST_RESULT.md](../backend/tests/TEST_RESULT.md) · backend integration suites in [backend/tests/integration](../backend/tests/integration) · frontend Vitest suites in [frontend/src/components/ErrorBoundary.test.tsx](../frontend/src/components/ErrorBoundary.test.tsx), [frontend/src/services/api/client.test.ts](../frontend/src/services/api/client.test.ts), [frontend/tests/components/LoginForm.test.tsx](../frontend/tests/components/LoginForm.test.tsx), [frontend/tests/components/RegisterForm.test.tsx](../frontend/tests/components/RegisterForm.test.tsx), [frontend/tests/router/guards.test.ts](../frontend/tests/router/guards.test.ts), [frontend/tests/unit/identity.test.ts](../frontend/tests/unit/identity.test.ts) |
 | QA audit | [backend/tests/MANUAL_TEST_PLAN.md](../backend/tests/MANUAL_TEST_PLAN.md) · [backend/tests/BUG_TRACKING.md](../backend/tests/BUG_TRACKING.md) |
 | Refactor notes | Frontend test coverage now lives in [frontend/src/services/api/client.test.ts](../frontend/src/services/api/client.test.ts) and [frontend/src/components/ErrorBoundary.test.tsx](../frontend/src/components/ErrorBoundary.test.tsx) |
-| Task board | Discord Call |
-| Production environment | [add URL when deployed] |
+| Task board | Discord for coordination & Task |
+| Landing page | https://prim-o-landing.vercel.app/ |
 
 ---
 
