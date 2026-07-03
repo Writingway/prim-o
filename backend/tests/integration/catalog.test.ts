@@ -14,7 +14,7 @@ describe('Catalogue - vitrine publique & CRUD admin', () => {
     categoryId = cats.body.categories[0].id;
   });
 
-  // ── Public (optionalAuth) ───────────────────────────────
+  //  Public (optionalAuth) 
   it('GET /offers/categories (public) -> 200', async () => {
     const res = await request(app).get('/api/offers/categories');
     expect(res.status).toBe(200);
@@ -40,7 +40,7 @@ describe('Catalogue - vitrine publique & CRUD admin', () => {
     expect(res.status).toBe(400);
   });
 
-  // ── Offres (admin) : create -> update -> promo -> delete ─
+  //  Offres (admin) : create -> update -> promo -> delete 
   it('cycle offre complet (create/update/promo/delete)', async () => {
     const create = await request(app).post('/api/admin/offers').set(auth(adminToken))
       .send({ partnerName: 'TestPartner', cost: 10, discountPercent: 25, categoryId });
@@ -77,7 +77,7 @@ describe('Catalogue - vitrine publique & CRUD admin', () => {
     expect(res.status).toBe(401);
   });
 
-  // ── Catégories (admin) : create -> update -> delete ─────
+  //  Catégories (admin) : create -> update -> delete 
   it('cycle catégorie complet (create/update/delete)', async () => {
     const create = await request(app).post('/api/admin/categories').set(auth(adminToken))
       .send({ label: 'Test Cat', icon: 'gift', color: '#123abc', slug: 'test-cat' });

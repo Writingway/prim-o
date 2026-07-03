@@ -72,7 +72,7 @@ describe('Jetons - allocation & distribution', () => {
     expect(res.status).toBe(409);
   });
 
-  // ── Lectures (UI patron / manager) ──────────────────────
+  //  Lectures (UI patron / manager)
   it('GET /attributions/managers (owner) -> 200', async () => {
     const res = await request(app).get('/api/attributions/managers').set(auth(ownerToken));
     expect(res.status).toBe(200);

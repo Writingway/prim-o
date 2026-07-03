@@ -2,7 +2,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Identity } from '@/services/api/identity';
 
-// ── Test d'intégration du routage ──
+//  Test d'intégration du routage 
 // On pilote l'identité (source de vérité, normalement GET /auth/me) et on
 // vérifie où les gardes `beforeLoad` envoient l'utilisateur. On NE monte PAS
 // les pages (pas de RouterProvider) : on résout juste les gardes via

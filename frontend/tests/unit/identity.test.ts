@@ -70,8 +70,8 @@ describe('getIdentity — cache & échecs transitoires', () => {
     expect(authRequest).toHaveBeenCalledTimes(1);   // null caché → pas re-fetché
   });
 
-  // ── Le cas durci (miroir du backend) : un 429 / 5xx / coupure ne doit PAS
-  //    empoisonner l'identité. On NE cache PAS → l'appel suivant re-tente. ──
+  //  Le cas durci (miroir du backend) : un 429 / 5xx / coupure ne doit PAS
+  //    empoisonner l'identité. On NE cache PAS → l'appel suivant re-tente. 
   it('429 → null MAIS ne cache PAS (échec transitoire)', async () => {
     const { getIdentity } = await loadIdentity();
     authRequest.mockResolvedValueOnce(res(429));
