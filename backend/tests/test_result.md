@@ -3,7 +3,7 @@
 **Date:** 2026-07-03
 **Stack:** Vitest + Supertest (TypeScript, ts-node)
 **Scope:** backend API (`backend/src`), 62 production endpoints + Stripe webhook
-**Status:** ✅ **98 / 98 passing** (20 unit + 78 integration)
+**Status:** ✅ **98 / 98 backend passing** (20 unit + 78 integration) + ✅ **45 / 45 frontend passing** (see section 7)
 
 ---
 
@@ -123,9 +123,37 @@ Everything else - **~58 of 62 endpoints** - is exercised by the suites above.
 
 ---
 
-## 7. Summary
+## 7. Frontend tests (45) - `frontend/`
 
-- ✅ 98 automated tests, 100% passing.
+**Stack:** Vitest + @testing-library/react + jsdom.
+**Run:** `cd frontend && npm test` (no backend or DB needed - the API layer is mocked).
+
+Same pyramid as the backend: pure-logic units, then component/integration tests
+that mount real React components with the network stubbed.
+
+| File | Tests | Layer | Covers |
+|------|-------|-------|--------|
+| `src/services/api/client.test.ts` | 5 | unit | auth request lifecycle: single shared refresh promise, 401 -> refresh -> retry once, refresh 429 does NOT log out (transient), refresh 401 logs out, retry-still-401 logs out |
+| `tests/unit/identity.test.ts` | 7 | unit | `normalizeRole` (MAJ -> min, null), `getIdentity` cache: 200 cached, 401 caches null, **429/500 NOT cached (transient failure must not poison identity)**, `clearIdentityCache` forces refetch |
+| `tests/components/LoginForm.test.tsx` | 6 | component | ok -> `onLoginSuccess(token)`, 200 without token -> error + no callback, 401/403 messages, EMAIL_NOT_VERIFIED shows resend link, network-down message, forgot-password anti-enumeration notice |
+| `tests/components/RegisterForm.test.tsx` | 5 | component | consent gate blocks submit (register never called), 409 email-taken, 400 surfaces first backend validation message, 400 fallback, success -> `onSuccess()` |
+| `tests/router/guards.test.ts` | 20 | integration | full `beforeLoad` redirect matrix (visitor / floating / OWNER / EMPLOYEE / ADMIN) x (`/dashboard` `/stats` `/admin` `/onboarding` `/auth`), driven through the real TanStack router |
+| `src/components/ErrorBoundary.test.tsx` | 2 | component | renders fallback on child throw, renders children when healthy |
+
+**Why these first:** the router guards were the weakest untested layer
+(flagged in `FRONTEND_AUDIT.md`). The guard suite proves every auth/role
+redirect end-to-end against the real router - a logged-out user can never reach
+`/dashboard`, a floating user is forced through `/onboarding`, `/stats` is
+OWNER-only, `/admin` is ADMIN-only. The identity + client suites lock in the
+same transient-failure hardening proven on the backend (a 429/5xx must never
+log the user out or blank their identity).
+
+---
+
+## 8. Summary
+
+- ✅ 98 backend + 45 frontend automated tests, 100% passing.
 - ✅ Every critical business path (onboarding, money movement, token spend, RGPD) proven end-to-end.
+- ✅ Frontend auth/role routing guards proven against the real router.
 - ✅ 2 production bugs found and fixed before reaching users.
 - ✅ Runs on a throwaway database; safe to run in CI.
