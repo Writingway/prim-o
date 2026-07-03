@@ -19,7 +19,7 @@ import OnboardingPage from './pages/OnboardingPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 
 
-// Router context carries the identity — the single source of truth read by every route guard.
+// Router context carries the identity - the single source of truth read by every route guard.
 type RouterContext = { identity: Identity | null };
 
 const rootRoute = createRootRouteWithContext<RouterContext>()({
@@ -46,7 +46,7 @@ const indexRoute = createRoute({
     'reset-token': typeof s['reset-token'] === 'string' ? (s['reset-token'] as string) : undefined,
   }),
   // `/` is the visitor page. A logged-in user belongs on /dashboard (which carries the same offer
-  // catalogue), so redirect there — unless a reset link is being followed, in which case the
+  // catalogue), so redirect there - unless a reset link is being followed, in which case the
   // reset flow must be allowed to run.
   beforeLoad: ({ context, search }) => {
     if (search['reset-token']) return;
@@ -199,7 +199,7 @@ const onboardingRoute = createRoute({
     const id = context.identity;
     if (!id) throw redirect({ to: '/auth' });
     if (id.role === 'ADMIN') throw redirect({ to: '/admin' });
-    // Already attached to a company — onboarding is done.
+    // Already attached to a company - onboarding is done.
     if (id.companyId !== null) throw redirect({ to: '/dashboard' });
   },
   component: function OnboardingRoute() {
@@ -232,7 +232,7 @@ const routeTree = rootRoute.addChildren([
   indexRoute, authRoute, dashboardRoute, statsRoute, adminRoute, onboardingRoute, billingReturnRoute,
 ]);
 
-// Router config module, not a component file — Fast Refresh N/A here.
+// Router config module, not a component file - Fast Refresh N/A here.
 export const router = createRouter({
   routeTree,
   // Initial placeholder; rootRoute.beforeLoad supplies the real identity.

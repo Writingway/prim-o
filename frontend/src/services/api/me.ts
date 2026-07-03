@@ -1,4 +1,4 @@
-// GDPR — the logged-in user's personal data (art. 15, 16, 17, 20).
+// GDPR - the logged-in user's personal data (art. 15, 16, 17, 20).
 // Reuses the authenticated transport from client.ts (401 → refresh → retry).
 import { authRequest } from './client';
 

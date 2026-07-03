@@ -11,7 +11,7 @@ export const listOffers = async () => {
     include: { category: { select: { id: true, slug: true, label: true, icon: true, color: true } } },
   })
 
-  // Count codes per offer and status in one query — no per-offer round trips.
+  // Count codes per offer and status in one query - no per-offer round trips.
   const grouped = await prisma.promoCode.groupBy({
     by: ['offerId', 'isUsed'],
     _count: { _all: true },

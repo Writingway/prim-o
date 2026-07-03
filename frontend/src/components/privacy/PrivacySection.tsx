@@ -17,7 +17,7 @@ const BTN_DANGER_SOLID = `${BTN} bg-primo-error text-white hover:brightness-95`;
 
 type PrivacySectionProps = {
   // Called after a successful deletion: the parent must end the session (clear the
-  // token, go back to the landing page) — the account no longer exists.
+  // token, go back to the landing page) - the account no longer exists.
   onAccountDeleted: () => void;
 };
 

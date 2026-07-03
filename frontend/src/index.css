@@ -8,19 +8,19 @@
    utilities (bg-primo-*, text-primo-*, border-primo-*). Incremental migration:
    coexists with the remaining per-page CSS. */
 @theme {
-  /* Teal — primary */
+  /* Teal - primary */
   --color-primo-teal: #00a19a;          /* CTA, active */
   --color-primo-teal-strong: #00827c;   /* teal text, hover */
   --color-primo-teal-dark: #00827c;     /* backward-compat alias */
   --color-primo-teal-100: #16ada5;      /* hero gradients */
   --color-primo-teal-soft: #e3f4f2;     /* tinted teal background (= mint) */
 
-  /* Dark inks — surfaces & displays */
+  /* Dark inks - surfaces & displays */
   --color-primo-ink-900: #063b38;       /* sidebar, displays, badges */
   --color-primo-ink-950: #06302d;       /* darkest background */
   --color-primo-hero-from: #0a4b46;     /* hero gradient start */
 
-  /* Gold — token / reward (reserved) */
+  /* Gold - token / reward (reserved) */
   --color-primo-gold: #ffb72e;
   --color-primo-gold-bright: #ffc54d;   /* gold accent on dark backgrounds */
   --color-primo-gold-soft: #fff4e0;
@@ -131,7 +131,7 @@ html, body {
 }
 
 /* Media never overflow their container. Kept in @layer base so size utilities
-   (h-5, w-…) can win — otherwise a rule outside the layer beats all of Tailwind
+   (h-5, w-…) can win - otherwise a rule outside the layer beats all of Tailwind
    and freezes the height. */
 @layer base {
   img, video, canvas, svg {

@@ -24,7 +24,7 @@ export async function addPromoCodes(
 }
 
 // Deletes a promo code ONLY while it is still unused. The guarded deleteMany
-// (isUsed: false) can never remove a code an employee just claimed — that would
+// (isUsed: false) can never remove a code an employee just claimed - that would
 // break their redemption.
 export async function deletePromoCode(codeId: string): Promise<void> {
   const result = await prisma.promoCode.deleteMany({

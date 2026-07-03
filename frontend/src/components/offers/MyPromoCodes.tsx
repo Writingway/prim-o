@@ -4,7 +4,7 @@ import type { SpentToken } from '@/types/types';
 import Icon from '@/components/ui/Icon';
 import { formatDate } from '@/lib/format';
 
-// « Mes codes »: the promo codes bought by the logged-in user (employee OR manager —
+// « Mes codes »: the promo codes bought by the logged-in user (employee OR manager -
 // /employees/me/spent is filtered per user). Two user-driven buckets, « Disponible » (not yet
 // used) and « Utilisé »; a button moves a code from one to the other (persisted server-side).
 const PAGE_SIZE = 10;
@@ -125,7 +125,7 @@ export default function MyPromoCodes() {
                   </div>
 
                   {/* Marking a code as used is one-way in the UI: once used, only a frozen
-                      status is shown — no undo. */}
+                      status is shown - no undo. */}
                   <div className="p-3.5 pt-3">
                     {t.used ? (
                       <div className="flex w-full items-center justify-center gap-2 rounded-xl bg-primo-error-soft py-2.5 text-sm font-bold text-primo-error">

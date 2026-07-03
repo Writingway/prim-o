@@ -11,7 +11,7 @@ export type AdminPromoCode = {
 export const listPromoCodes = (offerId: string) =>
   authRequest<{ codes: AdminPromoCode[] }>('GET', `/admin/offers/${offerId}/promo-codes`);
 
-// Deletes a promo code (admin) — succeeds only while the code is still unused.
+// Deletes a promo code (admin) - succeeds only while the code is still unused.
 export const deletePromoCode = (codeId: string) =>
   authRequest<{ ok: boolean }>('DELETE', `/admin/promo-codes/${codeId}`);
 

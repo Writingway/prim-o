@@ -40,7 +40,7 @@ type EmployeeDashboardProps = {
   profilePhoto?: string | null;
 };
 
-// Employee area: a single tab-view shell (fixed bottom bar, content swapped per tab —
+// Employee area: a single tab-view shell (fixed bottom bar, content swapped per tab -
 // "mobile app" model, same as the manager/owner dashboards).
 export default function EmployeeDashboard({ onLogout, firstName, profilePhoto }: EmployeeDashboardProps) {
   const { balance, error, loading, reload, received, spent, handleLogout } =
@@ -174,7 +174,7 @@ export default function EmployeeDashboard({ onLogout, firstName, profilePhoto }:
                 {histView === 'recus' && (
                   <section className="mb-6">
                     {received.items.length === 0 ? (
-                      <p className={MUTED}>Aucun token reçu pour l'instant — ça ne saurait tarder.</p>
+                      <p className={MUTED}>Aucun token reçu pour l'instant - ça ne saurait tarder.</p>
                     ) : (
                       <>
                         <ul className="m-0 flex list-none flex-col gap-2.5 p-0 lg:grid lg:grid-cols-2 lg:items-start lg:gap-2.5">

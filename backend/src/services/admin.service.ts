@@ -57,7 +57,7 @@ export async function listAttributions(q: PaginationQuery) {
     }),
     prisma.attribution.count({ where }),
   ]);
-  // `reason` is the motif label — free-text reasons no longer exist.
+  // `reason` is the motif label - free-text reasons no longer exist.
   const mapped = items.map(({ motif, ...a }) => ({ ...a, reason: motif?.label ?? '' }));
   return { items: mapped, total, page: q.page, hasMore: q.page * q.limit < total };
 }
@@ -221,7 +221,7 @@ export async function updateUser(id: string, data: UpdateUserInput) {
 
     const nextRole = data.role!;
 
-    // This endpoint only assigns MANAGER/EMPLOYEE (never ADMIN — no privilege escalation),
+    // This endpoint only assigns MANAGER/EMPLOYEE (never ADMIN - no privilege escalation),
     // and a non-ADMIN role always requires a company.
     if (user.companyId === null) {
       throw new Error('ROLE_REQUIRES_COMPANY');

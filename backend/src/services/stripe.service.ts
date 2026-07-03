@@ -9,7 +9,7 @@ export async function createCheckoutSession(
   companyId: string,
   amount: number,
 ): Promise<string> {
-  // Business rule: a company that is not APPROVED (PENDING/REJECTED) is inert — no pool top-ups.
+  // Business rule: a company that is not APPROVED (PENDING/REJECTED) is inert - no pool top-ups.
   // Enforced server-side before any Stripe call.
   const company = await prisma.company.findUnique({
     where: { id: companyId },

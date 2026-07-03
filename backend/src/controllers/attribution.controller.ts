@@ -13,7 +13,7 @@ import {
 } from '../services/attribution.service';
 import { requireManagerOrOwner } from '../middleware/authz';
 
-// POST /api/attributions — direct token attribution to an employee (owner only; managers must
+// POST /api/attributions - direct token attribution to an employee (owner only; managers must
 // go through their envelopes).
 export async function createAttributionController(
   req: Request,
@@ -49,7 +49,7 @@ export async function createAttributionController(
   }
 }
 
-// POST /api/attributions/allocate — the owner allocates tokens to a manager.
+// POST /api/attributions/allocate - the owner allocates tokens to a manager.
 export async function allocateController(
   req: Request,
   res: Response,
@@ -94,7 +94,7 @@ export async function allocateController(
   }
 }
 
-// POST /api/attributions/distribute — the manager distributes an envelope. One-shot: an
+// POST /api/attributions/distribute - the manager distributes an envelope. One-shot: an
 // envelope can only be distributed once.
 export async function distributeEnvelopeController(
   req: Request,
@@ -126,7 +126,7 @@ export async function distributeEnvelopeController(
   }
 }
 
-// GET /api/attributions/envelopes — the current manager's envelopes ("Mes enveloppes" view).
+// GET /api/attributions/envelopes - the current manager's envelopes ("Mes enveloppes" view).
 export async function listEnvelopesController(
   req: Request,
   res: Response,
@@ -142,7 +142,7 @@ export async function listEnvelopesController(
   }
 }
 
-// GET /api/attributions/sent-envelopes — envelopes sent by the current employer.
+// GET /api/attributions/sent-envelopes - envelopes sent by the current employer.
 export async function listSentEnvelopesController(
   req: Request,
   res: Response,
@@ -158,7 +158,7 @@ export async function listSentEnvelopesController(
   }
 }
 
-// GET /api/attributions/balances — the current manager's two balances (envelope remaining +
+// GET /api/attributions/balances - the current manager's two balances (envelope remaining +
 // personal tokens).
 export async function balancesController(
   req: Request,
@@ -175,7 +175,7 @@ export async function balancesController(
   }
 }
 
-// GET /api/attributions/managers — the company's managers (owner allocation view).
+// GET /api/attributions/managers - the company's managers (owner allocation view).
 export async function listManagersController(
   req: Request,
   res: Response,
@@ -191,7 +191,7 @@ export async function listManagersController(
   }
 }
 
-// GET /api/attributions — attribution history for the caller's company.
+// GET /api/attributions - attribution history for the caller's company.
 export async function listAttributionsController(
   req: Request,
   res: Response,

@@ -102,7 +102,7 @@ export function useOfferForm({ reload, flash }: Opts) {
       }
 
       // Step 2 (image), keyed on the created/edited offer id. The offer is already saved, so a
-      // failure here does not roll it back — we only surface a warning.
+      // failure here does not roll it back - we only surface a warning.
       const offerId = editingId ?? res.data?.offer.id;
       let imageWarning = '';
       if (offerId) {

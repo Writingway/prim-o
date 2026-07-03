@@ -1,7 +1,7 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 
 // Root safety net: a render exception anywhere in the tree must never leave a blank
-// screen — show a fallback with a reload button instead of crashing the whole app.
+// screen - show a fallback with a reload button instead of crashing the whole app.
 //
 // Must be a class component: React exposes getDerivedStateFromError / componentDidCatch
 // only on classes, with no hook equivalent.

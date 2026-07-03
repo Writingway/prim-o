@@ -24,7 +24,7 @@ const CATEGORY_LABELS: Record<MotifCategory, string> = {
 
 // Delay in seconds → short human-readable string. null = no distribution yet.
 const formatDelay = (s: number | null): string => {
-  if (s == null) return '—';
+  if (s == null) return '-';
   if (s < 60) return `${Math.round(s)} s`;
   const m = Math.round(s / 60);
   if (m < 60) return `${m} min`;
@@ -33,7 +33,7 @@ const formatDelay = (s: number | null): string => {
   return `${Math.round(s / 86400)} j`;
 };
 
-// Rank shown in a badge — deliberately a plain number, no medal emoji for the top 3.
+// Rank shown in a badge - deliberately a plain number, no medal emoji for the top 3.
 const medal = (i: number) => `${i + 1}`;
 
 // Multi-series palette aligned with the brand (teal first, then category colors).
@@ -259,7 +259,7 @@ function EvolutionSection({ evolution, evoMotif, onMotif, evoEmployee, onEmploye
   );
 }
 
-// Employer statistics dashboard (§3.2/§3.4) — OWNER only.
+// Employer statistics dashboard (§3.2/§3.4) - OWNER only.
 export default function StatsPage({ onLogout, onBack, onNavTab }: StatsPageProps) {
   const {
     stats, loading, error,
@@ -275,7 +275,7 @@ export default function StatsPage({ onLogout, onBack, onNavTab }: StatsPageProps
 
   return (
     <Layout
-      title="Prim'O — Statistiques"
+      title="Prim'O - Statistiques"
       chrome="console"
       hideConsoleMobileHeader
       hideConsoleTopbar
@@ -327,7 +327,7 @@ export default function StatsPage({ onLogout, onBack, onNavTab }: StatsPageProps
           </div>
 
           {/* First load only: sections stay mounted during a re-fetch (employee selection)
-              so the page keeps its height — no scroll jump. */}
+              so the page keeps its height - no scroll jump. */}
           {!stats && loading && <p className={C.msg}>Chargement des statistiques…</p>}
           {error && (
             <div className={C.msgError}>
@@ -337,7 +337,7 @@ export default function StatsPage({ onLogout, onBack, onNavTab }: StatsPageProps
 
           {stats && (
             <>
-              {/* Top by motif — the flagship insight (who is best at what), hence first on the page. */}
+              {/* Top by motif - the flagship insight (who is best at what), hence first on the page. */}
               <section className={C.section}>
                 <h2 className={C.title}><Icon name="trophy" size={18} className="text-primo-teal-strong" /> Top par motif</h2>
                 {stats.leaderboardByMotif.length === 0 ? (

@@ -26,7 +26,7 @@ const storage = multer.diskStorage({
   },
 });
 
-// Offer photo upload middleware: single file in field "image", 2 MB max, jpeg/png/webp only —
+// Offer photo upload middleware: single file in field "image", 2 MB max, jpeg/png/webp only -
 // all enforced server-side, the client decides nothing.
 export const offerImageUpload = multer({
   storage,

@@ -2,7 +2,7 @@ import type { RetributionMode } from '@prisma/client';
 
 // Manager retribution share R, taken from the envelope at send time (addendum v1.1 §3.4).
 // Rounded DOWN: any remainder stays in the team budget, in favor of the employees. Pure,
-// deterministic function — tested in isolation.
+// deterministic function - tested in isolation.
 export function computeRetribution(params: {
   mode: RetributionMode;
   amount: number;

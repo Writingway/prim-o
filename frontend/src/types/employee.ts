@@ -14,7 +14,7 @@ export type ReceivedToken = {
   id: string;
   amount: number;
   reason: string;
-  // §3.5 — message shown to the employee on receipt; null for legacy attributions.
+  // §3.5 - message shown to the employee on receipt; null for legacy attributions.
   compliment: string | null;
   motifLabel: string | null;
   createdAt: string;

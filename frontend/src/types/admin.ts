@@ -9,7 +9,7 @@ export type AdminStats = {
 export type AdminRole = 'ADMIN' | 'MANAGER' | 'EMPLOYEE';
 export type AdminStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 
-// User as returned by GET /api/admin/users (backend ADMIN_SAFE_SELECT — never exposes
+// User as returned by GET /api/admin/users (backend ADMIN_SAFE_SELECT - never exposes
 // passwordHash).
 export type AdminUser = {
   id: string;

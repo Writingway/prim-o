@@ -5,7 +5,7 @@ import { z } from 'zod';
 export const statsQuerySchema = z
   .object({
     teamId: z.uuid().optional(),
-    // §3.5 — scopes the evolution curve to a single employee.
+    // §3.5 - scopes the evolution curve to a single employee.
     employeeId: z.uuid().optional(),
     from: z.coerce.date().optional(),
     to: z.coerce.date().optional(),

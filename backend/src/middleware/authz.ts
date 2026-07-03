@@ -6,7 +6,7 @@ export type ManagerContext = { userId: string; role: 'MANAGER' | 'OWNER'; compan
 
 // Shared guard for "company space" routes: MANAGER and OWNER both get in. OWNER is a superset
 // of MANAGER (everything a manager can do, plus token purchase). Returns the validated
-// { userId, role, companyId }, or null after reporting the error via next() — same idiom as
+// { userId, role, companyId }, or null after reporting the error via next() - same idiom as
 // requireEmployee().
 export function requireManagerOrOwner(req: Request, next: NextFunction): ManagerContext | null {
   if (req.user?.role !== 'MANAGER' && req.user?.role !== 'OWNER') {

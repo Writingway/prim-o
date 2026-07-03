@@ -14,7 +14,7 @@ interface StatsFilters {
   employeeId?: string | undefined; // Scopes the evolution curve only, not the other stats.
 }
 
-// §3.2/§3.4 — employer dashboard. Everything is scoped to companyId (multi-tenant).
+// §3.2/§3.4 - employer dashboard. Everything is scoped to companyId (multi-tenant).
 // At most 2 queries per stat, zero N+1.
 export async function getStats(companyId: string, filters: StatsFilters): Promise<StatsResponse> {
   const createdAt =
@@ -27,14 +27,14 @@ export async function getStats(companyId: string, filters: StatsFilters): Promis
 
   const whereAttr = { companyId, ...(createdAt ? { createdAt } : {}) };
 
-  // Active motif catalog — shared by motifAggregate AND blindSpots (one query).
+  // Active motif catalog - shared by motifAggregate AND blindSpots (one query).
   const activeMotifs = await prisma.motif.findMany({
     where: { active: true },
     select: { id: true, tag: true, category: true, sortOrder: true },
   });
   const motifById = new Map(activeMotifs.map((m) => [m.id, m]));
 
-  // 1) motifAggregate — count and token sum per motif.
+  // 1) motifAggregate - count and token sum per motif.
   const aggRows = await prisma.attribution.groupBy({
     by: ['motifId'],
     where: { ...whereAttr, motifId: { not: null } },
@@ -59,7 +59,7 @@ export async function getStats(companyId: string, filters: StatsFilters): Promis
   // Motifs that received the most tokens come first.
   motifAggregate.sort((a, b) => b.totalTokens - a.totalTokens || b.count - a.count);
 
-  // 2) ranking — total per employee plus the motif they received most often.
+  // 2) ranking - total per employee plus the motif they received most often.
   const totalsByEmployee = await prisma.attribution.groupBy({
     by: ['employeeId'],
     where: whereAttr,
@@ -91,10 +91,10 @@ export async function getStats(companyId: string, filters: StatsFilters): Promis
     })
     .sort((a, b) => b.totalTokens - a.totalTokens); // The client expects the top earner first.
 
-  // 3) blindSpots — active motifs never used in the company-wide scope.
+  // 3) blindSpots - active motifs never used in the company-wide scope.
   const blindSpots = activeMotifs.filter((m) => !usedMotifIds.has(m.id)).map((m) => m.tag);
 
-  // 3bis) blindSpotsByManager — active motifs EACH manager has never used (§3.5).
+  // 3bis) blindSpotsByManager - active motifs EACH manager has never used (§3.5).
   const usedByManagerRows = await prisma.attribution.groupBy({
     by: ['managerId', 'motifId'],
     where: { ...whereAttr, motifId: { not: null } },
@@ -112,7 +112,7 @@ export async function getStats(companyId: string, filters: StatsFilters): Promis
     tags: activeMotifs.filter((m) => !used.has(m.id)).map((m) => m.tag),
   }));
 
-  // 4) equityByManager — coefficient of variation of per-employee totals, per manager
+  // 4) equityByManager - coefficient of variation of per-employee totals, per manager
   // (does this manager always favor the same people?).
   const perManagerEmployee = await prisma.attribution.groupBy({
     by: ['managerId', 'employeeId'],
@@ -140,13 +140,13 @@ export async function getStats(companyId: string, filters: StatsFilters): Promis
     return { managerId, spread, recipients };
   });
 
-  // 5) velocityByManager — average delay from allocation to the first distribution after it.
+  // 5) velocityByManager - average delay from allocation to the first distribution after it.
   const velocityByManager = await getVelocityByManager(companyId, filters.to);
 
   // 5bis) Resolve the distributors present in the aggregates. The OWNER only distributes to
   // managers (allocations), so non-MANAGER roles are excluded here: the "per manager"
   // sections must show real managers only (deleted ones included). Names are resolved
-  // WITHOUT filtering deletedAt — otherwise the frontend falls back to a truncated UUID.
+  // WITHOUT filtering deletedAt - otherwise the frontend falls back to a truncated UUID.
   const distributorIds = new Set<string>([
     ...blindSpotsByManagerRaw.map((r) => r.managerId),
     ...equityByManagerRaw.map((r) => r.managerId),
@@ -169,7 +169,7 @@ export async function getStats(companyId: string, filters: StatsFilters): Promis
   const blindSpotsByManager = blindSpotsByManagerRaw.filter((r) => isManager.has(r.managerId));
   const equityByManager = equityByManagerRaw.filter((r) => isManager.has(r.managerId));
 
-  // 6) leaderboardByMotif (contract bump v1.2) — top 3 employees per motif ("who is best at
+  // 6) leaderboardByMotif (contract bump v1.2) - top 3 employees per motif ("who is best at
   // what"), OWNER only. Reuses motifByEmployee (already loaded for topMotifTag): no extra query.
   const TOP_N = 3;
   const byMotif = new Map<string, Array<{ employeeId: string; tokens: number; count: number }>>();
@@ -195,7 +195,7 @@ export async function getStats(companyId: string, filters: StatsFilters): Promis
     .sort((a, b) => a.sortOrder - b.sortOrder)
     .map((x) => x.row);
 
-  // 7) evolution — monthly curve per motif (optionally scoped to a single employee).
+  // 7) evolution - monthly curve per motif (optionally scoped to a single employee).
   const evolution = await getEvolution(companyId, filters, motifById);
 
   return {
@@ -211,7 +211,7 @@ export async function getStats(companyId: string, filters: StatsFilters): Promis
   };
 }
 
-// §3.5 — aggregates tagged attributions by month × motif; date_trunc('month') is rendered
+// §3.5 - aggregates tagged attributions by month × motif; date_trunc('month') is rendered
 // as 'YYYY-MM' via to_char. Optional employeeId yields one employee's progression curve.
 async function getEvolution(
   companyId: string,
@@ -248,7 +248,7 @@ async function getEvolution(
   return out;
 }
 
-// §3.4 — for each Allocation, the same manager's first Attribution after it; averaged per
+// §3.4 - for each Allocation, the same manager's first Attribution after it; averaged per
 // manager. The LATERAL join avoids N+1. AVG ignores NULLs, so the result is null only when
 // NO allocation was ever followed by a distribution.
 async function getVelocityByManager(

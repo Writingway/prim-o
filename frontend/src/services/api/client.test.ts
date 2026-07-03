@@ -28,8 +28,8 @@ beforeEach(() => {
   vi.restoreAllMocks();
 });
 
-describe('authRequest — refresh & retry', () => {
-  // A 429 on the refresh must NOT log the user out — the case most implementations get wrong:
+describe('authRequest - refresh & retry', () => {
+  // A 429 on the refresh must NOT log the user out - the case most implementations get wrong:
   // a rate limit or 5xx is transient, not a dead session.
   it('ne déconnecte PAS si le refresh prend un 429', async () => {
     const client = await loadClient();

@@ -1,4 +1,4 @@
-// Password strength meter (4 segments) — pattern shared by the Register and Reset Password forms.
+// Password strength meter (4 segments) - pattern shared by the Register and Reset Password forms.
 function score(pw: string): number {
   let s = 0;
   if (pw.length >= 8) s++;

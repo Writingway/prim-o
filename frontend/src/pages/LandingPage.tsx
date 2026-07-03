@@ -64,7 +64,7 @@ function SectionHead({ kicker, title, dark = false }: { kicker: string; title: s
   );
 }
 
-// Desktop landing page (visitors): marketing page — app pitch, features per audience
+// Desktop landing page (visitors): marketing page - app pitch, features per audience
 // (employee / company / owner stats) with real mobile screenshots, and an API-fed teaser of
 // the offer catalog. "Offres" swaps in the full catalog WITHIN the page (same URL, same nav).
 // Mobile visitors see the Splash screen instead (see router).
@@ -208,7 +208,7 @@ export default function LandingPage({
             {
               num: '01',
               title: 'Ton entreprise te récompense',
-              text: "Ton manager t'attribue des tokens en un clic — au moment où tu le mérites, pas six mois plus tard.",
+              text: "Ton manager t'attribue des tokens en un clic - au moment où tu le mérites, pas six mois plus tard.",
             },
             {
               num: '02',

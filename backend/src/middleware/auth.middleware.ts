@@ -49,7 +49,7 @@ export function optionalAuth(req: Request, _res: Response, next: NextFunction): 
 
 export async function requireAdmin(req: Request, res: Response, next: NextFunction): Promise<void> {
   // The token says ADMIN, but role/status can change mid-session and the 15-min access token
-  // would otherwise honor a stale role — re-check against the DB.
+  // would otherwise honor a stale role - re-check against the DB.
   if (req.user?.role !== 'ADMIN') {
     next(new AppError(403, 'Accès réservé aux administrateurs.'));
     return;

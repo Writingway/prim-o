@@ -1,6 +1,6 @@
 import type { ReactNode, SVGProps } from 'react';
 
-// Prim'O line icon set (1.8 stroke, 0 0 24 24 viewBox) — no emoji anywhere.
+// Prim'O line icon set (1.8 stroke, 0 0 24 24 viewBox) - no emoji anywhere.
 // Paths taken from the mockup. `star` is filled (the "coin" logo); everything else is stroked.
 export type IconName =
   | 'home' | 'gift' | 'received' | 'user' | 'users' | 'bell' | 'search'

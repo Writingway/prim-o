@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
 
-// Typed errors — single source of truth.
+// Typed errors - single source of truth.
 // - ErrorCode: stable identity of a business error.
 // - ERROR_CATALOG: code -> { HTTP status, French message }.
 // - DomainError: thrown by services (type-safe, no magic strings).

@@ -218,7 +218,7 @@ export default function OwnerDashboard({ onLogout, onStats, firstName, profilePh
 
   return (
     <Layout
-      title="Prim'O — Espace patron"
+      title="Prim'O - Espace patron"
       chrome="console"
       hideConsoleMobileHeader
       hideConsoleTopbar
@@ -276,7 +276,7 @@ export default function OwnerDashboard({ onLogout, onStats, firstName, profilePh
             </div>
             <div className="flex items-end gap-2.5">
               <Coin size={40} />
-              <span className="text-[44px] font-extrabold leading-none tracking-[-0.03em]">{company?.tokenBalance ?? '—'}</span>
+              <span className="text-[44px] font-extrabold leading-none tracking-[-0.03em]">{company?.tokenBalance ?? '-'}</span>
             </div>
             <div className="mt-1.5 text-[13px] text-white/65">tokens disponibles à allouer</div>
           </div>
@@ -299,7 +299,7 @@ export default function OwnerDashboard({ onLogout, onStats, firstName, profilePh
 
         {paymentNotice === 'success' && (
           <div className="mb-4 flex items-center gap-2 rounded-xl bg-primo-success-soft px-4 py-3 text-[13px] font-semibold text-primo-success">
-            <Icon name="check" size={16} strokeWidth={2.2} /> Paiement réussi — ton pool sera crédité dans un instant.
+            <Icon name="check" size={16} strokeWidth={2.2} /> Paiement réussi - ton pool sera crédité dans un instant.
           </div>
         )}
         {paymentNotice === 'cancel' && (
@@ -411,7 +411,7 @@ export default function OwnerDashboard({ onLogout, onStats, firstName, profilePh
                     <option value="" disabled>Choisir un manager…</option>
                     {managers.map((m) => (
                       <option key={m.id} value={m.id}>
-                        {m.firstName} {m.lastName} — {m.balance} tokens
+                        {m.firstName} {m.lastName} - {m.balance} tokens
                       </option>
                     ))}
                   </select>

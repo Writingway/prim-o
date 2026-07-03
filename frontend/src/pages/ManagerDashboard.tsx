@@ -174,7 +174,7 @@ export default function ManagerDashboard({ onLogout, firstName, profilePhoto }: 
 
   return (
     <Layout
-      title="Prim'O — Espace manager"
+      title="Prim'O - Espace manager"
       chrome="console"
       hideConsoleMobileHeader
       hideConsoleTopbar
@@ -232,7 +232,7 @@ export default function ManagerDashboard({ onLogout, firstName, profilePhoto }: 
                   <div className="text-xs text-white/65">Mon solde perso</div>
                   <div className="mt-1.5 flex items-center gap-1.5">
                     <Coin size={18} />
-                    <span className="text-xl font-extrabold">{balances?.personalBalance ?? '—'}</span>
+                    <span className="text-xl font-extrabold">{balances?.personalBalance ?? '-'}</span>
                   </div>
                 </div>
                 <div className="rounded-2xl bg-white/[0.06] p-3.5">
@@ -247,7 +247,7 @@ export default function ManagerDashboard({ onLogout, firstName, profilePhoto }: 
           </>
         )}
 
-        {/* Enveloppes tab: two views — received (still to distribute) and opened. */}
+        {/* Enveloppes tab: two views - received (still to distribute) and opened. */}
         {activeTab === 'enveloppes' && (
           loading ? loader
           : error ? errorNote

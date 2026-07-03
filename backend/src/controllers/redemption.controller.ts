@@ -3,7 +3,7 @@ import { AppError } from '../middleware/error.middleware';
 import { redeemSchema } from '../schemas/redemption.schemas';
 import { redeemOffer } from '../services/redemption.service';
 
-// POST /api/employees/me/redeem — exchange tokens for a promo code.
+// POST /api/employees/me/redeem - exchange tokens for a promo code.
 export async function redeemOfferController(
   req: Request,
   res: Response,

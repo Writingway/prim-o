@@ -23,7 +23,7 @@ type LayoutProps = {
   // 'public' (default) = marketing/legal pages → footer shown.
   // 'app' = logged-in mobile shell → no footer, tab bar fixed at the bottom (thumb zone).
   // 'console' = adaptive shell: Sidebar + Topbar on desktop (lg+), ConsoleHeaderMobile +
-  //             BottomNav below lg — a single content tree for both.
+  //             BottomNav below lg - a single content tree for both.
   chrome?: 'app' | 'public' | 'console';
   bottomNav?: ReactNode;     // Rendered fixed at the bottom when chrome='app'.
   // Console-only fields (ignored by 'app'/'public').

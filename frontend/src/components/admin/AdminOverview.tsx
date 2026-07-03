@@ -191,7 +191,7 @@ export default function AdminOverview({
             <p className="py-8 text-center text-sm text-primo-gray">Aucune entreprise enregistrée.</p>
           ) : (
             <>
-              {/* Column headers — hidden on mobile. */}
+              {/* Column headers - hidden on mobile. */}
               <div className="hidden grid-cols-[1fr_110px_110px_90px] gap-3 border-b border-primo-line pb-2 text-[11px] font-semibold uppercase tracking-wide text-primo-gray sm:grid">
                 <span>Entreprise</span>
                 <span>Utilisateurs</span>
@@ -241,7 +241,7 @@ export default function AdminOverview({
 
               <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-primo-line pt-3">
                 <span className="text-[13px] text-primo-gray">
-                  Affichage 1–{preview.length} sur {total}
+                  Affichage 1-{preview.length} sur {total}
                 </span>
                 <button
                   type="button"
@@ -318,7 +318,7 @@ export default function AdminOverview({
             )}
           </div>
 
-          {/* Critical stock alert — only when an offer has ≥ 90% of its codes used. */}
+          {/* Critical stock alert - only when an offer has ≥ 90% of its codes used. */}
           {lowStock.length > 0 && (
             <div className="rounded-2xl border border-primo-warn-strong/30 bg-primo-warn-soft p-5">
               <div className="flex items-start gap-3">

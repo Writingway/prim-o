@@ -18,7 +18,7 @@ export default function MotifSelect({ groups, value, onChange, disabled }: Props
       disabled={disabled}
       onChange={(e) => onChange(e.target.value)}
     >
-      <option value="">— motif —</option>
+      <option value="">- motif -</option>
       {groups.map((g) => (
         <optgroup key={g.category} label={MOTIF_CATEGORY_LABELS[g.category]}>
           {g.motifs.map((m) => (

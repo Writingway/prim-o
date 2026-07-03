@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
 import { listActiveMotifs } from '../services/motif.service';
 
-// GET /api/motifs — official list of active motifs (allocation reasons), grouped by category.
+// GET /api/motifs - official list of active motifs (allocation reasons), grouped by category.
 export async function listMotifsController(
   _req: Request,
   res: Response,

@@ -13,7 +13,7 @@ function legalFromHash(): LegalPageKey | null {
 }
 
 // Standalone showcase: the landing plus the legal pages, with no router or backend.
-// The landing's offer teaser is already best-effort — with no API it hides itself,
+// The landing's offer teaser is already best-effort - with no API it hides itself,
 // and the catalog falls back to its own empty state.
 export default function LandingApp() {
   const [legalPage, setLegalPage] = useState<LegalPageKey | null>(legalFromHash);

@@ -83,7 +83,7 @@ export async function createCompany(userId: string, input: CreateCompanyInput) {
 }
 
 // A floating user joins a company via an invite code. A valid code makes them an
-// active member immediately — no manager approval step (spec §4).
+// active member immediately - no manager approval step (spec §4).
 export async function joinCompany(userId: string, input: JoinCompanyInput) {
   const { code } = input;
   const user = await prisma.user.findFirst({ where: { id: userId, deletedAt: null } });
@@ -174,7 +174,7 @@ export async function login(input: LoginInput) {
 }
 
 // Single source of identity for the frontend: role + company + status.
-// Read from DB — the token may be stale and does not carry company.status.
+// Read from DB - the token may be stale and does not carry company.status.
 export async function getMe(userId: string) {
   const user = await prisma.user.findFirst({
     where: { id: userId, deletedAt: null },

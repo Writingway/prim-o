@@ -17,7 +17,7 @@ function parsePaging(req: Request): { page: number; limit: number } {
   return { page, limit };
 }
 
-// GET /api/employees — employees of the connected employer. The company scope comes from the
+// GET /api/employees - employees of the connected employer. The company scope comes from the
 // token (req.user), never from client input.
 export async function listEmployeesController(
   req: Request,
@@ -35,7 +35,7 @@ export async function listEmployeesController(
   }
 }
 
-// DELETE /api/employees/:id — soft-delete an employee of the caller's company.
+// DELETE /api/employees/:id - soft-delete an employee of the caller's company.
 export async function deleteEmployeeController(
   req: Request,
   res: Response,
@@ -77,7 +77,7 @@ function requireEmployee(req: Request, next: NextFunction): string | null {
   return req.user.id;
 }
 
-// GET /api/employees/me — the connected employee's balance.
+// GET /api/employees/me - the connected employee's balance.
 export async function getEmployeeBalanceController(
   req: Request,
   res: Response,
@@ -99,7 +99,7 @@ export async function getEmployeeBalanceController(
 }
 
 
-// GET /api/employees/me/received — paginated history of received tokens.
+// GET /api/employees/me/received - paginated history of received tokens.
 export async function getEmployeeReceivedController(
   req: Request,
   res: Response,
@@ -117,7 +117,7 @@ export async function getEmployeeReceivedController(
   }
 }
 
-// GET /api/employees/me/spent — paginated spending history.
+// GET /api/employees/me/spent - paginated spending history.
 export async function getEmployeeSpentController(
   req: Request,
   res: Response,
@@ -135,7 +135,7 @@ export async function getEmployeeSpentController(
   }
 }
 
-// PATCH /api/employees/me/spent/:id — toggle a code's "used" flag (redemption owner only).
+// PATCH /api/employees/me/spent/:id - toggle a code's "used" flag (redemption owner only).
 export async function setRedemptionUsedController(
   req: Request,
   res: Response,

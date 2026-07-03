@@ -9,7 +9,7 @@ import { useConfirm } from '@/components/ui/ConfirmDialog';
 import tkn2 from '@/assets/primotoken/primo-tkn2.png';
 
 // Partner offer catalog: grid + search/filters + detail bottom sheet + code-reveal celebration.
-// Reused by the LandingPage (visitors) AND the employee area's « Offres » section — one source,
+// Reused by the LandingPage (visitors) AND the employee area's « Offres » section - one source,
 // so the experience is identical in both places. See README C1/C2/C3.
 const CTA_PRIMARY =
   'w-full rounded-2xl border-0 bg-primo-teal px-4 py-4 text-base font-bold text-white shadow-[0_12px_26px_-8px_rgba(0,161,154,0.6)] transition hover:bg-primo-teal-strong disabled:opacity-60';
@@ -21,7 +21,7 @@ type Revealed = { code: string; offerName: string; amount: number };
 
 type OfferCatalogProps = {
   isLoggedIn: boolean;
-  // True for employees and managers — the only roles allowed to redeem.
+  // True for employees and managers - the only roles allowed to redeem.
   canRedeem: boolean;
   // Lets the parent refresh balance/history after a redemption.
   onRedeemed?: () => void;
@@ -59,7 +59,7 @@ export default function OfferCatalog({
   const [copied, setCopied] = useState(false);
   const [visible, setVisible] = useState(PAGE_SIZE);
 
-  // Reset pagination the moment search/category changes — during render,
+  // Reset pagination the moment search/category changes - during render,
   // before paint, so there's no second render pass.
   const resetKey = `${query}|${activeCat}`;
   const [prevKey, setPrevKey] = useState(resetKey);
@@ -99,7 +99,7 @@ export default function OfferCatalog({
   }, [offers, query, activeCat]);
 
   // Featured pick: the best available deal (highest discount), showcased at the top of the
-  // catalog. Default view only — hidden as soon as the user filters or searches.
+  // catalog. Default view only - hidden as soon as the user filters or searches.
   const featured = useMemo(() => {
     const pool = offers.filter((o) => o.available);
     if (pool.length === 0) return null;
@@ -177,7 +177,7 @@ export default function OfferCatalog({
           />
         </div>
 
-        {/* Category filter rail — horizontally scrollable, scrollbar hidden. */}
+        {/* Category filter rail - horizontally scrollable, scrollbar hidden. */}
         {categories.length > 0 && (
           <div className="no-scrollbar mt-4 flex gap-3.5 overflow-x-auto pb-1">
             <CategoryPill
@@ -220,7 +220,7 @@ export default function OfferCatalog({
             </div>
           </div>
         ) : filtered.length === 0 ? (
-          // Empty state invites an action — never a dead end.
+          // Empty state invites an action - never a dead end.
           <div className="mt-8 flex flex-col items-center rounded-[24px] border border-dashed border-primo-line bg-white px-6 py-12 text-center">
             <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primo-mint text-primo-teal-strong">
               <Icon name={offers.length === 0 ? 'gift' : 'search'} size={26} />
@@ -337,7 +337,7 @@ export default function OfferCatalog({
         )}
       </section>
 
-      {/* Offer detail — bottom sheet (C2). */}
+      {/* Offer detail - bottom sheet (C2). */}
       {selected && selectedMeta && (
         <div
           className="fixed inset-0 z-[1000] flex items-end justify-center bg-black/55 p-0 sm:items-center sm:p-4"
@@ -421,7 +421,7 @@ export default function OfferCatalog({
         </div>
       )}
 
-      {/* Code reveal — celebration screen (C3). */}
+      {/* Code reveal - celebration screen (C3). */}
       {revealed && (
         <div className="fixed inset-0 z-[1000] flex flex-col overflow-hidden bg-gradient-to-b from-primo-hero-from via-primo-ink-900 to-primo-ink-950 text-white">
           {/* Static confetti. */}
@@ -554,7 +554,7 @@ function CategoryVisual({
   );
 }
 
-// Gold discount badge — the eye-catcher, reserved for the discount percentage alone.
+// Gold discount badge - the eye-catcher, reserved for the discount percentage alone.
 function DiscountBadge({ percent, className = '' }: { percent: number; className?: string }) {
   return (
     <span
@@ -566,7 +566,7 @@ function DiscountBadge({ percent, className = '' }: { percent: number; className
   );
 }
 
-// Price in tokens (coin + number) — the single unit used across the whole catalog.
+// Price in tokens (coin + number) - the single unit used across the whole catalog.
 function TokenPrice({ cost, size = 17, text = 'text-sm' }: { cost: number; size?: number; text?: string }) {
   return (
     <span className="flex items-center gap-1.5">

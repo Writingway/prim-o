@@ -38,7 +38,7 @@ export function useHeroTheme() {
     try {
       localStorage.setItem(KEY, t);
     } catch {
-      // localStorage unavailable (strict private mode) — keep the choice in memory only.
+      // localStorage unavailable (strict private mode) - keep the choice in memory only.
     }
   };
 

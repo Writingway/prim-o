@@ -13,7 +13,7 @@ export function assetUrl(path: string): string {
   return /^https?:\/\//.test(path) ? path : `${API_URL}${path}`;
 }
 
-// Token ownership: client.ts owns the access token, in memory only — never in localStorage.
+// Token ownership: client.ts owns the access token, in memory only - never in localStorage.
 // App sets it at login, refresh() renews it silently, and components never carry it around.
 
 let currentToken: string | null = null;
@@ -34,7 +34,7 @@ export function registerSessionExpired(cb: () => void): void {
 // HTTP errors do not throw; the status is returned so forms can show the right
 // message (400, 404, 409...).
 async function rawRequest<T = unknown>(method: string, path: string, body?: unknown): Promise<ApiResult<T>> {
-  // FormData (file upload): do NOT set Content-Type — the browser generates
+  // FormData (file upload): do NOT set Content-Type - the browser generates
   // "multipart/form-data; boundary=…" itself.
   const isForm = body instanceof FormData;
   const headers: Record<string, string> = {};
@@ -57,13 +57,13 @@ async function rawRequest<T = unknown>(method: string, path: string, body?: unkn
   try {
     data = await res.json();
   } catch {
-    // No JSON body (204, error page...) — ignore.
+    // No JSON body (204, error page...) - ignore.
   }
 
   return { ok: res.ok, status: res.status, data };
 }
 
-// Public POST (login, register, refresh, logout): no Bearer, no retry — a 401 here is a real
+// Public POST (login, register, refresh, logout): no Bearer, no retry - a 401 here is a real
 // business response, not an expired token.
 export async function post<T = unknown>(path: string, body?: unknown): Promise<ApiResult<T>> {
   const res = await fetch(`${API_URL}${path}`, {
@@ -77,13 +77,13 @@ export async function post<T = unknown>(path: string, body?: unknown): Promise<A
   try {
     data = await res.json();
   } catch {
-    // No JSON body — ignore.
+    // No JSON body - ignore.
   }
 
   return { ok: res.ok, status: res.status, data };
 }
 
-// Refresh singleton: only one refresh request in flight at a time — concurrent callers
+// Refresh singleton: only one refresh request in flight at a time - concurrent callers
 // (StrictMode, the 401 wrapper, parallel calls) share the same promise. Without this, a second
 // call would present an already-rotated token → server-side theft detection → token family
 // revoked → user logged out.
@@ -116,7 +116,7 @@ export async function authRequest<T = unknown>(method: string, path: string, bod
   if (!r.ok || !r.data?.accessToken) {
     // Only log out when the refresh is rejected for an auth reason (401/403 = cookie
     // expired/revoked). A 429 (rate limit), a 5xx or a network failure does NOT mean the session
-    // is dead — otherwise a burst of requests (StrictMode, fast navigation) exceeds the quota,
+    // is dead - otherwise a burst of requests (StrictMode, fast navigation) exceeds the quota,
     // the refresh gets a 429 and the user is logged out for no reason.
     if (r.status === 401 || r.status === 403) {
       setAccessToken(null);

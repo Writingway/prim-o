@@ -7,7 +7,7 @@ const prisma = new PrismaClient()
 const hash = (pwd: string) => bcrypt.hash(pwd, 12)
 
 async function main() {
-  console.log('🌱 Seeding database...')
+  console.log('Seeding database...')
 
   // Wipe tables in FK-safe order.
   await prisma.redemption.deleteMany()

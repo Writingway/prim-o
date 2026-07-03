@@ -34,7 +34,7 @@ const refreshCookieOptions = {
 };
 
 // Express 5 forwards async rejections to errorHandler: no try/catch or per-string remapping
-// here — the code -> HTTP mapping is centralized.
+// here - the code -> HTTP mapping is centralized.
 
 export async function registerController(req: Request, res: Response): Promise<void> {
   const input = registerSchema.parse(req.body);
@@ -93,7 +93,7 @@ export async function logoutController(req: Request, res: Response): Promise<voi
 }
 
 // Link clicked from the email (GET). Consumes the token server-side then redirects to the
-// frontend. Local try/catch: redirect even on failure — never return error JSON on a browser
+// frontend. Local try/catch: redirect even on failure - never return error JSON on a browser
 // navigation.
 export async function verifyEmailController(req: Request, res: Response): Promise<void> {
   const token = typeof req.query.token === 'string' ? req.query.token : '';

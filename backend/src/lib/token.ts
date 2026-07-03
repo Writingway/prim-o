@@ -21,7 +21,7 @@ export function generateRefreshToken(): { raw: string; hash: string } {
   return { raw, hash: hashRefreshToken(raw) };
 }
 
-// Email verification token: same scheme as refresh — raw goes into the link, sha256 hash
+// Email verification token: same scheme as refresh - raw goes into the link, sha256 hash
 // into the DB.
 export function generateEmailVerificationToken(): { raw: string; hash: string } {
   const raw = crypto.randomBytes(32).toString('hex');

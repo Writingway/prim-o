@@ -6,7 +6,7 @@ import { Prisma } from '@prisma/client';
 // exposes the Stripe.Checkout.Session namespace.
 export type CheckoutSession = Awaited<ReturnType<typeof stripe.checkout.sessions.retrieve>>;
 
-// Fulfills a confirmed payment: credits the company pool and records the purchase. Idempotent —
+// Fulfills a confirmed payment: credits the company pool and records the purchase. Idempotent -
 // a redelivered event for the same payment is a no-op.
 export async function fulfillCheckout(session: CheckoutSession): Promise<void> {
   // Only credit once the money is actually captured. With async payment methods (SEPA, Pix, ...)
@@ -44,7 +44,7 @@ export async function fulfillCheckout(session: CheckoutSession): Promise<void> {
       });
     });
   } catch (err) {
-    // P2002 (unique violation) means this payment was already credited — swallow the redelivery.
+    // P2002 (unique violation) means this payment was already credited - swallow the redelivery.
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
       return;
     }

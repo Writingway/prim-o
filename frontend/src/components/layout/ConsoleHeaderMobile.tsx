@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 
-// Mobile (<lg) console header — counterpart of the desktop Topbar: section title and
+// Mobile (<lg) console header - counterpart of the desktop Topbar: section title and
 // subtitle on the left, an actions slot for icon buttons on the right.
 type Props = {
   title?: string;

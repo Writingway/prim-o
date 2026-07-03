@@ -2,7 +2,7 @@ import { authRequest } from "./client";
 import type { MotifCategory } from "../../types/allocation";
 export type { MotifCategory };
 
-// Mirrors the backend shapes (§3.2/§3.4) — see manager.contracts.ts.
+// Mirrors the backend shapes (§3.2/§3.4) - see manager.contracts.ts.
 export type MotifAggregateRow = {
   motifTag: string;
   category: MotifCategory;

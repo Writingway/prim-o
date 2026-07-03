@@ -1,4 +1,4 @@
-# Prim'O — MVP Development & Execution (Stage 4)
+# Prim'O - MVP Development & Execution (Stage 4)
 
 > **Team:** Mario Colomas (PM / Backend) · Mateo Marques (Fullstack / SCM) · Lucas Nevano (Frontend / QA)
 > **Repository:** https://github.com/Writingway/prim-o
@@ -11,11 +11,11 @@
 at the exact moment of performance. Employees exchange their tokens (1 token = 1 €)
 for promotional codes from partner brands.
 
-- **Backend API** — Express 5 + TypeScript, Prisma ORM, PostgreSQL (Docker).
-- **Frontend** — React 19 + Vite + TypeScript + TailwindCSS, mobile-first.
-- **Payments** — Stripe Checkout + signature-verified webhook (company pool top-up).
-- **Transactional email** — Brevo (account verification, password reset, invitations).
-- **RBAC** — 4 roles (`ADMIN`, `OWNER`, `MANAGER`, `EMPLOYEE`) with a manager
+- **Backend API** - Express 5 + TypeScript, Prisma ORM, PostgreSQL (Docker).
+- **Frontend** - React 19 + Vite + TypeScript + TailwindCSS, mobile-first.
+- **Payments** - Stripe Checkout + signature-verified webhook (company pool top-up).
+- **Transactional email** - Brevo (account verification, password reset, invitations).
+- **RBAC** - 4 roles (`ADMIN`, `OWNER`, `MANAGER`, `EMPLOYEE`) with a manager
   envelope (allocation) system and strict cross-company isolation.
 
 ---
@@ -37,13 +37,13 @@ The goal of this MVP is to:
 
 - **Duration:** ~1-week sprints, scoped by feature branches (`feat/*`) merged into
   `develop` through reviewed pull requests.
-- **Prioritisation:** MoSCoW — the Must-have core (auth → attribution → redemption)
+- **Prioritisation:** MoSCoW - the Must-have core (auth → attribution → redemption)
   was shipped first; Should-haves (admin back-office, stats, GDPR tooling) followed;
   Won't-haves stayed out (native app, token→cash conversion, multi-language).
 - **Weekly rhythm:**
-  - **Monday** — sprint check-in: divide the week's tasks and assign them.
-  - **Wednesday** — mid-sprint code review: walk through everyone's progress.
-  - **Friday** — sprint close: final check, pull requests pushed and reviewed,
+  - **Monday** - sprint check-in: divide the week's tasks and assign them.
+  - **Wednesday** - mid-sprint code review: walk through everyone's progress.
+  - **Friday** - sprint close: final check, pull requests pushed and reviewed,
     bugs inspected and triaged for the next sprint.
 
 ---
@@ -54,49 +54,49 @@ The goal of this MVP is to:
 
 Repo bootstrap, README, conventions, monorepo layout (`backend/`, `frontend/`,
 `docker-compose.yml` for PostgreSQL 16 + Adminer). Velocity was low at this stage:
-the team was still aligning — addressed in the retrospective.
+the team was still aligning - addressed in the retrospective.
 
-### Sprint 1 — Auth & Skeleton
+### Sprint 1 - Auth & Skeleton
 
 `develop` becomes the integration branch. The Prisma schema lands, followed by
 project hygiene work (gitignore, env example, Postman collection) and the full
 auth slice: backend register/login/refresh, then frontend login.
-**Demo:** a user registers, verifies, and logs in — JWT access (15 min) + rotated
+**Demo:** a user registers, verifies, and logs in - JWT access (15 min) + rotated
 httpOnly refresh cookie (7 days).
 
-### Sprint 2 — Employees & Attribution
+### Sprint 2 - Employees & Attribution
 
 Employee listing, first Manager dashboard, attribution service with atomic
 Prisma transactions and non-negative balance invariant.
 **Demo:** an employer attributes tokens; the employee's balance and history update.
 
-### Sprint 3 — Admin Back-office & Payments Groundwork
+### Sprint 3 - Admin Back-office & Payments Groundwork
 
-Admin page and public homepage, Stripe service, admin router — users, companies,
+Admin page and public homepage, Stripe service, admin router - users, companies,
 offers, ledgers. Quality week too: the 403-line `api.ts` was split into a typed
 per-domain client, `types.ts` split by domain (both refactors documented in
 `frontend/tests/*-refactor.md`), and the admin smoke-test harness
 `tests/admin/run.sh` was created.
 **Demo:** admin CRUD on offers and companies, driven by the real database.
 
-### Sprint 4 — Stripe, GDPR & Envelopes
+### Sprint 4 - Stripe, GDPR & Envelopes
 
 Stripe checkout + webhook merged. GDPR slice: privacy service and legal pages,
 Brevo mailer, anonymisation & token-cleanup background jobs. Promo-code
-management, then the manager **envelope system** — OWNER allocates, MANAGER
-distributes — and the OWNER stats page.
-**Demo:** full lifecycle — Stripe top-up → allocation → distribution → attribution.
+management, then the manager **envelope system** - OWNER allocates, MANAGER
+distributes - and the OWNER stats page.
+**Demo:** full lifecycle - Stripe top-up → allocation → distribution → attribution.
 
-### Sprint 5 — Employee UX & Polish
+### Sprint 5 - Employee UX & Polish
 
 Employee-facing frontend hardened through a series of focused merges, manager
 dashboard fixes, landing page, Stripe finalisation. A dedicated frontend audit
 (`Documentation/audit/FRONTEND_AUDIT.md`) tracked the remaining gaps (ESLint
 config, Vitest, ErrorBoundary, toasts) to closure.
-**Demo:** the complete employee journey on mobile — balance → catalogue →
+**Demo:** the complete employee journey on mobile - balance → catalogue →
 redemption → promo code.
 
-### Sprint 6 — Final QA & Release Readiness
+### Sprint 6 - Final QA & Release Readiness
 
 Customisation and test passes, terminology unification ("jetons" → "tokens"
 across the UI), category color-variable cleanup, documentation review against
@@ -123,7 +123,7 @@ Decisions made during development, visible in the code:
 | Decision | Rationale |
 |---|---|
 | Invitation-only employee onboarding (link / company code) | No credential sharing; the employee owns their account from day one |
-| Email-only verification (Brevo) — SMS dropped | An SMS provider added cost and complexity with no MVP value |
+| Email-only verification (Brevo) - SMS dropped | An SMS provider added cost and complexity with no MVP value |
 | Predefined `Motif` table instead of free-text attribution reasons | Consistent data, exploitable statistics |
 | 4 roles + envelope system instead of a flat Employer/Employee split | Real companies delegate: OWNER funds the pool, MANAGERs distribute |
 | Unified `User` model + `Company` (single auth path) | Auth/RBAC written once; roles are data, not tables |
@@ -142,7 +142,7 @@ Consolidated retrospective:
 | Topic | Notes |
 |---|---|
 | ✅ What went well | Typed API layer kept front/back integration cheap; append-only ledger made token accounting reliable; PR-based workflow kept `develop` stable throughout; documenting refactors as living notes paid off immediately |
-| ⚠️ What didn't | A slow start compressed the schedule; Vite served a stale module graph after `api.ts` was deleted mid-refactor (fix: dev-server restart — documented); Brevo emails landed in spam until the sender was properly verified; wording drifted ("jetons"/"tokens") and needed a late cross-codebase cleanup |
+| ⚠️ What didn't | A slow start compressed the schedule; Vite served a stale module graph after `api.ts` was deleted mid-refactor (fix: dev-server restart - documented); Brevo emails landed in spam until the sender was properly verified; wording drifted ("jetons"/"tokens") and needed a late cross-codebase cleanup |
 | 💡 What to improve | CI pipeline (lint + tests on every PR); automated E2E tests on the critical journeys; update planning docs as part of the Definition of Done |
 
 ---
@@ -162,7 +162,7 @@ Consolidated retrospective:
 - **Email flows tested locally:** without `BREVO_API_KEY` the backend logs the
   verification/reset links, enabling full click-tests in dev.
 - **Static gates:** `tsc --noEmit` (both apps), ESLint, Vitest unit tests
-  (API client, ErrorBoundary) — all green.
+  (API client, ErrorBoundary) - all green.
 
 ---
 
@@ -192,16 +192,16 @@ Consolidated retrospective:
 | Testing evidence | [`backend/tests/admin/RESULTS.md`](../backend/tests/admin/RESULTS.md) · Vitest suites in `frontend/src` |
 | QA audit | [`Documentation/audit/FRONTEND_AUDIT.md`](audit/FRONTEND_AUDIT.md) |
 | Refactor notes | [`frontend/tests/api-refactor.md`](../frontend/tests/api-refactor.md) · [`type-refactor.md`](../frontend/tests/type-refactor.md) |
-| Task board | Notion — [add link] |
+| Task board | Notion - [add link] |
 | Production environment | [add URL when deployed] |
 
 ---
 
-## Technical Manual Review — Preparation
+## Technical Manual Review - Preparation
 
 - ✅ Functional MVP (see delivery summary).
-- ⬜ Application architecture diagram — [to add].
-- ⬜ Database diagram — generate from `backend/prisma/schema.prisma`.
+- ⬜ Application architecture diagram - [to add].
+- ⬜ Database diagram - generate from `backend/prisma/schema.prisma`.
 - ✅ GitHub repository with complete, structured, reviewed code.
 - Talking points ready: unified `User`/`Company` design and the append-only ledger,
   JWT vs refresh-cookie strategy, RBAC & cross-company isolation, Stripe webhook
@@ -210,5 +210,5 @@ Consolidated retrospective:
 
 ---
 
-**© 2026 — Prim'O** · Mario Colomas · Mateo Marques · Lucas Nevano
+**© 2026 - Prim'O** · Mario Colomas · Mateo Marques · Lucas Nevano
 *"Your efforts rewarded instantly!"*

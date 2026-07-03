@@ -5,7 +5,7 @@ import type { CreateAttributionInput, DistributeEnvelopeInput } from '../schemas
 import { computeRetribution } from '../lib/retribution';
 
 // Direct owner → employee send (small-company flow): debits the company POOL, credits the
-// employee and records the motif (allocation reason). Atomic + guarded. OWNER only —
+// employee and records the motif (allocation reason). Atomic + guarded. OWNER only -
 // managers go through envelopes (see distributeEnvelope).
 export async function createAttribution(
   attributorId: string,
@@ -275,7 +275,7 @@ export async function listCompanyManagers(companyId: string) {
 // Company attribution history, newest first.
 // Optional `managerId` restricts the list to that manager's own attributions (a manager
 // only sees theirs; the owner, unfiltered, keeps the full company view).
-// `reason` is derived from the motif — free-text reasons no longer exist — to stay
+// `reason` is derived from the motif - free-text reasons no longer exist - to stay
 // compatible with the existing display.
 export async function listAttributionsByCompany(companyId: string, managerId?: string) {
   const rows = await prisma.attribution.findMany({

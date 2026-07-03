@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { safeText } from '../lib/validation';
 // Account deletion requires the password to confirm an irreversible action (anonymisation).
-// min(1) only checks presence — the actual comparison is done with bcrypt in the service
+// min(1) only checks presence - the actual comparison is done with bcrypt in the service
 // (deleteOwnAccount).
 export const deleteAccountSchema = z.object({
   password: z.string().min(1),

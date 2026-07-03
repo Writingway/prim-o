@@ -29,7 +29,7 @@ export default function Footer() {
         </div>
 
         <div className="mt-6 border-t border-white/10 pt-5 text-center text-[13px] text-white/50">
-          © {new Date().getFullYear()} Prim'O — Tous droits réservés
+          © {new Date().getFullYear()} Prim'O - Tous droits réservés
         </div>
       </div>
     </footer>

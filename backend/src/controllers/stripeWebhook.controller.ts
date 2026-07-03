@@ -8,7 +8,7 @@ export async function stripeWebhookController(req: Request, res: Response): Prom
 
   let event: ReturnType<typeof stripe.webhooks.constructEvent>;
   try {
-    // req.body is a raw Buffer (express.raw() on this route) — required for Stripe signature
+    // req.body is a raw Buffer (express.raw() on this route) - required for Stripe signature
     // verification.
     event = stripe.webhooks.constructEvent(
       req.body,

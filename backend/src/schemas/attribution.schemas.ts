@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-// Manager-to-employee distribution (§3.3/§3.5). The motif (allocation reason) is mandatory —
+// Manager-to-employee distribution (§3.3/§3.5). The motif (allocation reason) is mandatory -
 // the free-text `reason` field was removed; the motif alone carries the meaning.
 export const createAttributionSchema = z.object({
   employeeId: z.uuid(),

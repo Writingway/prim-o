@@ -3,7 +3,7 @@ import { AppError } from '../middleware/error.middleware';
 import { generateInviteSchema } from '../schemas/invite.schemas';
 import { generateInviteCode } from '../services/invite.service';
 
-// POST /api/invites/generate — generate an invitation code. companyId and createdById come
+// POST /api/invites/generate - generate an invitation code. companyId and createdById come
 // from the token (req.user), never from the body.
 export async function generateInviteController(
   req: Request,

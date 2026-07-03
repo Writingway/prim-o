@@ -3,7 +3,7 @@ import { AppError } from '../middleware/error.middleware';
 import { deleteAccountSchema, updateProfileSchema } from '../schemas/privacy.schemas';
 import { exportUserData, deleteOwnAccount, updateOwnProfile, getMyProfile } from '../services/privacy.service';
 
-// GET /api/me/export — the connected user downloads all their personal data (GDPR art. 15
+// GET /api/me/export - the connected user downloads all their personal data (GDPR art. 15
 // & 20). The id comes from the JWT, never from the client.
 export async function exportMyDataController(
   req: Request,
@@ -31,7 +31,7 @@ export async function exportMyDataController(
   }
 }
 
-// DELETE /api/me — delete (anonymize) the connected user's account, after password
+// DELETE /api/me - delete (anonymize) the connected user's account, after password
 // confirmation (GDPR art. 17).
 export async function deleteMyAccountController(
   req: Request,
@@ -67,7 +67,7 @@ export async function deleteMyAccountController(
   }
 }
 
-// PATCH /api/me — rectify the connected user's profile (GDPR art. 16).
+// PATCH /api/me - rectify the connected user's profile (GDPR art. 16).
 export async function updateMyProfileController(
   req: Request,
   res: Response,
@@ -98,7 +98,7 @@ export async function updateMyProfileController(
   }
 }
 
-// GET /api/me — the connected user's profile.
+// GET /api/me - the connected user's profile.
 export async function getMyProfileController(
   req: Request,
   res: Response,

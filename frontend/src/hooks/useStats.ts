@@ -9,7 +9,7 @@ import {
 } from '../services/api';
 import type { Employee } from '../types/types';
 
-// Employer statistics dashboard (§3.2/§3.4) — data logic extracted from StatsPage: reference
+// Employer statistics dashboard (§3.2/§3.4) - data logic extracted from StatsPage: reference
 // maps (id → name, tag → label), stats fetching, period filters and evolution-chart selection.
 // The page itself only renders.
 export function useStats() {
