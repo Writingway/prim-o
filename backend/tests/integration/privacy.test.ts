@@ -2,9 +2,9 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import request from 'supertest';
 import { app, login, verifyEmail, auth, SEED_PASSWORD } from './helpers';
 
-// RGPD : profil (lecture/màj), export des données, suppression de compte
-// (anonymisation, confirmée par mot de passe). Utilise un compte jetable
-// pour ne pas casser les données seedées.
+// GDPR: profile (read/update), data export, account deletion
+// (anonymization, confirmed by password). Uses a throwaway account
+// so the seeded data isn't broken.
 const VICTIM = 'privacy-victim@integration.test';
 
 describe('RGPD - profil, export & suppression', () => {

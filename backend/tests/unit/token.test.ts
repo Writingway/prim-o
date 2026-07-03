@@ -34,7 +34,7 @@ describe('signAccessToken / verifyAccessToken', () => {
   });
 
   it('rejette un token signé avec un autre secret', () => {
-    // Header/payload valides mais signature d'une autre clé.
+    // Valid header/payload but signature from a different key.
     const forged = jwt.sign({ role: 'ADMIN' }, 'wrong-secret-wrong-secret-wrong!', {
       subject: 'user-4',
       expiresIn: '15m',

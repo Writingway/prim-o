@@ -73,10 +73,8 @@ Prisma transactions and non-negative balance invariant.
 ### Sprint 3 - Admin Back-office & Payments Groundwork
 
 Admin page and public homepage, Stripe service, admin router - users, companies,
-offers, ledgers. Quality week too: the 403-line `api.ts` was split into a typed
-per-domain client, `types.ts` split by domain (both refactors documented in
-`frontend/tests/*-refactor.md`), and the admin smoke-test harness
-`tests/admin/run.sh` was created.
+offers, ledgers. Quality week too: the frontend API and type layers were split
+into smaller testable modules, and the admin smoke-test harness was created.
 **Demo:** admin CRUD on offers and companies, driven by the real database.
 
 ### Sprint 4 - Stripe, GDPR & Envelopes
@@ -90,9 +88,9 @@ distributes - and the OWNER stats page.
 ### Sprint 5 - Employee UX & Polish
 
 Employee-facing frontend hardened through a series of focused merges, manager
-dashboard fixes, landing page, Stripe finalisation. A dedicated frontend audit
-(`Documentation/audit/FRONTEND_AUDIT.md`) tracked the remaining gaps (ESLint
-config, Vitest, ErrorBoundary, toasts) to closure.
+dashboard fixes, landing page, Stripe finalisation. The remaining gaps were
+closed through the current frontend Vitest suites, especially the router guard,
+API client, form and ErrorBoundary coverage.
 **Demo:** the complete employee journey on mobile - balance → catalogue →
 redemption → promo code.
 
@@ -153,9 +151,9 @@ Consolidated retrospective:
   frontend :5180): register → email verification → create/join company → Stripe
   top-up (test mode) → allocate envelope → distribute → attribution → redemption →
   promo code delivered exactly once → histories and stats consistent.
-- **Smoke tests:** `bash tests/admin/run.sh` replays every `/api/admin` endpoint
-  (nominal + 400/401/403/404 cases) against a live backend; captured output is
-  committed as `RESULTS.md` (testing evidence).
+- **Smoke tests:** the backend test evidence file records the admin API coverage
+  and the current integration suites cover the owner, manager, employee and
+  admin paths against a live backend.
 - **Stripe sandbox:** checkout session, webhook signature verification (raw body
   mounted before `express.json`), pool credited on `checkout.session.completed`,
   purchases visible in the admin ledgers.
@@ -189,10 +187,10 @@ Consolidated retrospective:
 |---|---|
 | Sprint planning | [`Documentation/SPRINT_PLAN.md`](SPRINT_PLAN.md) |
 | Source repository | https://github.com/Writingway/prim-o |
-| Testing evidence | [`backend/tests/admin/RESULTS.md`](../backend/tests/admin/RESULTS.md) · Vitest suites in `frontend/src` |
-| QA audit | [`Documentation/audit/FRONTEND_AUDIT.md`](audit/FRONTEND_AUDIT.md) |
-| Refactor notes | [`frontend/tests/api-refactor.md`](../frontend/tests/api-refactor.md) · [`type-refactor.md`](../frontend/tests/type-refactor.md) |
-| Task board | Notion - [add link] |
+| Testing evidence | [backend/tests/TEST_RESULT.md](../backend/tests/TEST_RESULT.md) · backend integration suites in [backend/tests/integration](../backend/tests/integration) · frontend Vitest suites in [frontend/src/components/ErrorBoundary.test.tsx](../frontend/src/components/ErrorBoundary.test.tsx), [frontend/src/services/api/client.test.ts](../frontend/src/services/api/client.test.ts), [frontend/tests/components/LoginForm.test.tsx](../frontend/tests/components/LoginForm.test.tsx), [frontend/tests/components/RegisterForm.test.tsx](../frontend/tests/components/RegisterForm.test.tsx), [frontend/tests/router/guards.test.ts](../frontend/tests/router/guards.test.ts), [frontend/tests/unit/identity.test.ts](../frontend/tests/unit/identity.test.ts) |
+| QA audit | [backend/tests/MANUAL_TEST_PLAN.md](../backend/tests/MANUAL_TEST_PLAN.md) · [backend/tests/BUG_TRACKING.md](../backend/tests/BUG_TRACKING.md) |
+| Refactor notes | Frontend test coverage now lives in [frontend/src/services/api/client.test.ts](../frontend/src/services/api/client.test.ts) and [frontend/src/components/ErrorBoundary.test.tsx](../frontend/src/components/ErrorBoundary.test.tsx) |
+| Task board | Discord Call |
 | Production environment | [add URL when deployed] |
 
 ---

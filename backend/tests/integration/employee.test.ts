@@ -2,9 +2,9 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import request from 'supertest';
 import { app, login, verifyEmail, auth } from './helpers';
 
-// Espace employé : solde, historiques reçus/dépensés, échange d'une offre
-// contre des tokens, bascule « utilisé » d'un code. Employé seedé
-// jean.dupont@acme.fr (30 tokens). Netflix coûte 15 (code seedé dispo).
+// Employee space: balance, received/spent history, redeeming an offer
+// for tokens, toggling a code as "used". Seeded employee
+// jean.dupont@acme.fr (30 tokens). Netflix costs 15 (seeded code available).
 describe('Employé - solde, échange & historiques', () => {
   let empToken: string;
   let ownerToken: string;

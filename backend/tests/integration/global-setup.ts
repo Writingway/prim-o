@@ -1,8 +1,8 @@
 import 'dotenv/config';
 import { execSync } from 'child_process';
 
-// Avant TOUS les tests d'intégration : reset complet du schéma sur la base
-// de test `primo_test` (créée si absente) puis seed standard. Idempotent.
+// Before ALL integration tests: full schema reset on the test database
+// `primo_test` (created if missing) then standard seed. Idempotent.
 export default function setup(): void {
   const testUrl = new URL(process.env.DATABASE_URL ?? '');
   testUrl.pathname = '/primo_test';

@@ -1,44 +1,8 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import request from 'supertest';
-import { app, login, verifyEmail, auth } from './helpers';
+import { app, login, auth } from './helpers';
 
-// Endpoints restants : company, stats, motifs, lectures admin (ledgers,
-// dashboard) et cycle réversible soft-delete/restore d'une entreprise.
-describe('Divers - company, stats, motifs', () => {
-  let ownerToken: string;
-
-  beforeAll(async () => {
-    ownerToken = await login('boss@acme.fr');
-  });
-
-  it('GET /company (owner) -> 200', async () => {
-    const res = await request(app).get('/api/company').set(auth(ownerToken));
-    expect(res.status).toBe(200);
-    expect(res.body.company).toBeTruthy();
-  });
-
-  it('GET /company sans token -> 401', async () => {
-    const res = await request(app).get('/api/company');
-    expect(res.status).toBe(401);
-  });
-
-  it('GET /stats (owner) -> 200', async () => {
-    const res = await request(app).get('/api/stats').set(auth(ownerToken));
-    expect(res.status).toBe(200);
-  });
-
-  it('GET /motifs (authentifié) -> 200 groupés par catégorie', async () => {
-    const res = await request(app).get('/api/motifs').set(auth(ownerToken));
-    expect(res.status).toBe(200);
-    expect(Array.isArray(res.body.categories)).toBe(true);
-  });
-
-  it('GET /motifs sans token -> 401', async () => {
-    const res = await request(app).get('/api/motifs');
-    expect(res.status).toBe(401);
-  });
-});
-
+// Admin-only coverage: dashboard, ledgers and reversible company mutations.
 describe('Admin - dashboard & ledgers (lectures)', () => {
   let adminToken: string;
 

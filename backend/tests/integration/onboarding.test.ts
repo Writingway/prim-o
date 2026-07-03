@@ -2,9 +2,9 @@ import { describe, it, expect } from 'vitest';
 import request from 'supertest';
 import { app, login, verifyEmail, auth, SEED_PASSWORD } from './helpers';
 
-// Parcours critique account-first (ex-smoke.sh) :
-// register -> verify -> login -> create-company (PENDING) -> checkout bloqué
-// -> admin approuve -> invite -> join-company. DB de test seedée par global-setup.
+// Critical account-first flow (formerly smoke.sh):
+// register -> verify -> login -> create-company (PENDING) -> checkout blocked
+// -> admin approves -> invite -> join-company. Test DB seeded by global-setup.
 const OWNER_EMAIL = 'patron@integration.test';
 const EMP_EMAIL = 'employe@integration.test';
 

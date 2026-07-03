@@ -140,13 +140,12 @@ that mount real React components with the network stubbed.
 | `tests/router/guards.test.ts` | 20 | integration | full `beforeLoad` redirect matrix (visitor / floating / OWNER / EMPLOYEE / ADMIN) x (`/dashboard` `/stats` `/admin` `/onboarding` `/auth`), driven through the real TanStack router |
 | `src/components/ErrorBoundary.test.tsx` | 2 | component | renders fallback on child throw, renders children when healthy |
 
-**Why these first:** the router guards were the weakest untested layer
-(flagged in `FRONTEND_AUDIT.md`). The guard suite proves every auth/role
-redirect end-to-end against the real router - a logged-out user can never reach
-`/dashboard`, a floating user is forced through `/onboarding`, `/stats` is
-OWNER-only, `/admin` is ADMIN-only. The identity + client suites lock in the
-same transient-failure hardening proven on the backend (a 429/5xx must never
-log the user out or blank their identity).
+**Why these first:** the router guards were the weakest untested layer. The
+guard suite proves every auth/role redirect end-to-end against the real router
+- a logged-out user can never reach `/dashboard`, a floating user is forced
+through `/onboarding`, `/stats` is OWNER-only, `/admin` is ADMIN-only. The
+identity + client suites lock in the same transient-failure hardening proven on
+the backend (a 429/5xx must never log the user out or blank their identity).
 
 ---
 

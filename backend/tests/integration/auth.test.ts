@@ -2,8 +2,8 @@ import { describe, it, expect } from 'vitest';
 import request from 'supertest';
 import { app, login, verifyEmail, auth, SEED_PASSWORD } from './helpers';
 
-// Endpoints auth hors parcours d'onboarding : validations, guards, endpoints
-// silencieux (anti-énumération) et gestion du refresh cookie.
+// Auth endpoints outside the onboarding flow: validations, guards, silent
+// endpoints (anti-enumeration) and refresh cookie handling.
 describe('Auth - validations & endpoints annexes', () => {
   it('register body invalide -> 400', async () => {
     const res = await request(app).post('/api/auth/register')

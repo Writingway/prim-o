@@ -2,8 +2,8 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import request from 'supertest';
 import { app, login, auth } from './helpers';
 
-// Vitrine publique (offres, catégories) + CRUD admin des offres, catégories
-// et codes promo.
+// Public storefront (offers, categories) + admin CRUD of offers, categories
+// and promo codes.
 describe('Catalogue - vitrine publique & CRUD admin', () => {
   let adminToken: string;
   let categoryId: string;
@@ -66,7 +66,7 @@ describe('Catalogue - vitrine publique & CRUD admin', () => {
       .set(auth(adminToken));
     expect(delCode.status).toBe(200);
 
-    // Désactivation (soft) de l'offre -> 200
+    // Soft-deactivation of the offer -> 200
     const del = await request(app).delete(`/api/admin/offers/${offerId}`).set(auth(adminToken));
     expect(del.status).toBe(200);
   });
@@ -77,7 +77,7 @@ describe('Catalogue - vitrine publique & CRUD admin', () => {
     expect(res.status).toBe(401);
   });
 
-  //  Catégories (admin) : create -> update -> delete 
+  //  Categories (admin): create -> update -> delete
   it('cycle catégorie complet (create/update/delete)', async () => {
     const create = await request(app).post('/api/admin/categories').set(auth(adminToken))
       .send({ label: 'Test Cat', icon: 'gift', color: '#123abc', slug: 'test-cat' });

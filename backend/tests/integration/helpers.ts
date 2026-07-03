@@ -14,7 +14,7 @@ export async function login(email: string, password: string = SEED_PASSWORD): Pr
   return res.body.accessToken;
 }
 
-// Force isEmailVerified=true via la route de test (montée hors production).
+// Force isEmailVerified=true via the test route (mounted outside production).
 export async function verifyEmail(email: string): Promise<void> {
   const res = await request(app).post('/api/test/verify-email').send({ email });
   if (res.status !== 200) {
