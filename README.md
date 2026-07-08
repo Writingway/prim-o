@@ -1,183 +1,23 @@
 # Prim'O
 
-> Plateforme B2B2C de récompense instantanée — « Tes efforts récompensés instantanément ! »
+> Plateforme B2B2C de récompense instantanée - Tes efforts récompensés instantanément !
 
-Prim'O permet à une entreprise d'acheter un pool de **tokens**, de les distribuer à ses employés via ses managers (avec un motif obligatoire), et à l'employé d'échanger ses tokens contre des **offres partenaires** (codes promo). Aucune conversion en argent : les tokens ne s'échangent que contre des offres.
-
-**Stack :** React · TypeScript · Vite · Express / Node.js · PostgreSQL · Prisma · JWT · Stripe · Brevo
+**Stack :** React · Express/Node.js · PostgreSQL · Prisma
 
 ---
 
-## Sommaire
+## Key Business Flows
 
-- [Architecture de l'application](#architecture-de-lapplication)
-- [Diagramme de la base de données](#diagramme-de-la-base-de-données)
-- [Règles métier](#règles-métier)
-- [Prérequis](#prérequis)
-- [Installation](#installation)
-- [Structure du projet](#structure-du-projet)
-- [Tests](#tests)
-- [Workflow Git](#workflow-git)
-- [Équipe](#équipe)
+Diagrams of the main user journeys are available in `Documentation/img_doc/`:
+
+- **Authentication (JWT)**: `User Login (JWT).png`
+- **Employer token management**: `Employer Token Management.png`
+- **Employee token usage and promo codes**: `Employee Token Usage & Promo Code.png`
+- **Stripe payment flow**: `Stripe Payment Flow.png`
 
 ---
 
-## Architecture de l'application
-
-Application découpée en deux : un **frontend** React (SPA, navigateur) et un **backend** Express (API REST). Ils ne partagent aucune mémoire et communiquent uniquement en **HTTP/JSON**. La base **PostgreSQL** est pilotée via l'ORM **Prisma**.
-
-### Backend — architecture en couches
-
-Chaque requête traverse des couches à responsabilité unique :
-
-```
-Requête HTTP
-   │
-   ▼
-[ routes ]        mappe verbe + URL → handler, branche les middlewares
-   │
-   ▼
-[ middleware ]    auth (JWT), autorisation (rôle), gestion d'erreurs
-   │
-   ▼
-[ controller ]    valide l'entrée (Zod), appelle le service, met en forme la réponse
-   │
-   ▼
-[ service ]       logique métier + accès DB (transactions atomiques)
-   │
-   ▼
-[ Prisma ] ──▶ PostgreSQL
-```
-
-- **routes/** — définition des endpoints, aucun code métier.
-- **middleware/** — `auth.middleware.ts` (vérifie le JWT), `authz.ts` (RBAC par rôle), `error.middleware.ts` (mapping centralisé code métier → statut HTTP).
-- **controllers/** — glue HTTP : ne connaît rien à la DB.
-- **services/** — cerveau métier + Prisma ; sans dépendance HTTP, donc testables en isolation et réutilisables (ex. jobs cron).
-- **schemas/** — schémas de validation Zod (entrées) + inférence des types TypeScript.
-- **lib/** — infra partagée : `db.ts` (client Prisma), `token.ts` (JWT + hash), `mail.ts` (Brevo), `stripe.ts`, `rateLimit.ts`, `upload.ts`.
-- **jobs/** — tâches planifiées : anonymisation RGPD des comptes inactifs, purge des tokens expirés.
-
-### Sécurité (transverse)
-
-- **Authentification** JWT : access token court (15 min) + refresh token (7 j) avec **rotation** et **détection de vol** (rejeu d'un token révoqué → révocation de toute la famille).
-- **Mots de passe** hachés avec **bcrypt** (coût 12, salt intégré) ; tokens hachés en **sha256** en base.
-- **RBAC** (4 rôles) + **isolation multi-tenant** par `companyId` extrait du token (jamais du body).
-- `helmet` (headers de sécurité), `cors` restreint au frontend, **rate limiting** par cas d'usage.
-- Validation Zod au bord + contraintes `CHECK` en base (défense en profondeur).
-- Access token en mémoire (protège du CSRF), refresh token en cookie **httpOnly** (protège du XSS).
-
-### Frontend
-
-SPA React + TypeScript (build Vite). Le client API (`services/api/`) détient l'access token **en mémoire**, rafraîchit la session silencieusement sur 401, et gère un **singleton de refresh** pour éviter les faux positifs de détection de vol. Interfaces distinctes par rôle : Employé, Manager, Patron (Owner), Admin plateforme.
-
----
-
-## Diagramme de la base de données
-
-Entités principales et relations (Prisma / PostgreSQL) :
-
-```mermaid
-erDiagram
-    Company ||--o{ User : "emploie"
-    Company ||--o{ CompanyInviteCode : "génère"
-    Company ||--o{ CompanyTokenPurchase : "achète (pool)"
-    Company ||--o{ Attribution : "héberge"
-    Company ||--o{ Allocation : "alloue"
-    Company ||--o{ Redemption : "héberge"
-
-    User ||--o{ RefreshToken : "possède"
-    User ||--o{ EmailVerificationToken : "possède"
-    User ||--o{ PasswordResetToken : "possède"
-    User ||--o{ Attribution : "envoie (manager)"
-    User ||--o{ Attribution : "reçoit (employé)"
-    User ||--o{ Allocation : "reçoit (manager)"
-    User ||--o{ Redemption : "effectue"
-
-    Allocation ||--o{ Attribution : "source (enveloppe)"
-    Motif ||--o{ Attribution : "justifie"
-
-    Category ||--o{ PartnerOffer : "regroupe"
-    PartnerOffer ||--o{ PromoCode : "possède"
-    PartnerOffer ||--o{ Redemption : "échangée en"
-    PromoCode ||--|| Redemption : "adossé à"
-
-    Company {
-        uuid id PK
-        string name
-        int tokenBalance
-        enum status
-        datetime deletedAt
-    }
-    User {
-        uuid id PK
-        string email
-        string passwordHash
-        enum role
-        int balance
-        bool isEmailVerified
-        uuid companyId FK
-        datetime deletedAt
-    }
-    Attribution {
-        uuid id PK
-        int amount
-        uuid motifId FK
-        uuid managerId FK
-        uuid employeeId FK
-        uuid allocationId FK
-    }
-    Allocation {
-        uuid id PK
-        int amount
-        enum mode
-        int percentage
-        enum status
-    }
-    Redemption {
-        uuid id PK
-        int amount
-        uuid employeeId FK
-        uuid offerId FK
-        uuid promoCodeId FK
-    }
-    PartnerOffer {
-        uuid id PK
-        string partnerName
-        int cost
-        int discountPercent
-        uuid categoryId FK
-    }
-    PromoCode {
-        uuid id PK
-        string code
-        bool isUsed
-        uuid offerId FK
-    }
-```
-
-**Points de conception clés :**
-
-- **`Company` = frontière multi-tenant** : tout utilisateur non-ADMIN et toute ligne de ledger porte un `companyId`.
-- **Modèle `User` unique** pour les 4 rôles (ADMIN / OWNER / MANAGER / EMPLOYEE) : la logique d'auth est écrite une seule fois. `role` null = utilisateur « flottant » (inscrit, pas encore rattaché à une entreprise).
-- **Ledger append-only** : `Attribution` (crédit) et `Redemption` (débit). Invariant : `user.balance = Σ attributions reçues − Σ redemptions`. La balance est toujours mutée dans la même transaction que la ligne de ledger.
-- **Idempotence Stripe** : `CompanyTokenPurchase.stripeSessionId` est unique → un webhook rejoué ne crédite pas deux fois.
-- **Contraintes non exprimables en Prisma** (SQL brut en migration) : `CHECK` (`balance >= 0`, `amount > 0`) et index unique **partiel** sur l'email `WHERE deletedAt IS NULL` (ré-inscription possible après soft delete).
-- **Soft delete** (`deletedAt`) partout + jobs RGPD d'anonymisation des comptes inactifs.
-
----
-
-## Règles métier
-
-1. Le solde de tokens ne peut **jamais** être négatif (contrainte `CHECK` en base, en plus de la validation applicative).
-2. **Pas de conversion token → argent** : les tokens ne s'échangent que contre des offres partenaires.
-3. Un compte nécessite une **vérification par e-mail** avant de pouvoir se connecter.
-4. Chaque attribution de tokens exige un **motif** officiel (champ obligatoire).
-5. Un code promo est délivré **exactement une fois** (réservation atomique, gestion de la concurrence).
-6. Un manager / patron ne gère **que les employés de sa propre entreprise** (isolation par `companyId`).
-
----
-
-## Prérequis
+## Requirements
 
 - Node.js ≥ 20
 - npm ≥ 10
@@ -190,7 +30,7 @@ erDiagram
 ### 1. Cloner le dépôt
 
 ```bash
-git clone <URL_DU_REPO>
+git clone https://github.com/Writingway/prim-o.git
 cd prim-o
 ```
 
@@ -239,11 +79,11 @@ npm run dev
 
 ---
 
-## Structure du projet
+## Project Structure
 
 ```
 prim-o/
-├── backend/
+├── backend/                  # Express + TypeScript REST API
 │   ├── prisma/
 │   │   ├── schema.prisma        # Schéma DB (entités, relations, enums)
 │   │   └── migrations/          # Migrations SQL versionnées
