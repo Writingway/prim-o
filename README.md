@@ -1,8 +1,64 @@
 # Prim'O
 
-> Plateforme B2B2C de récompense instantanée - Tes efforts récompensés instantanément !
+> B2B2C instant reward platform: Your efforts, instantly rewarded!
 
-**Stack :** React · Express/Node.js · PostgreSQL · Prisma
+Prim'O lets companies reward their employees through a token system that can be
+redeemed for partner offers. Employers buy tokens, distribute them to their
+employees based on configurable motives, and employees exchange them for promo
+codes from partner brands.
+
+**Stack:** React 19 · TypeScript · Express 5 / Node.js · PostgreSQL 16 · Prisma · JWT · Stripe · Tailwind CSS
+
+---
+
+## Table of Contents
+
+- [Application Architecture](#application-architecture)
+- [Database Diagram](#database-diagram)
+- [Key Business Flows](#key-business-flows)
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Running the App](#running-the-app)
+- [Tests](#tests)
+- [Project Structure](#project-structure)
+
+---
+
+## Application Architecture
+
+The application follows a decoupled client/server architecture: a React frontend
+(SPA) consuming an Express REST API, backed by a PostgreSQL database through the
+Prisma ORM. Payments are handled by Stripe and authentication relies on JWTs
+(access + refresh tokens).
+
+![Application architecture](Documentation/img_doc/Design%20System%20Architecture.png)
+
+**Main layers:**
+
+- **Frontend (`/frontend`)**: React 19 + TypeScript SPA, routing with TanStack
+  Router, styling with Tailwind CSS, built with Vite. Communicates with the API
+  through authenticated REST calls (JWT).
+- **Backend (`/backend`)**: Express 5 REST API in TypeScript, structured in
+  layers (routes -> controllers -> services), input validation with Zod,
+  security via Helmet, CORS, rate limiting and HTML sanitization.
+- **Database**: PostgreSQL 16, accessed exclusively through Prisma (typed
+  schema, versioned migrations).
+- **Payments**: Stripe integration for company token purchases.
+
+---
+
+## Database Diagram
+
+The relational model is managed by Prisma (`backend/prisma/schema.prisma`) and
+deployed on PostgreSQL. It covers companies, users (multiple roles), token
+management, motive-based attributions, partner offers and promo codes.
+
+![Database diagram](Documentation/img_doc/Relationnal%20Database.png)
+
+**Main entities:** `Company`, `User`, `Attribution`, `Motif`, `Allocation`,
+`Category`, `PartnerOffer`, `PromoCode`, `Redemption`, `CompanyTokenPurchase`,
+plus the authentication tables (`RefreshToken`, `EmailVerificationToken`,
+`PasswordResetToken`, `CompanyInviteCode`).
 
 ---
 
@@ -19,25 +75,27 @@ Diagrams of the main user journeys are available in `Documentation/img_doc/`:
 
 ## Requirements
 
-- Node.js ≥ 20
-- npm ≥ 10
-- PostgreSQL ≥ 15 (local, ou via le `docker-compose.yml` fourni)
+- Node.js >= 20
+- npm >= 10
+- PostgreSQL >= 15 (local or via Docker)
+- Docker and Docker Compose (recommended for the database)
 
 ---
 
 ## Installation
 
-### 1. Cloner le dépôt
+### 1. Clone the repository
 
 ```bash
 git clone https://github.com/Writingway/prim-o.git
 cd prim-o
 ```
 
-### 2. Base de données (option Docker)
+### 2. Database (Docker)
 
 ```bash
-docker compose up -d   # démarre PostgreSQL
+# Starts PostgreSQL (port 5432) + Adminer (port 8080)
+docker compose up -d
 ```
 
 ### 3. Backend
@@ -46,35 +104,60 @@ docker compose up -d   # démarre PostgreSQL
 cd backend
 npm install
 
-# Variables d'environnement
+# Copy and fill in the environment variables
 cp .env.example .env
-# → Renseigner : DATABASE_URL, JWT_SECRET, CLIENT_URL, PORT, NODE_ENV,
-#   STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, TOKEN_PRICE_CENTS,
-#   BREVO_API_KEY, BREVO_SENDER_EMAIL, BREVO_SENDERNAME
+# -> Edit .env: DATABASE_URL, JWT_SECRET, STRIPE_SECRET_KEY, BREVO_API_KEY, etc.
 
-# Prisma : générer le client + appliquer les migrations
+# Generate the Prisma client + apply migrations
 npx prisma generate
 npx prisma migrate dev
 
-# (Optionnel) Jeu de données de test
+# (Optional) Seed the database with test data
 npx prisma db seed
-
-# Lancer en dev
-npm run dev
-# → API sur http://localhost:4000
 ```
-
-> Sans `BREVO_API_KEY`, les liens de vérification / réinitialisation sont **loggés en console** — pratique pour tester les flux e-mail en local.
 
 ### 4. Frontend
 
 ```bash
-cd frontend
+cd ../frontend
 npm install
-cp .env.example .env   # vérifier VITE_API_URL
+```
 
+---
+
+## Running the App
+
+### Backend (API on <http://localhost:4000>)
+
+```bash
+cd backend
 npm run dev
-# → App sur http://localhost:5173
+```
+
+### Frontend (application on <http://localhost:5173>)
+
+```bash
+cd frontend
+npm run dev
+```
+
+Adminer (database UI) is available on <http://localhost:8080> once Docker is up.
+
+---
+
+## Tests
+
+```bash
+# Backend: unit tests
+cd backend
+npm test
+
+# Backend: integration tests
+npm run test:int
+
+# Frontend: tests
+cd ../frontend
+npm test
 ```
 
 ---
@@ -85,84 +168,35 @@ npm run dev
 prim-o/
 ├── backend/                  # Express + TypeScript REST API
 │   ├── prisma/
-│   │   ├── schema.prisma        # Schéma DB (entités, relations, enums)
-│   │   └── migrations/          # Migrations SQL versionnées
-│   ├── src/
-│   │   ├── routes/              # Définition des endpoints REST
-│   │   ├── middleware/          # auth, authz (RBAC), gestion d'erreurs
-│   │   ├── controllers/         # Glue HTTP (parse, valide, met en forme)
-│   │   ├── services/            # Logique métier + accès Prisma
-│   │   ├── schemas/             # Validation Zod + types inférés
-│   │   ├── lib/                 # db, token, mail, stripe, rateLimit, upload
-│   │   ├── jobs/                # Tâches planifiées (RGPD, purge tokens)
-│   │   ├── types/               # Déclarations TS (ex. express.d.ts)
-│   │   └── server.ts            # Point d'entrée
-│   └── tests/
-│       ├── unit/                # Tests unitaires (Vitest)
-│       └── integration/         # Tests d'intégration (Vitest + Supertest)
-│
-├── frontend/
+│   │   └── schema.prisma     # Database schema
 │   └── src/
-│       ├── pages/               # Pages par rôle (Employee, Manager, Owner, Admin…)
-│       ├── components/          # Composants (auth, dashboard, offers, admin, ui…)
-│       ├── hooks/               # Hooks React custom
-│       ├── services/api/        # Client API typé (transport, refresh, endpoints)
-│       ├── lib/                 # Helpers (format, avatars, cropImage)
-│       ├── types/               # Types partagés
-│       ├── router.tsx           # Routage + guards
-│       └── main.tsx             # Point d'entrée
-│
-├── docker-compose.yml           # PostgreSQL
-├── Documentation/               # Docs projet (Stages 1 à 4)
-└── README.md
+│       ├── routes/           # Route definitions
+│       ├── controllers/      # Request/response handling
+│       ├── services/         # Business logic
+│       ├── middleware/       # Auth, security, error handling
+│       ├── schemas/          # Zod validation
+│       ├── jobs/             # Scheduled tasks
+│       └── lib/              # Utilities
+├── frontend/                 # React + TypeScript SPA
+│   └── src/
+│       ├── pages/            # Application pages
+│       ├── components/       # Reusable components
+│       ├── hooks/            # React hooks
+│       ├── services/         # API calls
+│       └── router.tsx        # Routing configuration
+├── Documentation/            # Project documentation and diagrams
+│   └── img_doc/              # Diagrams (architecture, DB, flows)
+└── docker-compose.yml        # PostgreSQL + Adminer
 ```
 
 ---
 
-## Tests
+## Team
 
-| Périmètre | Outils | Localisation |
-|---|---|---|
-| Backend — unitaire | Vitest | `backend/tests/unit` |
-| Backend — intégration (API) | Vitest + Supertest | `backend/tests/integration` |
-| Frontend — composants / routing | Vitest + Testing Library | `frontend/tests`, `frontend/src/**/*.test.tsx` |
+Built as part of the Holberton School Portfolio Project by:
 
-```bash
-# Backend
-cd backend
-npm run test        # unitaires
-npm run test:int    # intégration (DB de test)
+- **Mario Colomas**: Project Manager · Backend
+- **Lucas Nevano**: Frontend · QA
+- **Mateo Marques**: Fullstack · Source Control
 
-# Frontend
-cd frontend
-npm run test
-```
-
-Portée testée : flux d'authentification, RBAC (accès autorisés/refusés par rôle), cohérence du ledger de tokens, cas de concurrence (réservation de code promo), validation des entrées. Les rate limiters sont désactivés en `NODE_ENV=test`.
-
-> Portes de qualité exécutées localement avant merge : `tsc --noEmit` (front + back), ESLint, Vitest. La mise en place d'un pipeline CI est identifiée comme amélioration (voir `Documentation/`).
-
----
-
-## Workflow Git
-
-```
-main          → production (stable)
-develop       → intégration
-feat/xxx      → nouvelles features   (PR vers develop)
-fix/xxx       → corrections de bugs  (PR vers develop)
-```
-
-Chaque feature passe par une **Pull Request** relue avant merge dans `develop`. `develop` est fusionné dans `main` pour les livraisons.
-
----
-
-## Équipe
-
-| Nom | Rôle |
-|---|---|
-| Mario Colomas | PM / Backend |
-| Mateo Marques | Fullstack |
-| Lucas Nevano | Frontend / UX |
-
-**Communication :** Discord · **Suivi :** Notion · **Code :** GitHub
+Repository: <https://github.com/Writingway/prim-o>
