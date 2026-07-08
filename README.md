@@ -1,138 +1,202 @@
 # Prim'O
 
-> Plateforme B2B2C de récompense instantanée - Tes efforts récompensés instantanément !
+> B2B2C instant reward platform: Your efforts, instantly rewarded!
 
-**Stack :** React · Express/Node.js · PostgreSQL · Prisma · JWT
+Prim'O lets companies reward their employees through a token system that can be
+redeemed for partner offers. Employers buy tokens, distribute them to their
+employees based on configurable motives, and employees exchange them for promo
+codes from partner brands.
+
+**Stack:** React 19 · TypeScript · Express 5 / Node.js · PostgreSQL 16 · Prisma · JWT · Stripe · Tailwind CSS
 
 ---
 
-## Prérequis
+## Table of Contents
 
-- Node.js ≥ 20
-- npm ≥ 10
-- PostgreSQL ≥ 15 (local ou Docker)
+- [Application Architecture](#application-architecture)
+- [Database Diagram](#database-diagram)
+- [Key Business Flows](#key-business-flows)
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Running the App](#running-the-app)
+- [Tests](#tests)
+- [Project Structure](#project-structure)
+
+---
+
+## Application Architecture
+
+The application follows a decoupled client/server architecture: a React frontend
+(SPA) consuming an Express REST API, backed by a PostgreSQL database through the
+Prisma ORM. Payments are handled by Stripe and authentication relies on JWTs
+(access + refresh tokens).
+
+![Application architecture](Documentation/img_doc/Design%20System%20Architecture.png)
+
+**Main layers:**
+
+- **Frontend (`/frontend`)**: React 19 + TypeScript SPA, routing with TanStack
+  Router, styling with Tailwind CSS, built with Vite. Communicates with the API
+  through authenticated REST calls (JWT).
+- **Backend (`/backend`)**: Express 5 REST API in TypeScript, structured in
+  layers (routes -> controllers -> services), input validation with Zod,
+  security via Helmet, CORS, rate limiting and HTML sanitization.
+- **Database**: PostgreSQL 16, accessed exclusively through Prisma (typed
+  schema, versioned migrations).
+- **Payments**: Stripe integration for company token purchases.
+
+---
+
+## Database Diagram
+
+The relational model is managed by Prisma (`backend/prisma/schema.prisma`) and
+deployed on PostgreSQL. It covers companies, users (multiple roles), token
+management, motive-based attributions, partner offers and promo codes.
+
+![Database diagram](Documentation/img_doc/Relationnal%20Database.png)
+
+**Main entities:** `Company`, `User`, `Attribution`, `Motif`, `Allocation`,
+`Category`, `PartnerOffer`, `PromoCode`, `Redemption`, `CompanyTokenPurchase`,
+plus the authentication tables (`RefreshToken`, `EmailVerificationToken`,
+`PasswordResetToken`, `CompanyInviteCode`).
+
+---
+
+## Key Business Flows
+
+Diagrams of the main user journeys are available in `Documentation/img_doc/`:
+
+- **Authentication (JWT)**: `User Login (JWT).png`
+- **Employer token management**: `Employer Token Management.png`
+- **Employee token usage and promo codes**: `Employee Token Usage & Promo Code.png`
+- **Stripe payment flow**: `Stripe Payment Flow.png`
+
+---
+
+## Requirements
+
+- Node.js >= 20
+- npm >= 10
+- PostgreSQL >= 15 (local or via Docker)
+- Docker and Docker Compose (recommended for the database)
 
 ---
 
 ## Installation
 
-### 1. Cloner le repo
+### 1. Clone the repository
 
 ```bash
-git clone <URL_DU_REPO>
+git clone https://github.com/Writingway/prim-o.git
 cd prim-o
 ```
 
-### 2. Backend
+### 2. Database (Docker)
+
+```bash
+# Starts PostgreSQL (port 5432) + Adminer (port 8080)
+docker compose up -d
+```
+
+### 3. Backend
 
 ```bash
 cd backend
 npm install
 
-# Copier et remplir les variables d'environnement
+# Copy and fill in the environment variables
 cp .env.example .env
-# → Editer .env : mettre DATABASE_URL, JWT_SECRET, etc.
+# -> Edit .env: DATABASE_URL, JWT_SECRET, STRIPE_SECRET_KEY, BREVO_API_KEY, etc.
 
-# Générer le client Prisma + migrer la DB
-npm run db:generate
-npm run db:migrate
+# Generate the Prisma client + apply migrations
+npx prisma generate
+npx prisma migrate dev
 
-# (Optionnel) Insérer des données de test
-npm run db:seed
-
-# Démarrer en mode dev
-npm run dev
-# → API disponible sur http://localhost:4000
+# (Optional) Seed the database with test data
+npx prisma db seed
 ```
 
-### 3. Frontend
+### 4. Frontend
+
+```bash
+cd ../frontend
+npm install
+```
+
+---
+
+## Running the App
+
+### Backend (API on <http://localhost:4000>)
+
+```bash
+cd backend
+npm run dev
+```
+
+### Frontend (application on <http://localhost:5173>)
 
 ```bash
 cd frontend
-npm install
-
-# Copier les variables d'environnement
-cp .env.example .env
-# → Vérifier VITE_API_URL (par défaut http://localhost:4000/api)
-
-# Démarrer en mode dev
 npm run dev
-# → App disponible sur http://localhost:5173
+```
+
+Adminer (database UI) is available on <http://localhost:8080> once Docker is up.
+
+---
+
+## Tests
+
+```bash
+# Backend: unit tests
+cd backend
+npm test
+
+# Backend: integration tests
+npm run test:int
+
+# Frontend: tests
+cd ../frontend
+npm test
 ```
 
 ---
 
-## Structure du projet
+## Project Structure
 
 ```
 prim-o/
-├── backend/
+├── backend/                  # Express + TypeScript REST API
 │   ├── prisma/
-│   │   └── schema.prisma       # Schéma DB (entités, relations)
-│   ├── src/
-│   │   ├── controllers/        # Logique métier des routes
-│   │   ├── routes/             # Définition des endpoints
-│   │   ├── middlewares/        # Auth JWT, validation, etc.
-│   │   ├── services/           # Services réutilisables (email, SMS)
-│   │   └── utils/              # Helpers (validate.js, etc.)
-│   ├── .env.example
-│   ├── package.json
-│   └── src/server.js           # Point d'entrée
-│
-├── frontend/
-│   ├── public/
+│   │   └── schema.prisma     # Database schema
 │   └── src/
-│       ├── components/
-│       │   ├── employer/       # Composants interface Employeur
-│       │   ├── employee/       # Composants interface Employé
-│       │   └── shared/         # Composants partagés
-│       ├── pages/
-│       │   ├── employer/       # Pages back-office employeur
-│       │   └── employee/       # Pages mobile employé
-│       ├── hooks/              # Custom hooks React
-│       ├── services/
-│       │   └── api.js          # Client Axios configuré
-│       ├── context/
-│       │   └── AuthContext.jsx # Contexte d'authentification
-│       └── utils/
-│
-├── SPRINT_PLAN.md              # Plan de sprints & MoSCoW
-├── .gitignore
-└── README.md
+│       ├── routes/           # Route definitions
+│       ├── controllers/      # Request/response handling
+│       ├── services/         # Business logic
+│       ├── middleware/       # Auth, security, error handling
+│       ├── schemas/          # Zod validation
+│       ├── jobs/             # Scheduled tasks
+│       └── lib/              # Utilities
+├── frontend/                 # React + TypeScript SPA
+│   └── src/
+│       ├── pages/            # Application pages
+│       ├── components/       # Reusable components
+│       ├── hooks/            # React hooks
+│       ├── services/         # API calls
+│       └── router.tsx        # Routing configuration
+├── Documentation/            # Project documentation and diagrams
+│   └── img_doc/              # Diagrams (architecture, DB, flows)
+└── docker-compose.yml        # PostgreSQL + Adminer
 ```
 
 ---
 
-## Règles métier importantes
+## Team
 
-1. Le solde token ne peut **jamais** être négatif
-2. **Pas de conversion token → cash** - uniquement échangeable contre des offres partenaires
-3. Un compte employé nécessite une **double validation** (email + SMS) avant activation
-4. Chaque attribution de tokens exige une **raison** (champ obligatoire)
-5. Un code promo est délivré **exactement une fois** (opération atomique)
-6. Un employeur ne peut gérer **que ses propres employés**
+Built as part of the Holberton School Portfolio Project by:
 
----
+- **Mario Colomas**: Project Manager · Backend
+- **Lucas Nevano**: Frontend · QA
+- **Mateo Marques**: Fullstack · Source Control
 
-## Workflow Git
-
-> À définir en équipe - suggestion :
-
-```
-main          → production
-dev           → intégration
-feat/xxx      → nouvelles features (PR obligatoire vers dev)
-fix/xxx       → corrections de bugs
-```
-
----
-
-## Contacts
-
-| Nom | Rôle |
-|---|---|
-| Mario Colomas | PM / Backend |
-| Mateo Marques | Fullstack |
-| Lucas Nevano | Frontend / UX |
-
-**Communication :** Discord · **Tâches :** Notion · **Code :** GitHub
+Repository: <https://github.com/Writingway/prim-o>
