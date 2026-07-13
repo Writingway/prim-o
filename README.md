@@ -31,6 +31,8 @@ The application follows a decoupled client/server architecture: a React frontend
 Prisma ORM. Payments are handled by Stripe and authentication relies on JWTs
 (access + refresh tokens).
 
+![Application Architecture](documentation/img_doc/Design%20System%20Architecture.png)
+
 **Main layers:**
 
 - **Frontend (`/frontend`)**: React 19 + TypeScript SPA, routing with TanStack
@@ -58,11 +60,13 @@ The relational model is managed by Prisma (`backend/prisma/schema.prisma`) and
 deployed on PostgreSQL. It covers companies, users (multiple roles), token
 management, motive-based attributions, partner offers and promo codes.
 
+![Database Diagram](documentation/img_doc/Relationnal%20Database.png)
+
 ---
 
 ## Key Business Flows
 
-Diagrams of the main user journeys are available in `Documentation/img_doc/`:
+Diagrams of the main user journeys are available in `documentation/img_doc/`:
 
 - **Authentication (JWT)**: `User Login (JWT).png`
 - **Employer token management**: `Employer Token Management.png`
@@ -162,7 +166,7 @@ npm test
 
 ## Project Structure
 
-```
+```text
 prim-o/
 ├── backend/                  # Express 5 + TypeScript REST API
 │   ├── prisma/
@@ -192,7 +196,7 @@ prim-o/
 │       ├── hooks/            # Reusable logic (useStats, useEmployeeDashboard…)
 │       ├── lib/              # Pure helpers (format, avatars, image cropping)
 │       └── types/            # Shared types
-├── Documentation/            # Project documentation and diagrams
+├── documentation/            # Project documentation and diagrams
 │   └── img_doc/              # Diagrams (architecture, DB, flows)
 └── docker-compose.yml        # PostgreSQL + Adminer
 ```
