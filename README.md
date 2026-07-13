@@ -41,7 +41,14 @@ Prisma ORM. Payments are handled by Stripe and authentication relies on JWTs
   security via Helmet, CORS, rate limiting and HTML sanitization.
 - **Database**: PostgreSQL 16, accessed exclusively through Prisma (typed
   schema, versioned migrations).
-- **Payments**: Stripe integration for company token purchases.
+- **Payments**: Stripe integration for company token purchases, confirmed
+  server-side through a signed, idempotent webhook.
+- **Background jobs**: scheduled tasks for refresh-token cleanup and GDPR
+  anonymization of inactive accounts.
+
+**Authentication model**: short-lived JWT access token (kept in memory on the
+client) paired with a rotating refresh token stored in an httpOnly cookie and
+hashed in the database, enabling revocation and reuse-based theft detection.
 
 ---
 
@@ -157,24 +164,34 @@ npm test
 
 ```
 prim-o/
-├── backend/                  # Express + TypeScript REST API
+├── backend/                  # Express 5 + TypeScript REST API
 │   ├── prisma/
-│   │   └── schema.prisma     # Database schema
+│   │   ├── schema.prisma     # Data model (entities, relations, enums)
+│   │   ├── migrations/       # Versioned SQL migration history
+│   │   └── seed.ts           # Initial data (categories, motives)
 │   └── src/
-│       ├── routes/           # Route definitions
-│       ├── controllers/      # Request/response handling
-│       ├── services/         # Business logic
-│       ├── middleware/       # Auth, security, error handling
-│       ├── schemas/          # Zod validation
-│       ├── jobs/             # Scheduled tasks
-│       └── lib/              # Utilities
-├── frontend/                 # React + TypeScript SPA
+│       ├── config.ts         # Environment validation (Zod, fail-fast)
+│       ├── app.ts            # Express app assembly (middlewares + routes)
+│       ├── server.ts         # Entry point: HTTP listen + background jobs
+│       ├── routes/           # Endpoint definitions (routing only)
+│       ├── controllers/      # HTTP layer: validation, authorization, response
+│       ├── services/         # Business logic + DB access (Prisma)
+│       ├── schemas/          # Input contracts (Zod validation)
+│       ├── middleware/       # Authentication, authorization, error handling
+│       ├── jobs/             # Background tasks (token cleanup, GDPR)
+│       ├── lib/              # Reusable tools (db, token, mail, stripe, upload…)
+│       └── types/            # Shared TypeScript declarations
+├── frontend/                 # React 19 + TypeScript SPA (Vite)
 │   └── src/
-│       ├── pages/            # Application pages
-│       ├── components/       # Reusable components
-│       ├── hooks/            # React hooks
-│       ├── services/         # API calls
-│       └── router.tsx        # Routing configuration
+│       ├── main.tsx          # Entry point (mounts React)
+│       ├── App.tsx           # Root component
+│       ├── router.tsx        # Routes + navigation guards (TanStack Router)
+│       ├── pages/            # One screen per page (dashboards, auth, admin…)
+│       ├── components/       # Reusable components, grouped by domain
+│       ├── services/api/     # Transport layer to the backend (client, auth, identity…)
+│       ├── hooks/            # Reusable logic (useStats, useEmployeeDashboard…)
+│       ├── lib/              # Pure helpers (format, avatars, image cropping)
+│       └── types/            # Shared types
 ├── Documentation/            # Project documentation and diagrams
 │   └── img_doc/              # Diagrams (architecture, DB, flows)
 └── docker-compose.yml        # PostgreSQL + Adminer
@@ -187,7 +204,7 @@ prim-o/
 Built as part of the Holberton School Portfolio Project by:
 
 - **Mario Colomas**: Project Manager · Backend
-- **Lucas Nevano**: Frontend · QA
-- **Mateo Marques**: Fullstack · Source Control
+- **Lucas Nevano**: Frontend · Source Control
+- **Mateo Marques**: Fullstack · QA
 
 Repository: <https://github.com/Writingway/prim-o>
