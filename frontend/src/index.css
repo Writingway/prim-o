@@ -1,0 +1,222 @@
+/* PRIM'O design system, applied globally.
+   Primary: #00A19A (teal). Secondary: #000000. Background: #FFFFFF.
+   Primary font: Poppins. Mobile-first. */
+@import 'tailwindcss';
+
+/* Tailwind v4 @theme: the "reimagined" v1.1 palette (teal + gold, Poppins).
+   Reference: README handoff / Prim'O Mobile mockup. Tokens are exposed as
+   utilities (bg-primo-*, text-primo-*, border-primo-*). Incremental migration:
+   coexists with the remaining per-page CSS. */
+@theme {
+  /* Teal - primary */
+  --color-primo-teal: #00a19a;          /* CTA, active */
+  --color-primo-teal-strong: #00827c;   /* teal text, hover */
+  --color-primo-teal-dark: #00827c;     /* backward-compat alias */
+  --color-primo-teal-100: #16ada5;      /* hero gradients */
+  --color-primo-teal-soft: #e3f4f2;     /* tinted teal background (= mint) */
+
+  /* Dark inks - surfaces & displays */
+  --color-primo-ink-900: #063b38;       /* sidebar, displays, badges */
+  --color-primo-ink-950: #06302d;       /* darkest background */
+  --color-primo-hero-from: #0a4b46;     /* hero gradient start */
+
+  /* Gold - token / reward (reserved) */
+  --color-primo-gold: #ffb72e;
+  --color-primo-gold-bright: #ffc54d;   /* gold accent on dark backgrounds */
+  --color-primo-gold-soft: #fff4e0;
+
+  /* Text */
+  --color-primo-ink: #0b2422;           /* primary text */
+  --color-primo-slate: #3c5450;         /* secondary text */
+  --color-primo-slate-soft: #5c7370;
+  --color-primo-muted: #90a5a2;         /* tertiary / placeholders */
+
+  /* Surfaces & lines */
+  --color-primo-bg: #ffffff;
+  --color-primo-surface: #f3f7f6;       /* screen background */
+  --color-primo-mint: #e3f4f2;          /* tinted teal background */
+  --color-primo-mint-line: #8fcec8;     /* invite chip border (mint) */
+  --color-primo-mint-line-hover: #d3ece8; /* invite chip hover */
+  --color-primo-line: #e3ecea;          /* borders */
+  --color-primo-border: #e3ecea;        /* backward-compat alias */
+  --color-primo-gray: #6b7280;
+  --color-primo-gray-light: #90a5a2;
+
+  /* States */
+  --color-primo-success: #0e9f6e;
+  --color-primo-success-soft: #e7f7f0;
+  --color-primo-error: #e5484d;
+  --color-primo-error-soft: #fdecec;
+  --color-primo-error-line: #f0c9c9;    /* danger button border */
+  --color-primo-warn: #e08c12;
+  --color-primo-warn-strong: #b8801c;
+  --color-primo-warn-soft: #fff8ec;
+  --color-primo-warn-soft2: #fbefd2;
+
+  /* Category color still used directly (confetti). The other category colors
+     now come from the DB (Category.color field). */
+  --color-primo-cat-food: #e5784a;
+
+  --font-sans: 'Poppins', system-ui, 'Segoe UI', Roboto, sans-serif;
+
+  /* Shared animations. */
+  --animate-confirm-fade: confirm-fade 0.12s ease;
+  --animate-confirm-pop: confirm-pop 0.14s ease;
+  --animate-primo-float: primo-float 4s ease-in-out infinite;
+  --animate-sheet-up: sheet-up 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  /* Orchestrated catalog entrance: fade in plus a gentle rise, staggered per card. */
+  --animate-offer-in: offer-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Horizontal scroll with no visible gray bar (carousels, filters). */
+@utility no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@keyframes primo-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes sheet-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+@keyframes offer-in {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-primo-float,
+  .animate-sheet-up,
+  .animate-offer-in { animation: none; }
+}
+
+@keyframes confirm-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes confirm-pop {
+  from { opacity: 0; transform: translateY(6px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+:root {
+  /* The only legacy vars still referenced in this file (color + body bg). */
+  --primo-ink: #0b2422;
+  --primo-bg: #ffffff;
+
+  font-family: 'Poppins', system-ui, 'Segoe UI', Roboto, sans-serif;
+  color: var(--primo-ink);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Global guardrail: the PAGE never scrolls horizontally on mobile.
+   Wide areas (tables) scroll inside their own wrapper, not the page. */
+html, body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* Media never overflow their container. Kept in @layer base so size utilities
+   (h-5, w-…) can win - otherwise a rule outside the layer beats all of Tailwind
+   and freezes the height. */
+@layer base {
+  img, video, canvas, svg {
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+
+body {
+  margin: 0;
+  background: var(--primo-bg);
+  font-family: inherit;
+  /* Mobile-first: small-screen base, enriched afterwards via min-width. */
+  font-size: 15px;
+}
+
+@media (min-width: 768px) {
+  body {
+    font-size: 16px;
+  }
+}
+
+/*  Admin tables → stacked cards on mobile  */
+@media (max-width: 639px) {
+  .admin-table-responsive {
+    overflow-x: visible;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+  }
+  .admin-table-responsive table,
+  .admin-table-responsive thead,
+  .admin-table-responsive tbody,
+  .admin-table-responsive th,
+  .admin-table-responsive td,
+  .admin-table-responsive tr {
+    display: block;
+  }
+  .admin-table-responsive thead tr {
+    position: absolute;
+    top: -9999px;
+    left: -9999px;
+  }
+  .admin-table-responsive tbody tr {
+    background: #fff;
+    border: 1px solid var(--color-primo-line);
+    border-radius: 14px;
+    margin-bottom: 10px;
+    padding: 4px 0;
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.04);
+  }
+  .admin-table-responsive td {
+    border: none;
+    border-bottom: 1px solid var(--color-primo-surface);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+  .admin-table-responsive td:last-child {
+    border-bottom: none;
+  }
+  /* Label injected from data-label attribute */
+  .admin-table-responsive td[data-label]::before {
+    content: attr(data-label);
+    font-size: 10.5px;
+    font-weight: 600;
+    color: var(--color-primo-gray);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    flex-shrink: 0;
+    min-width: 90px;
+  }
+  /* Actions row: stack buttons full-width */
+  .admin-table-responsive td:last-child {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+  .admin-table-responsive td:last-child::before {
+    display: none;
+  }
+}

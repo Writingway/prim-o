@@ -1,4 +1,4 @@
-# Prim'O — *Your efforts rewarded instantly!*
+# Prim'O - *Your efforts rewarded instantly!*
 
 > **Real-time rewards.** The employer gives, the employee earns, the motivation is immediate.
 
@@ -41,7 +41,7 @@ A **meritocratic reverse reward pool**: the company funds it, the employee earns
 ### Key Mechanics (V1)
 
 1. The employer creates a company account
-2. They create employee accounts — or the employee self-registers via invitation link / company code
+2. They create employee accounts - or the employee self-registers via invitation link / company code
 3. They deposit money → converted into tokens (1€ = 1 token in V1)
 4. They manually assign tokens to their employees via the interface
 5. The employee sees their tokens credited in real time
@@ -90,7 +90,7 @@ The model rests on two components:
 
 - **Communication:** Discord
 - **Task management:** Notion
-- **Code collaboration:** GitHub — branch naming: `feature/`, `fix/`, `chore/`
+- **Code collaboration:** GitHub - branch naming: `feature/`, `fix/`, `chore/`
 - **Meetings:** 2x per week
 - **Decision-making:** Consensus
 
@@ -103,14 +103,14 @@ The model rests on two components:
 | **Julien & Sandrine (Prim'O)** | Founders / Product Owners | Define the vision, validate features, provide domain expertise |
 | **Development Team** | Project team | Builds and delivers the entire product |
 | **Merchant partners** | Distribution partners | Supply the offers that give tokens their value |
-| **Employers (B2B clients)** | Primary users (back-office) | Core paying customers — their UX drives adoption |
+| **Employers (B2B clients)** | Primary users (back-office) | Core paying customers - their UX drives adoption |
 | **Employees** | End users (mobile) | Their engagement validates the product's motivational impact |
 
 ---
 
 ## Architecture Decisions
 
-### Mobile-first web app — no native app in V1
+### Mobile-first web app - no native app in V1
 
 **Confirmed decision**: PRIM'O V1 is a **responsive web app**, mobile-first, accessible from both mobile and desktop browsers.
 
@@ -119,15 +119,15 @@ The model rests on two components:
 A native mobile app operates through **system layers** (direct hardware access, OS-native navigation) rather than **HTTP requests**. Building native from V1 would:
 - complicate the architecture without adding value for this spec
 - slow down development and deployment
-- go beyond what the client requires (spec: *"Native iOS/Android app — a PWA or hybrid app is accepted"*)
+- go beyond what the client requires (spec: *"Native iOS/Android app - a PWA or hybrid app is accepted"*)
 
 **API-first strategy for V2+**
 
-V1 is designed with a **well-defined API decoupled from the frontend**. If the team decides to build a native mobile app in V2, it simply consumes the V1 API directly — no backend rewrite needed.
+V1 is designed with a **well-defined API decoupled from the frontend**. If the team decides to build a native mobile app in V2, it simply consumes the V1 API directly - no backend rewrite needed.
 
 ```
-V1 : [Browser mobile/desktop]  ── HTTP ──>  [API REST]  ──>  [DB]
-V2 : [Native iOS/Android app]  ── HTTP ──>  [Same API]  ──>  [Same DB]
+V1 : [Browser mobile/desktop]   HTTP >  [API REST]  >  [DB]
+V2 : [Native iOS/Android app]   HTTP >  [Same API]  >  [Same DB]
 ```
 
 ### General architecture
@@ -196,13 +196,13 @@ V2 : [Native iOS/Android app]  ── HTTP ──>  [Same API]  ──>  [Same D
 |-------------|--------|
 | **Architecture** | Client-server with REST API |
 | **Database** | Relational PostgreSQL |
-| **Authentication** | JWT — Employer / Employee role management |
+| **Authentication** | JWT - Employer / Employee role management |
 | **Application** | Accessible from mobile and desktop browsers |
 | **Hosting** | Test environment accessible online |
 | **Performance** | Response time < 2 seconds for main actions |
 | **Real-time** | Token balance updated in real time or near-real time after attribution |
 
-### Database — Minimum expected entities
+### Database - Minimum expected entities
 
 | Entity | Key fields |
 |--------|------------|

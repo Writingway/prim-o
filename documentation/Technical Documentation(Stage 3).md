@@ -225,7 +225,11 @@ Below is a cleaned, developer-friendly view of the MVP relational schema rendere
 - **PromoCode** = single-use code assigned on redemption
 - **ExchangeHistory** = link between redemption, employee and code
 
-### 3.4 Authentication Flow – JWT
+---
+
+## 3. High-Level Sequence Diagrams
+
+### 3.1 Authentication Flow - JWT
 
 ![User Login (JWT)](img_doc/User%20Login%20(JWT).png)
 
@@ -240,11 +244,7 @@ Below is a cleaned, developer-friendly view of the MVP relational schema rendere
 7. Store JWT - the frontend stores the token in an HttpOnly cookie, making it inaccessible to JavaScript and protected against XSS attacks.
 8. User is logged in - the frontend redirects the user to the correct dashboard based on their role.
 
----
-
-## 3. High-Level Sequence Diagrams
-
-### 3.1 Employer Token Management
+### 3.2 Employer Token Management
 
 ![Employer Token Management](img_doc/Employer%20Token%20Management.png)
 
@@ -273,7 +273,7 @@ Below is a cleaned, developer-friendly view of the MVP relational schema rendere
 4. **Return transactions list** - the database returns the full list of transactions.
 5. **Display history** - the frontend displays each attribution with its date, amount, recipient, and reason, giving the employer full visibility over every reward they have issued.
 
-### 3.2 Employee Token Usage & Promo Code Redemption
+### 3.3 Employee Token Usage & Promo Code Redemption
 
 ![Employee Token Usage](img_doc/Employee%20Token%20Usage%20%26%20Promo%20Code.png)
 
@@ -302,7 +302,7 @@ Below is a cleaned, developer-friendly view of the MVP relational schema rendere
 5. **Return promo code** - the database returns the assigned promo code to the backend.
 6. **Display promo code + updated balance** - the frontend instantly displays the promo code to the employee along with their updated token balance. The code is available immediately with no delay.
 
-### 3.3 Stripe Payment Flow
+### 3.4 Stripe Payment Flow
 
 ![Stripe Payment Flow](img_doc/Stripe%20Payment%20Flow.png)
 
@@ -334,222 +334,222 @@ Below is a cleaned, developer-friendly view of the MVP relational schema rendere
 
 ## 4. External and Internal APIs
 
-### 4.1 External APIs
+## 4.1 External APIs Used
 
-#### Stripe Payments API
+| API | Purpose | Why chosen |
+|-----|---------|------------|
+| **Stripe** | Handle subscription payments and token top-ups securely | PCI-DSS compliance offloaded to Stripe, webhook-based server-side confirmation |
+| **Brevo (Optional)** | Send account verification emails at signup | Managed deliverability (SPF/DKIM/DMARC), GDPR-compliant European provider |
 
-**Purpose**: Handle secure payment processing for employer token deposits.
+---
 
-| Method | Endpoint | Request | Response |
-|--------|----------|---------|----------|
-| | | | |
+## 4.2 Internal API Endpoints (MVP)
 
-### 4.2 Internal API Endpoints
+### Authentication
 
-#### Authentication
+| Method | Endpoint | Description | Input | Output |
+|--------|----------|-------------|-------|--------|
+| `POST` | `/auth/register` | Register a new employer account | `{ "companyName": "string", "siret": "string", "email": "string", "password": "string" }` | `{ "employerId": "uuid", "token": "jwt_token" }` |
+| `POST` | `/auth/login` | Log in user and get JWT (any role) | `{ "email": "string", "password": "string" }` | `{ "token": "jwt_token", "role": "employer\|employee\|admin" }` |
+| `POST` | `/auth/logout` | Log out the current user | Header: `Authorization: Bearer <token>` | `{ "success": true }` |
+| `GET` | `/auth/me` | Get logged-in user info | Header: `Authorization: Bearer <token>` | `{ "id": "uuid", "role": "string", "email": "string" }` |
 
-| Method | Endpoint | Request | Response | Auth |
-|--------|----------|---------|----------|------|
-| | | | | |
+### Employer Account
 
-#### Employer Management
+| Method | Endpoint | Description | Input | Output |
+|--------|----------|-------------|-------|--------|
+| `GET` | `/employers/me` | Get current employer profile | JWT required | `{ "id": "uuid", "companyName": "string", "siret": "string", "email": "string" }` |
+| `PATCH` | `/employers/me` | Update current employer profile | `{ "companyName": "string", "email": "string" }` | `{ "success": true, "employer": { ... } }` |
+| `GET` | `/employers/me/balance` | Get current employer token balance | JWT required | `{ "balance": 250, "updatedAt": "ISO-date" }` |
 
-| Method | Endpoint | Request | Response | Auth |
-|--------|----------|---------|----------|------|
-| | | | | |
+### Employee Management
 
-#### Employee Management
+| Method | Endpoint | Description | Input | Output |
+|--------|----------|-------------|-------|--------|
+| `POST` | `/employees` | Create a new employee account | `{ "firstName": "string", "lastName": "string", "username": "string", "password": "string" }` | `{ "id": "uuid", "firstName": "string", "balance": 0, "isActive": true }` |
+| `GET` | `/employees/me` | Get current employee profile and balance | JWT required | `{ "id": "uuid", "firstName": "string", "balance": 45, "isActive": true }` |
+| `GET` | `/employees` | List employees of the current employer | JWT required | `[ { "id": "uuid", "firstName": "string", "balance": 45, "isActive": true } ]` |
+| `GET` | `/employees/:id` | Get one employee's details | Path param: `id` | `{ "id": "uuid", "firstName": "string", "lastName": "string", "balance": 45, "isActive": true }` |
+| `PATCH` | `/employees/:id` | Update employee profile or status | `{ "firstName": "string", "isActive": false }` | `{ "success": true, "employee": { ... } }` |
+| `DELETE` | `/employees/:id` | Deactivate employee (soft delete) | Path param: `id` | `{ "success": true, "id": "uuid", "isActive": false }` |
 
-| Method | Endpoint | Request | Response | Auth |
-|--------|----------|---------|----------|------|
-| | | | | |
+### Tokens & Payments
 
-#### Token Transactions
+| Method | Endpoint | Description | Input | Output |
+|--------|----------|-------------|-------|--------|
+| `POST` | `/payments/checkout-session` | Create a Stripe checkout session to buy tokens | `{ "amount": 500 }` | `{ "sessionId": "string", "checkoutUrl": "stripe_url" }` |
+| `POST` | `/payments/webhook` | Receive payment confirmation from Stripe | Stripe webhook payload | `{ "received": true }` |
+| `POST` | `/tokens/award` | Award tokens from employer to employee(s) | `{ "employeeIds": ["uuid"], "amount": 50, "reason": "string" }` | `{ "success": true, "transactions": [ ... ], "newBalance": 150 }` |
+| `GET` | `/tokens/transactions` | List token transactions of the current user | Query: `?page=1&limit=20` | `{ "transactions": [ ... ], "total": 47 }` |
 
-| Method | Endpoint | Request | Response | Auth |
-|--------|----------|---------|----------|------|
-| | | | | |
+### Partner Offers
 
-#### Offers & Redemption
+| Method | Endpoint | Description | Input | Output |
+|--------|----------|-------------|-------|--------|
+| `GET` | `/offers` | List active partner offers | Query: `?category=string&maxTokens=100` | `[ { "id": "uuid", "partner": "string", "tokenCost": 50, "valueEuros": 50 } ]` |
+| `GET` | `/offers/:id` | Get offer details | Path param: `id` | `{ "id": "uuid", "partner": "string", "description": "string", "tokenCost": 50, "codesAvailable": 47 }` |
+| `POST` | `/offers` | Create a new partner offer (admin only) | `{ "partner": "string", "title": "string", "tokenCost": 50, "valueEuros": 50, "category": "string" }` | `{ "id": "uuid", "status": "active", "codesAvailable": 0 }` |
+| `PATCH` | `/offers/:id` | Update an offer or change status (admin only) | `{ "tokenCost": 45, "status": "inactive" }` | `{ "success": true, "offer": { ... } }` |
+| `POST` | `/offers/:id/codes` | Bulk-import promo codes for an offer (admin only) | `{ "codes": ["string"] }` | `{ "success": true, "imported": 3, "codesAvailable": 50 }` |
 
-| Method | Endpoint | Request | Response | Auth |
-|--------|----------|---------|----------|------|
-| | | | | |
+### Redemption
+
+| Method | Endpoint | Description | Input | Output |
+|--------|----------|-------------|-------|--------|
+| `POST` | `/redemptions` | Redeem tokens for a promo code | `{ "offerId": "uuid" }` | `{ "id": "uuid", "partner": "string", "tokensSpent": 50, "promoCode": "string", "newBalance": 400 }` |
+| `GET` | `/redemptions` | List redemptions of the current employee | Query: `?page=1&limit=20` | `{ "redemptions": [ ... ], "total": 7 }` |
+| `GET` | `/redemptions/:id` | Get one redemption with the promo code | Path param: `id` | `{ "id": "uuid", "partner": "string", "tokensSpent": 50, "promoCode": "string" }` |
 
 ---
 
 ## 5. SCM and QA Strategies
-
+ 
 ### 5.1 Source Control Management (SCM)
-
+ 
 #### Branching Strategy
-
+ 
 | Strategy | Description | Use Case |
 |----------|-------------|----------|
-| | | |
-
+| **Feature branches** | One branch per feature, named `feature/<name>`, branched off `dev` | Isolated development |
+| **Dev branch** | Integration branch for testing all features together | Pre-production validation |
+| **Main branch** | Production-ready, updated only via PR from `dev` | Production deployments |
+ 
+**Workflow:** `feature/*` → `dev` → `main`
+ 
 #### Commit Message Convention
-
+ 
+Conventional Commits format.
+ 
 | Format | Example |
 |--------|---------|
-| | |
-
+| `<type>(<scope>): <description>` | `feat(auth): add JWT login endpoint` |
+| `<type>: <description>` | `fix: prevent negative token amounts` |
+ 
+**Allowed types:** `feat`, `fix`, `update`, `chore`, `docs`, `refactor`, `test`.
+ 
 #### PR Review & Merge Policy
-
-- Minimum reviews required: 
-- Branch protection rules:
-- Automated checks:
-
+ 
+- **Minimum reviews required:** 1 approval from another team member.
+- **Branch protection rules:** no self-review, no direct push to `dev`/`main`, all changes via PR, CI must pass.
+- **Automated checks:** linting, unit tests, integration tests.
+---
+ 
 ### 5.2 Quality Assurance (QA) Strategy
-
+ 
 #### Testing Levels
-
+ 
 | Testing Type | Coverage | Tools |
 |--------------|----------|-------|
-| Unit Tests | | |
-| Integration Tests | | |
-| End-to-End Tests | | |
-| Performance Tests | | |
-
+| **Unit Tests** | Business logic functions | Vitest |
+| **Integration Tests** | API endpoints with test DB | Vitest + Supertest |
+| **API Tests** | Manual endpoint testing during development | Postman |
+| **End-to-End Tests** | Critical user journeys | Playwright |
+| **Performance Tests** | Manual checks on critical pages (< 2s response) | Browser DevTools |
+ 
 #### Testing Standards
-
+ 
 | Category | Requirement |
 |----------|-------------|
-| Code Coverage Target | |
-| Bug Severity Levels | |
-| Regression Testing | |
-| Security Testing | |
-
+| **Code Coverage Target** | 100% on business logic and API endpoints (excluding configuration, type definitions, trivial getters) |
+| **Bug Severity Levels** | Critical (blocker) / Major (24h) / Minor (current sprint) / Cosmetic (backlog) |
+| **Regression Testing** | Full test suite runs on every PR via GitHub Actions |
+| **Security Testing** | Zod validation, Prisma parameterized queries, sanitize-html, JWT verification, Stripe webhook signature check |
+ 
 #### Deployment Pipeline
-
+ 
 ```
-Code Commit → Linting → Unit Tests → Integration Tests → Build → Staging → Production
+Code Commit → Linting (ESLint) → Unit Tests (Vitest) → Integration Tests (Vitest + Supertest) → Build → Staging (dev) → E2E Tests (Playwright) → Production (main)
 ```
-
+ 
 ---
 
 ## 6. Technical Justifications
 
 ### 6.1 Technology Choices
 
-#### Frontend – React
+#### Frontend - React
 
 **Why React?**
-- Rationale:
-- Trade-offs:
-- Alternatives considered:
+- **Rationale:** Largest frontend ecosystem; component-based; skills transferable to React Native for V2.
+- **Trade-offs:** Steeper learning curve; larger bundle than Vue.
+- **Alternatives considered:** Vue (smaller ecosystem), Angular (too heavy for MVP).
 
-#### Backend – Node.js + Express
+#### Backend - Node.js + Express
 
 **Why Node.js + Express?**
-- Rationale:
-- Trade-offs:
-- Alternatives considered:
+- **Rationale:** JavaScript on both ends; team already familiar; Express is the de-facto standard for REST APIs.
+- **Trade-offs:** Single-threaded; minimal architectural opinions.
+- **Alternatives considered:** Python/FastAPI (adds a second language), NestJS (overhead), Go (unfamiliar).
 
-#### Database – PostgreSQL + Prisma ORM
+#### Database - PostgreSQL + Prisma ORM
 
 **Why PostgreSQL?**
-- Rationale:
-- Trade-offs:
-- Alternatives considered:
+- **Rationale:** Relational + ACID; mandatory for token transactions; 40+ years of production track record.
+- **Trade-offs:** Requires upfront schema design.
+- **Alternatives considered:** MongoDB (weaker transactions, past data-loss issues), MySQL (fewer advanced features), SQLite (not multi-user).
 
 **Why Prisma ORM?**
-- Rationale:
-- Trade-offs:
-- Alternatives considered:
+- **Rationale:** Type-safe with TypeScript; first-class PostgreSQL support; simpler than legacy ORMs; built-in migrations.
+- **Trade-offs:** Abstraction layer (raw SQL needed for some complex queries).
+- **Alternatives considered:** Sequelize (older, more boilerplate), TypeORM (heavier API), raw SQL (no type safety).
 
-#### Authentication – JWT + bcrypt
+#### Authentication - JWT + bcrypt
 
 **Why JWT + bcrypt?**
-- Rationale:
-- Trade-offs:
-- Alternatives considered:
+- **Rationale:** Industry standard for REST APIs; team familiar; bcrypt is the long-established password hashing standard.
+- **Trade-offs:** JWTs hard to revoke; bcrypt intentionally slow on login.
+- **Alternatives considered:** Session + Redis (extra infrastructure), OAuth (overkill), Argon2 (less supported in Node).
 
-#### Payment Gateway – Stripe
+#### Payment Gateway - Stripe
 
 **Why Stripe?**
-- Rationale:
-- Trade-offs:
-- Alternatives considered:
+- **Rationale:** PCI-DSS offloaded; webhook server-side confirmation; best developer experience; widely adopted with mature Node.js SDK.
+- **Trade-offs:** Transaction fees (~1.4% + 0.25€ EU); vendor lock-in.
+- **Alternatives considered:** PayPal (worse DX), Adyen (overkill), Mollie (smaller ecosystem).
+
+---
 
 ### 6.2 Architectural Decisions
 
 #### Mobile-First, No Native App
 
 **Why web app instead of native iOS/Android?**
-- Rationale:
-- Trade-offs:
-- Future consideration:
+- **Rationale:** Single codebase for mobile + desktop; no app store process; faster MVP delivery.
+- **Trade-offs:** No native device features (push, biometrics, full offline).
+- **Future consideration:** API designed as a clean REST contract - React Native can consume it directly in V2.
 
 #### Atomic Transactions for Token Transfers
 
 **Why atomic transactions?**
-- Rationale:
-- Implementation:
+- **Rationale:** Token operations involve multiple writes (debit + credit + transaction record). A partial failure would corrupt balances.
+- **Implementation:** All multi-step operations wrapped in PostgreSQL transactions via Prisma `$transaction`. Row-level locks (`SELECT ... FOR UPDATE`) on critical rows (e.g., last promo code).
 
 #### Webhook-Driven Payment Confirmation
 
 **Why webhooks for Stripe confirmation?**
-- Rationale:
-- Security benefits:
+- **Rationale:** The client cannot be trusted to confirm payments. Stripe webhooks provide tamper-proof server-side confirmation.
+- **Security benefits:** Cryptographically signed payload verified server-side; tokens credited only after verification.
+
+---
 
 ### 6.3 Security & Compliance Justifications
 
 #### HttpOnly Cookies for JWT Storage
 
 **Why HttpOnly cookies?**
-- Rationale:
-- Protection against:
+- **Rationale:** JWT inaccessible to JavaScript; cookie automatically attached to outgoing requests.
+- **Protection against:** XSS (no `document.cookie` access). Combined with `Secure` + `SameSite=Strict`, also mitigates CSRF.
 
 #### Server-Side Balance Validation
 
 **Why validate on the backend, not frontend?**
-- Rationale:
-- Attack prevention:
+- **Rationale:** Frontend is controlled by the user; any client-side check is cosmetic and provides zero security.
+- **Attack prevention:** Token amounts, prices, and balances are always re-fetched server-side. Client input limited to identifiers, never to values affecting business state.
 
 #### Stripe Webhook Signature Verification
 
 **Why verify webhook signatures?**
-- Rationale:
-- Attack prevention:
+- **Rationale:** Webhook endpoint is publicly accessible; without verification, anyone could send fake events to credit tokens.
+- **Attack prevention:** Stripe signs every payload with a shared secret; the Stripe SDK rejects any request with an invalid or missing signature before business logic runs.
 
 ---
-
-## 7. Deliverable Summary
-
-This technical documentation serves as the comprehensive blueprint for Prim'O's MVP development. It includes:
-
-- ✅ **User Stories & Mockups** - prioritized stories covering must-have, should-have, could-have, and won't-have features
-- ✅ **System Architecture** - client-server architecture across frontend, backend, database, and external services
-- ✅ **Database Design** - relational schema with 8 core tables and atomic transaction patterns
-- ✅ **Sequence Diagrams** - authentication, employer token management, employee redemption, and Stripe payment flows
-- ✅ **API Specifications** - placeholders for internal REST endpoints and external API integrations
-- ✅ **SCM & QA Strategies** - branching, commit conventions, PR policies, and testing framework
-- ✅ **Technical Justifications** - rationales for technology and architectural choices
-
----
-
-## Appendix
-
-### A. Links & References
-
-- [GitHub Repository](#)
-- [Notion Workspace](#)
-- [Design Assets](#)
-- [Stripe Documentation](https://stripe.com/docs)
-
-### B. Glossary
-
-| Term | Definition |
-|------|-----------|
-| Token | Virtual currency equivalent to 1€, non-convertible to cash |
-| Promo Code | Single-use voucher issued to employee upon token redemption |
-| Employer | Company managing employees and distributing tokens |
-| Employee | User receiving and redeeming tokens for partner offers |
-| Partner Offer | Redeemable discount or product from a partner brand |
-
-### C. Version History
-
-| Version | Date | Changes |
-|---------|------|---------|
-| 1.0 | 2026-05-20 | Initial technical documentation (Stage 3) |
