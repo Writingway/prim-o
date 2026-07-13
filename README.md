@@ -31,8 +31,6 @@ The application follows a decoupled client/server architecture: a React frontend
 Prisma ORM. Payments are handled by Stripe and authentication relies on JWTs
 (access + refresh tokens).
 
-![Application architecture](Documentation/img_doc/Design%20System%20Architecture.png)
-
 **Main layers:**
 
 - **Frontend (`/frontend`)**: React 19 + TypeScript SPA, routing with TanStack
@@ -52,13 +50,6 @@ Prisma ORM. Payments are handled by Stripe and authentication relies on JWTs
 The relational model is managed by Prisma (`backend/prisma/schema.prisma`) and
 deployed on PostgreSQL. It covers companies, users (multiple roles), token
 management, motive-based attributions, partner offers and promo codes.
-
-![Database diagram](Documentation/img_doc/Relationnal%20Database.png)
-
-**Main entities:** `Company`, `User`, `Attribution`, `Motif`, `Allocation`,
-`Category`, `PartnerOffer`, `PromoCode`, `Redemption`, `CompanyTokenPurchase`,
-plus the authentication tables (`RefreshToken`, `EmailVerificationToken`,
-`PasswordResetToken`, `CompanyInviteCode`).
 
 ---
 
