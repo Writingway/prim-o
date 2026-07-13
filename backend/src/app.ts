@@ -25,27 +25,27 @@ import { requireAuth, requireAdmin } from './middleware/auth.middleware';
 import stripeRouter from './routes/stripe.routes';
 import { stripeWebhookController } from './controllers/stripeWebhook.controller';
 
-// L'app Express est construite ici SANS écouter de port : server.ts
-// (prod/dev) fait le listen + démarre les jobs ; les tests d'intégration
-// (Supertest) importent l'app directement, sans serveur ni port.
+// The Express app is built here WITHOUT listening on a port: server.ts
+// (prod/dev) does the listen + starts the jobs; integration tests
+// (Supertest) import the app directly, without a server or port.
 const app = express();
 
-// API dynamique authentifiée : pas d'ETag → pas de 304 (qui casse fetch,
-// res.ok devenant false et le body vide côté client).
+// Authenticated dynamic API: no ETag → no 304 (which breaks fetch,
+// res.ok becoming false and an empty body on the client side).
 app.set('etag', false);
 
 if (config.NODE_ENV === 'production') app.set('trust proxy', 1);
 
-// 1. Sécurité headers
+// 1. Security headers
 app.use(helmet());
-// 2. CORS (avant rate limit)
+// 2. CORS (before rate limit)
 app.use(cors({origin: config.CLIENT_URL, credentials: true}));
-// 3. Rate limiting - garde-fou DoS GLOBAL et large. Les routes sensibles
-// (login, refresh, génération de codes) ont leurs propres budgets serrés
-// dans lib/rateLimit.ts. Ce plafond global ne doit PAS étrangler le trafic
-// normal d'une SPA : chaque navigation déclenche /me + /offers, et un 401
-// → refresh → retry triple les appels (×2 encore en StrictMode dev).
-// Désactivé en test : les suites d'intégration enchaînent les requêtes.
+// 3. Rate limiting - GLOBAL, broad DoS guard. Sensitive routes
+// (login, refresh, code generation) have their own tight budgets
+// in lib/rateLimit.ts. This global ceiling must NOT throttle the
+// normal traffic of an SPA: each navigation triggers /me + /offers, and a 401
+// → refresh → retry triples the calls (×2 again in StrictMode dev).
+// Disabled in test: integration suites fire requests back to back.
 app.use(rateLimit({
   windowMs: 60 * 1000,
   max: 300,
@@ -55,13 +55,13 @@ app.use(rateLimit({
   message: { error: 'Trop de requêtes, réessaie dans 1 minute.' },
 }));
 
-// En dev : logs détaillés colorés
-// En prod : format court (économise les logs)
+// In dev: detailed colored logs
+// In prod: short format (saves on logs)
 if (config.NODE_ENV !== 'test') {
   app.use(morgan(config.NODE_ENV === 'production' ? 'combined' : 'dev'));
 }
 
-// Webhook Stripe : corps BRUT obligatoire (vérif de signature) → AVANT express.json().
+// Stripe webhook: RAW body required (signature verification) → BEFORE express.json().
 app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), stripeWebhookController);
 
 // 4. Parse JSON
@@ -73,8 +73,8 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', env: config.NODE_ENV });
 });
 
-// Fichiers uploadés (photos d'offres) servis en statique. Public (vitrine landing).
-// Sous /api/uploads pour passer par le proxy Vite en dev (qui ne route que /api).
+// Uploaded files (offer photos) served statically. Public (landing showcase).
+// Under /api/uploads to go through the Vite proxy in dev (which only routes /api).
 app.use('/api/uploads', express.static(UPLOADS_DIR));
 
 app.use('/api/auth', authRouter);
@@ -91,7 +91,7 @@ app.use('/api/admin', requireAuth, requireAdmin, adminRouter);
 //Stripe endpoints
 app.use('/api/stripe', stripeRouter);
 
-// Routes de test (auto-vérification email pour les tests d'intégration) : JAMAIS en production.
+// Test routes (email self-verification for integration tests): NEVER in production.
 if (config.NODE_ENV !== 'production') {
   app.use('/api/test', testRouter);
 }

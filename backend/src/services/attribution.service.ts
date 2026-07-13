@@ -222,7 +222,7 @@ export async function listManagerEnvelopes(managerId: string, companyId: string)
   });
 }
 
-// Envelopes SENT by an owner ("Mes enveloppes envoyées" screen): filtered by createdById,
+// Envelopes SENT by an owner ("Sent envelopes" screen): filtered by createdById,
 // with the recipient manager. Read-only, no R computation.
 export async function listSentEnvelopes(companyId: string, createdById: string) {
   const allocations = await prisma.allocation.findMany({

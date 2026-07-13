@@ -2,9 +2,9 @@ import { Router, Request, Response, NextFunction } from 'express';
 import z from 'zod';
 import { prisma } from '../lib/db';
 
-// Routes de test UNIQUEMENT : montées par app.ts hors production.
-// Permet aux tests d'intégration (tests/integration) de passer la
-// vérification email sans boîte mail - flip direct du flag en DB.
+// Test routes ONLY: mounted by app.ts outside production.
+// Lets integration tests (tests/integration) pass email
+// verification without a mailbox - direct flip of the flag in DB.
 const router = Router();
 
 const verifyEmailSchema = z.object({ email: z.email() });
