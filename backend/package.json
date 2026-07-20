@@ -7,6 +7,8 @@
     "dev": "nodemon --watch src --ext ts --exec ts-node src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
+    "start:render": "prisma migrate deploy && node dist/server.js",
+    "postinstall": "prisma generate",
     "test": "vitest run",
     "test:int": "vitest run -c vitest.integration.config.ts"
   },
